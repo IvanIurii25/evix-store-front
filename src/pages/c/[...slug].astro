@@ -1,11 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import ProductCard from '../../components/ProductCard.astro';
-import { getCategory, listProducts } from '../../api/catalog';
+import CatalogControls from '../../islands/CatalogControls.vue';
+import { getCategory, listProducts, getFacets } from '../../api/catalog';
 import { DEFAULT_LANG } from '../../config/env';
 
-// On-demand SSR in F1 (SSG per-category is a later optimization, plan §2).
+// On-demand SSR (SSG per-category is a later optimization, plan §2). The island
+// is server-rendered too, so the first grid is in HTML, then it hydrates (F2).
 export const prerender = false;
 
 const { slug } = Astro.params;
@@ -17,9 +18,13 @@ if (!catSlug) return Astro.redirect('/');
 
 let category;
 let listing;
+let facets;
 try {
   category = await getCategory(catSlug, lang);
-  listing = await listProducts(catSlug, lang);
+  [listing, facets] = await Promise.all([
+    listProducts(catSlug, lang),
+    getFacets(catSlug, lang),
+  ]);
 } catch {
   return new Response('Category not found', { status: 404 });
 }
@@ -33,40 +38,30 @@ try {
     <Breadcrumbs items={category.breadcrumbs ?? []} current={category.name} />
     <h1 class="mt-4 text-2xl font-bold text-ink">{category.name}</h1>
 
-    <div class="mt-6 flex gap-6">
-      <aside class="hidden w-64 shrink-0 lg:block">
-        <div class="rounded-2xl border-2 border-fill p-4 text-sm text-subtle">
-          Фильтры — скоро
-        </div>
-        {
-          category.children && category.children.length > 0 && (
-            <nav class="mt-4 space-y-1">
-              {category.children.map((c) => (
-                <a
-                  href={`/c/${c.slug}`}
-                  class="block rounded-lg px-3 py-1.5 text-sm text-body hover:bg-fill"
-                >
-                  {c.name}
-                </a>
-              ))}
-            </nav>
-          )
-        }
-      </aside>
+    {
+      category.children && category.children.length > 0 && (
+        <nav class="mt-4 flex flex-wrap gap-2">
+          {category.children.map((c) => (
+            <a
+              href={`/c/${c.slug}`}
+              class="rounded-full border-2 border-fill px-4 py-1.5 text-sm text-body transition hover:border-primary hover:text-primary"
+            >
+              {c.name}
+            </a>
+          ))}
+        </nav>
+      )
+    }
 
-      <div class="flex-1">
-        {
-          listing.data.length > 0 ? (
-            <div class="grid grid-cols-2 gap-6 md:grid-cols-3">
-              {listing.data.map((p) => (
-                <ProductCard product={p} />
-              ))}
-            </div>
-          ) : (
-            <p class="text-subtle">В этой категории пока нет товаров.</p>
-          )
-        }
-      </div>
+    <div class="mt-6">
+      <CatalogControls
+        client:load
+        categorySlug={catSlug}
+        lang={lang}
+        initialProducts={listing.data}
+        initialCursor={listing.next_cursor ?? null}
+        facets={facets}
+      />
     </div>
   </div>
 </Layout>

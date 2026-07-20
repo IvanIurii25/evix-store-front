@@ -4,7 +4,14 @@ import astro from 'eslint-plugin-astro';
 
 export default [
   {
-    ignores: ['dist/', '.astro/', 'node_modules/', 'src/types/api.d.ts'],
+    // TODO(F2 follow-up): add eslint-plugin-vue and lint islands too.
+    ignores: [
+      'dist/',
+      '.astro/',
+      'node_modules/',
+      'src/types/api.d.ts',
+      '**/*.vue',
+    ],
   },
   js.configs.recommended,
   ...ts.configs.recommended,

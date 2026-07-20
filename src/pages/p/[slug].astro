@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ProductGallery from '../../islands/ProductGallery.vue';
+import AddToCart from '../../islands/AddToCart.vue';
 import { getProduct } from '../../api/catalog';
 import { price } from '../../lib/format';
 import { DEFAULT_LANG } from '../../config/env';
@@ -14,7 +16,6 @@ const product = slug ? await getProduct(slug, lang) : null;
 if (!product) return new Response('Product not found', { status: 404 });
 
 const media = product.media ?? [];
-const mainImage = media[0];
 ---
 
 <Layout
@@ -25,36 +26,9 @@ const mainImage = media[0];
     <Breadcrumbs items={product.breadcrumbs ?? []} current={product.name} />
 
     <div class="mt-6 flex flex-col gap-10 lg:flex-row">
-      <!-- Gallery -->
+      <!-- Gallery (island: switch main image via thumbnails) -->
       <div class="lg:w-1/2">
-        <div
-          class="flex aspect-square items-center justify-center rounded-2xl border-2 border-fill bg-white p-6"
-        >
-          {
-            mainImage ? (
-              <img
-                src={mainImage.url}
-                alt={product.name}
-                class="max-h-full object-contain"
-              />
-            ) : (
-              <span class="text-subtle">нет фото</span>
-            )
-          }
-        </div>
-        {
-          media.length > 1 && (
-            <div class="mt-4 flex gap-3">
-              {media.map((m) => (
-                <img
-                  src={m.url}
-                  alt=""
-                  class="h-20 w-20 rounded-lg border-2 border-fill object-contain p-1"
-                />
-              ))}
-            </div>
-          )
-        }
+        <ProductGallery client:visible images={media} alt={product.name} />
       </div>
 
       <!-- Info -->
@@ -81,11 +55,11 @@ const mainImage = media[0];
         </div>
 
         <div class="mt-6">
-          <button
-            class="h-12 w-full rounded-xl bg-primary font-medium text-white transition hover:bg-primary-hover"
-          >
-            В корзину
-          </button>
+          <AddToCart
+            client:load
+            productId={product.id}
+            inStock={product.in_stock}
+          />
         </div>
 
         {
