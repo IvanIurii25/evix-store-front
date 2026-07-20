@@ -1,0 +1,40 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import LogoutButton from '../../islands/LogoutButton.vue';
+import { meWithToken } from '../../api/auth';
+
+export const prerender = false;
+
+// SSR-guard: the access cookie is httpOnly but readable server-side.
+const access = Astro.cookies.get('access')?.value;
+if (!access) return Astro.redirect('/auth?next=/account');
+
+const user = await meWithToken(access);
+if (!user) return Astro.redirect('/auth?next=/account');
+---
+
+<Layout title="Кабинет">
+  <div class="mx-auto max-w-[1360px] px-5 py-10">
+    <h1 class="text-2xl font-bold text-ink">Кабинет</h1>
+
+    <div class="mt-6 max-w-md rounded-2xl border-2 border-fill p-6">
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between gap-4">
+          <dt class="text-subtle">Email</dt>
+          <dd class="text-ink">{user.email}</dd>
+        </div>
+        {
+          user.phone && (
+            <div class="flex justify-between gap-4">
+              <dt class="text-subtle">Телефон</dt>
+              <dd class="text-ink">{user.phone}</dd>
+            </div>
+          )
+        }
+      </dl>
+      <div class="mt-6">
+        <LogoutButton client:load />
+      </div>
+    </div>
+  </div>
+</Layout>

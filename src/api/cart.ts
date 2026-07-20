@@ -11,3 +11,8 @@ export async function addToCart(productId: number, qty: number) {
   if (error) throw new Error(`addToCart failed (${response.status})`);
   return data;
 }
+
+// Merge the guest cart (session_token cookie) into the user cart after login.
+export async function mergeCart() {
+  await api.POST('/api/v1/cart/merge', { credentials: 'include' });
+}

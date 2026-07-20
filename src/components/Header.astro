@@ -2,6 +2,9 @@
 // Storefront header «по мотивам ecom»: logo · Каталог button · big central
 // live-search island · right icons. Catalog mega-menu remains a later island.
 import SearchBox from '../islands/SearchBox.vue';
+
+// httpOnly access cookie is readable on the server → reflect auth state in SSR.
+const loggedIn = Boolean(Astro.cookies.get('access')?.value);
 ---
 
 <header class="border-b border-fill">
@@ -28,7 +31,11 @@ import SearchBox from '../islands/SearchBox.vue';
     <SearchBox client:idle />
 
     <nav class="flex shrink-0 items-center gap-5 text-ink">
-      <a href="/account" aria-label="Кабинет" class="hover:text-primary">
+      <a
+        href={loggedIn ? '/account' : '/auth'}
+        aria-label={loggedIn ? 'Кабинет' : 'Войти'}
+        class="hover:text-primary"
+      >
         <svg
           class="h-6 w-6"
           viewBox="0 0 24 24"
