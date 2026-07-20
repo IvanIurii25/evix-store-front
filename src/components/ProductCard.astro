@@ -1,16 +1,19 @@
 ---
 import { price } from '../lib/format';
 import type { components } from '../types/api';
+import type { Lang } from '../lib/i18n';
+import { localePath } from '../lib/i18n';
 
 interface Props {
   product: components['schemas']['ProductCardOut'];
+  lang: Lang;
 }
 
-const { product } = Astro.props;
+const { product, lang } = Astro.props;
 ---
 
 <a
-  href={`/p/${product.slug}`}
+  href={localePath(lang, `p/${product.slug}`)}
   class="group flex flex-col rounded-2xl border-2 border-fill bg-white p-4 transition hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)]"
 >
   <div class="relative flex h-56 items-center justify-center overflow-hidden">

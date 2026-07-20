@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { logout } from '../api/auth';
+import { localePath, type Lang } from '../lib/i18n';
+
+const props = defineProps<{ lang: Lang }>();
 
 const loading = ref(false);
 
@@ -9,7 +12,7 @@ async function doLogout() {
   try {
     await logout();
   } finally {
-    location.href = '/';
+    location.href = localePath(props.lang);
   }
 }
 </script>

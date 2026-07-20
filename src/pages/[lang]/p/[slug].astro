@@ -1,29 +1,71 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import ProductGallery from '../../islands/ProductGallery.vue';
-import AddToCart from '../../islands/AddToCart.vue';
-import { getProduct } from '../../api/catalog';
-import { price } from '../../lib/format';
-import { DEFAULT_LANG } from '../../config/env';
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import ProductGallery from '../../../islands/ProductGallery.vue';
+import AddToCart from '../../../islands/AddToCart.vue';
+import { getProduct } from '../../../api/catalog';
+import { price } from '../../../lib/format';
+import {
+  isLang,
+  localePath,
+  DEFAULT_LOCALE,
+  type Alternate,
+} from '../../../lib/i18n';
+import { productJsonLd, breadcrumbJsonLd } from '../../../lib/seo';
 
 export const prerender = false;
 
-const { slug } = Astro.params;
-const lang = DEFAULT_LANG;
+const { lang, slug } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+
 const product = slug ? await getProduct(slug, lang) : null;
 
 if (!product) return new Response('Product not found', { status: 404 });
 
 const media = product.media ?? [];
+
+// Per-locale slugs come from the backend (slugs[]) → real hreflang equivalents.
+const canonical = localePath(lang, `p/${product.slug}`);
+const alternates: Alternate[] = [];
+for (const s of product.slugs ?? []) {
+  if (isLang(s.lang)) {
+    alternates.push({ lang: s.lang, path: localePath(s.lang, `p/${s.slug}`) });
+  }
+}
+const defaultSlug = (product.slugs ?? []).find(
+  (s) => s.lang === DEFAULT_LOCALE,
+)?.slug;
+if (defaultSlug) {
+  alternates.push({
+    lang: 'x-default',
+    path: localePath(DEFAULT_LOCALE, `p/${defaultSlug}`),
+  });
+}
+
+const origin = (Astro.site ?? new URL('http://localhost:4321')).href;
+const jsonLd = [
+  productJsonLd(origin, canonical, product),
+  breadcrumbJsonLd(origin, lang, product.breadcrumbs ?? [], {
+    name: product.name,
+    path: canonical,
+  }),
+];
 ---
 
 <Layout
   title={product.seo_title ?? product.name}
   description={product.seo_description ?? ''}
+  lang={lang}
+  canonical={canonical}
+  alternates={alternates}
+  jsonLd={jsonLd}
 >
   <div class="mx-auto max-w-[1360px] px-5 py-6">
-    <Breadcrumbs items={product.breadcrumbs ?? []} current={product.name} />
+    <Breadcrumbs
+      items={product.breadcrumbs ?? []}
+      current={product.name}
+      lang={lang}
+    />
 
     <div class="mt-6 flex flex-col gap-10 lg:flex-row">
       <!-- Gallery (island: switch main image via thumbnails) -->

@@ -1,9 +1,13 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { getOrder } from '../../api/checkout';
-import { price } from '../../lib/format';
+import Layout from '../../../layouts/Layout.astro';
+import { getOrder } from '../../../api/checkout';
+import { price } from '../../../lib/format';
+import { isLang, localePath } from '../../../lib/i18n';
 
 export const prerender = false;
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
 
 const url = new URL(Astro.request.url);
 const number = url.searchParams.get('number') ?? '';
@@ -60,14 +64,14 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
 
           <div class="mt-6 flex flex-wrap gap-3">
             <a
-              href="/"
+              href={localePath(lang)}
               class="rounded-xl bg-primary px-6 py-2.5 font-medium text-white transition hover:bg-primary-hover"
             >
               В каталог
             </a>
             {!loggedIn && (
               <a
-                href="/auth"
+                href={localePath(lang, 'auth')}
                 class="rounded-xl border-2 border-fill px-6 py-2.5 font-medium text-body transition hover:border-primary hover:text-primary"
               >
                 Создать аккаунт
@@ -78,7 +82,7 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
       ) : (
         <p class="text-subtle">
           Заказ не найден. Проверьте ссылку или{' '}
-          <a href="/" class="text-primary hover:underline">
+          <a href={localePath(lang)} class="text-primary hover:underline">
             вернитесь в каталог
           </a>
           .

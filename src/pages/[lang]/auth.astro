@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AuthForm from '../../islands/AuthForm.vue';
+import { isLang, localePath } from '../../lib/i18n';
+
+export const prerender = false;
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+
+const access = Astro.cookies.get('access')?.value;
+const url = new URL(Astro.request.url);
+const fallback = localePath(lang, 'account');
+const nextRaw = url.searchParams.get('next') ?? fallback;
+const next = nextRaw.startsWith('/') ? nextRaw : fallback;
+
+// Already signed in → skip the form.
+if (access) return Astro.redirect(next);
+---
+
+<Layout title="Вход в аккаунт">
+  <div class="mx-auto max-w-[1360px] px-5 py-16">
+    <AuthForm client:load next={next} lang={lang} />
+  </div>
+</Layout>

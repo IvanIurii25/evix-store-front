@@ -2,7 +2,9 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { search, type SearchHit } from '../api/search';
 import { price } from '../lib/format';
-import { DEFAULT_LANG } from '../config/env';
+import { localePath, type Lang } from '../lib/i18n';
+
+const props = defineProps<{ lang: Lang }>();
 
 const q = ref('');
 const results = ref<SearchHit[]>([]);
@@ -23,7 +25,7 @@ function onInput() {
   // debounce so typing doesn't spam the API
   timer = setTimeout(async () => {
     try {
-      const res = await search(query, DEFAULT_LANG, 1);
+      const res = await search(query, props.lang, 1);
       results.value = (res.data ?? []).slice(0, 6);
       open.value = true;
     } finally {
@@ -34,7 +36,11 @@ function onInput() {
 
 function submit() {
   const query = q.value.trim();
-  if (query) location.href = `/search?q=${encodeURIComponent(query)}`;
+  if (query)
+    location.href = localePath(
+      props.lang,
+      `search?q=${encodeURIComponent(query)}`,
+    );
 }
 
 function onDocClick(e: MouseEvent) {
@@ -76,7 +82,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
       <a
         v-for="hit in results"
         :key="hit.card.product_id"
-        :href="`/p/${hit.card.slug}`"
+        :href="localePath(props.lang, `p/${hit.card.slug}`)"
         class="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-fill"
       >
         <img

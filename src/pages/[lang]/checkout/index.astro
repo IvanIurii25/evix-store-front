@@ -1,16 +1,20 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import CheckoutForm from '../../islands/CheckoutForm.vue';
+import Layout from '../../../layouts/Layout.astro';
+import CheckoutForm from '../../../islands/CheckoutForm.vue';
+import { isLang } from '../../../lib/i18n';
 
 // No auth-guard — guest checkout is allowed (plan §9).
 export const prerender = false;
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
 ---
 
 <Layout title="Оформление заказа">
   <div class="mx-auto max-w-[1360px] px-5 py-8">
     <h1 class="text-2xl font-bold text-ink">Оформление заказа</h1>
     <div class="mt-6">
-      <CheckoutForm client:load />
+      <CheckoutForm client:load lang={lang} />
     </div>
   </div>
 </Layout>

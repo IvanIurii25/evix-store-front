@@ -1,17 +1,19 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import ProductCard from '../components/ProductCard.astro';
-import { search } from '../api/search';
-import type { SearchResponse } from '../api/search';
-import { DEFAULT_LANG } from '../config/env';
+import Layout from '../../layouts/Layout.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { search } from '../../api/search';
+import type { SearchResponse } from '../../api/search';
+import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
 
 // SSR: results are in the initial HTML (plan §2). Live-search is the header island.
 export const prerender = false;
 
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+
 const url = new URL(Astro.request.url);
 const q = (url.searchParams.get('q') ?? '').trim();
 const page = Math.max(1, Number(url.searchParams.get('page') ?? '1') || 1);
-const lang = DEFAULT_LANG;
 
 let results: SearchResponse = { data: [], total: 0, page, page_size: 0 };
 if (q) {
@@ -24,10 +26,21 @@ if (q) {
 
 const totalPages =
   results.page_size > 0 ? Math.ceil(results.total / results.page_size) : 1;
-const href = (p: number) => `/search?q=${encodeURIComponent(q)}&page=${p}`;
+const href = (p: number) =>
+  localePath(lang, `search?q=${encodeURIComponent(q)}&page=${p}`);
+
+// Same query across locales; the query string is the cross-language equivalent.
+const suffix = q ? `search?q=${encodeURIComponent(q)}` : 'search';
+const canonical = localePath(lang, suffix);
+const alternates = hreflangAlternates((l) => localePath(l, suffix));
 ---
 
-<Layout title={q ? `Поиск: ${q}` : 'Поиск'}>
+<Layout
+  title={q ? `Поиск: ${q}` : 'Поиск'}
+  lang={lang}
+  canonical={canonical}
+  alternates={alternates}
+>
   <div class="mx-auto max-w-[1360px] px-5 py-6">
     <h1 class="text-2xl font-bold text-ink">
       {q ? `Результаты по «${q}»` : 'Поиск'}
@@ -42,7 +55,7 @@ const href = (p: number) => `/search?q=${encodeURIComponent(q)}&page=${p}`;
       ) : (
         <div class="mt-6 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
           {(results.data ?? []).map((hit) => (
-            <ProductCard product={hit.card} />
+            <ProductCard product={hit.card} lang={lang} />
           ))}
         </div>
       )

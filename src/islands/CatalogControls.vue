@@ -7,10 +7,11 @@ import {
   type ProductSort,
   type FacetsResponse,
 } from '../api/catalog';
+import type { Lang } from '../lib/i18n';
 
 const props = defineProps<{
   categorySlug: string;
-  lang: string;
+  lang: Lang;
   initialProducts: PCard[];
   initialCursor: string | null;
   facets: FacetsResponse;
@@ -180,7 +181,12 @@ onMounted(() => {
       </div>
 
       <div v-if="products.length" class="grid grid-cols-2 gap-6 md:grid-cols-3">
-        <ProductCard v-for="p in products" :key="p.product_id" :product="p" />
+        <ProductCard
+          v-for="p in products"
+          :key="p.product_id"
+          :product="p"
+          :lang="props.lang"
+        />
       </div>
       <p v-else class="text-subtle">В этой категории пока нет товаров.</p>
 

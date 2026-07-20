@@ -1,20 +1,22 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import CatalogControls from '../../islands/CatalogControls.vue';
-import { getCategory, listProducts, getFacets } from '../../api/catalog';
-import { DEFAULT_LANG } from '../../config/env';
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import CatalogControls from '../../../islands/CatalogControls.vue';
+import { getCategory, listProducts, getFacets } from '../../../api/catalog';
+import { isLang, localePath } from '../../../lib/i18n';
+import { breadcrumbJsonLd } from '../../../lib/seo';
 
 // On-demand SSR (SSG per-category is a later optimization, plan §2). The island
 // is server-rendered too, so the first grid is in HTML, then it hydrates (F2).
 export const prerender = false;
 
-const { slug } = Astro.params;
-const lang = DEFAULT_LANG;
+const { lang, slug } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+
 const parts = (slug ?? '').split('/').filter(Boolean);
 const catSlug = parts[parts.length - 1];
 
-if (!catSlug) return Astro.redirect('/');
+if (!catSlug) return Astro.redirect(localePath(lang));
 
 let category;
 let listing;
@@ -28,14 +30,36 @@ try {
 } catch {
   return new Response('Category not found', { status: 404 });
 }
+
+// Category detail exposes only the current-locale slug (no slugs[]), so there
+// is no reliable cross-language equivalent — emit canonical only (no hreflang).
+const canonical = localePath(lang, `c/${parts.join('/')}`);
+
+// Category breadcrumbs already include the category itself as the last item,
+// so drop it and pass the category as `current` (no duplicate trail entry).
+const ancestors = (category.breadcrumbs ?? []).slice(0, -1);
+const origin = (Astro.site ?? new URL('http://localhost:4321')).href;
+const jsonLd = [
+  breadcrumbJsonLd(origin, lang, ancestors, {
+    name: category.name,
+    path: canonical,
+  }),
+];
 ---
 
 <Layout
   title={category.seo_title ?? category.name}
   description={category.seo_description ?? ''}
+  lang={lang}
+  canonical={canonical}
+  jsonLd={jsonLd}
 >
   <div class="mx-auto max-w-[1360px] px-5 py-6">
-    <Breadcrumbs items={category.breadcrumbs ?? []} current={category.name} />
+    <Breadcrumbs
+      items={category.breadcrumbs ?? []}
+      current={category.name}
+      lang={lang}
+    />
     <h1 class="mt-4 text-2xl font-bold text-ink">{category.name}</h1>
 
     {
@@ -43,7 +67,7 @@ try {
         <nav class="mt-4 flex flex-wrap gap-2">
           {category.children.map((c) => (
             <a
-              href={`/c/${c.slug}`}
+              href={localePath(lang, `c/${c.slug}`)}
               class="rounded-full border-2 border-fill px-4 py-1.5 text-sm text-body transition hover:border-primary hover:text-primary"
             >
               {c.name}

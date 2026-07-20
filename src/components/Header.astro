@@ -3,14 +3,40 @@
 // live-search island · right icons. Catalog mega-menu remains a later island.
 import SearchBox from '../islands/SearchBox.vue';
 import CartCount from '../islands/CartCount.vue';
+import {
+  langFromPath,
+  localePath,
+  isLang,
+  LANGS,
+  type Alternate,
+} from '../lib/i18n';
+
+interface Props {
+  lang?: string;
+  // Per-locale equivalents of the current page (from the page's alternates).
+  // Absent → the switcher falls back to the other locale's home.
+  alternates?: Alternate[];
+}
+
+const { lang: langProp, alternates = [] } = Astro.props;
 
 // httpOnly access cookie is readable on the server → reflect auth state in SSR.
 const loggedIn = Boolean(Astro.cookies.get('access')?.value);
+// Prefer the page-provided locale; fall back to the URL (Header renders
+// outside the [lang] route param).
+const lang = isLang(langProp) ? langProp : langFromPath(Astro.url.pathname);
+
+// Language switcher target for the given locale: the page's equivalent path if
+// known (PDP dual-slug / home / search), else that locale's home (safe).
+function switchHref(target: (typeof LANGS)[number]): string {
+  const alt = alternates.find((a) => a.lang === target);
+  return alt ? alt.path : localePath(target);
+}
 ---
 
 <header class="border-b border-fill">
   <div class="mx-auto flex h-20 max-w-[1360px] items-center gap-4 px-5">
-    <a href="/" class="shrink-0 text-xl font-bold text-ink">
+    <a href={localePath(lang)} class="shrink-0 text-xl font-bold text-ink">
       evix<span class="text-primary">store</span>
     </a>
 
@@ -29,11 +55,11 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
       Каталог
     </button>
 
-    <SearchBox client:idle />
+    <SearchBox client:idle lang={lang} />
 
     <nav class="flex shrink-0 items-center gap-5 text-ink">
       <a
-        href={loggedIn ? '/account' : '/auth'}
+        href={loggedIn ? localePath(lang, 'account') : localePath(lang, 'auth')}
         aria-label={loggedIn ? 'Кабинет' : 'Войти'}
         class="hover:text-primary"
       >
@@ -49,7 +75,11 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
             stroke-linecap="round"></path>
         </svg>
       </a>
-      <a href="/cart" aria-label="Корзина" class="relative hover:text-primary">
+      <a
+        href={localePath(lang, 'cart')}
+        aria-label="Корзина"
+        class="relative hover:text-primary"
+      >
         <svg
           class="h-6 w-6"
           viewBox="0 0 24 24"
@@ -66,6 +96,30 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
         </svg>
         <CartCount client:idle />
       </a>
+
+      <div
+        class="flex items-center gap-1 text-sm font-medium uppercase"
+        aria-label="Язык"
+      >
+        {
+          LANGS.map((l, i) => (
+            <>
+              {i > 0 && <span class="text-fill">|</span>}
+              {l === lang ? (
+                <span class="text-ink">{l}</span>
+              ) : (
+                <a
+                  href={switchHref(l)}
+                  hreflang={l}
+                  class="text-subtle hover:text-primary"
+                >
+                  {l}
+                </a>
+              )}
+            </>
+          ))
+        }
+      </div>
     </nav>
   </div>
 </header>

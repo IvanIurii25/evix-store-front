@@ -2,6 +2,9 @@
 import { ref, onMounted, watch } from 'vue';
 import { quote, checkout, type QuoteOut } from '../api/checkout';
 import { price } from '../lib/format';
+import { localePath, type Lang } from '../lib/i18n';
+
+const props = defineProps<{ lang: Lang }>();
 
 const email = ref('');
 const phone = ref('');
@@ -58,7 +61,10 @@ async function submit() {
       phone: phone.value,
       delivery_type: deliveryType.value,
     });
-    location.href = `/checkout/success?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(email.value)}`;
+    location.href = localePath(
+      props.lang,
+      `checkout/success?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(email.value)}`,
+    );
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Ошибка';
   } finally {

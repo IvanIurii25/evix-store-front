@@ -2,8 +2,9 @@
 import { ref } from 'vue';
 import { login, register } from '../api/auth';
 import { mergeCart } from '../api/cart';
+import { localePath, type Lang } from '../lib/i18n';
 
-const props = defineProps<{ next?: string }>();
+const props = defineProps<{ next?: string; lang: Lang }>();
 
 const mode = ref<'login' | 'register'>('login');
 const email = ref('');
@@ -41,7 +42,8 @@ async function submit() {
       /* merge is best-effort */
     }
     const next = props.next;
-    location.href = next && next.startsWith('/') ? next : '/account';
+    location.href =
+      next && next.startsWith('/') ? next : localePath(props.lang, 'account');
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Ошибка';
   } finally {

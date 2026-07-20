@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { price } from '../lib/format';
 import type { ProductCard } from '../api/catalog';
+import { localePath, type Lang } from '../lib/i18n';
 
-defineProps<{ product: ProductCard }>();
+const props = defineProps<{ product: ProductCard; lang: Lang }>();
 </script>
 
 <template>
   <a
-    :href="`/p/${product.slug}`"
+    :href="localePath(props.lang, `p/${product.slug}`)"
     class="group flex flex-col rounded-2xl border-2 border-fill bg-white p-4 transition hover:shadow-[0_6px_24px_rgba(0,0,0,0.15)]"
   >
     <div class="relative flex h-56 items-center justify-center overflow-hidden">

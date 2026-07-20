@@ -1,0 +1,49 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCategoryTree } from '../../api/catalog';
+import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
+
+export const prerender = false;
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+
+let categories: Awaited<ReturnType<typeof getCategoryTree>>;
+try {
+  categories = await getCategoryTree(lang);
+} catch {
+  categories = [];
+}
+
+const alternates = hreflangAlternates((l) => localePath(l));
+---
+
+<Layout
+  title="evix-store — каталог"
+  lang={lang}
+  canonical={localePath(lang)}
+  alternates={alternates}
+>
+  <div class="mx-auto max-w-[1360px] px-5 py-10">
+    <h1 class="text-3xl font-bold text-ink">Каталог</h1>
+
+    {
+      categories.length > 0 ? (
+        <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          {categories.map((c) => (
+            <a
+              href={localePath(lang, `c/${c.slug}`)}
+              class="rounded-2xl border-2 border-fill p-6 transition hover:shadow-[0_6px_24px_rgba(0,0,0,0.1)]"
+            >
+              <span class="font-semibold text-ink">{c.name}</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p class="mt-6 text-subtle">
+          Каталог недоступен — проверь, что бэкенд запущен ({lang}).
+        </p>
+      )
+    }
+  </div>
+</Layout>

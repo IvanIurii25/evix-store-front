@@ -3,6 +3,9 @@ import { ref, onMounted } from 'vue';
 import { getCart, updateItem, removeItem, type CartOut } from '../api/cart';
 import { price } from '../lib/format';
 import { notifyCartChanged } from '../lib/cart-events';
+import { localePath, type Lang } from '../lib/i18n';
+
+const props = defineProps<{ lang: Lang }>();
 
 const cart = ref<CartOut>({ items: [], subtotal: '0', item_count: 0 });
 const loading = ref(true);
@@ -46,7 +49,9 @@ onMounted(load);
 
   <div v-else-if="!cart.items || cart.items.length === 0" class="text-subtle">
     Корзина пуста.
-    <a href="/" class="text-primary hover:underline">В каталог →</a>
+    <a :href="localePath(props.lang)" class="text-primary hover:underline"
+      >В каталог →</a
+    >
   </div>
 
   <div v-else class="flex flex-col gap-6 lg:flex-row">
@@ -102,7 +107,7 @@ onMounted(load);
           }}</span>
         </div>
         <a
-          href="/checkout"
+          :href="localePath(props.lang, 'checkout')"
           class="mt-5 block rounded-xl bg-primary py-3 text-center font-medium text-white transition hover:bg-primary-hover"
         >
           Оформить заказ

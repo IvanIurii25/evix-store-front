@@ -1,25 +1,33 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import LogoutButton from '../../islands/LogoutButton.vue';
-import Addresses from '../../islands/Addresses.vue';
-import OrderHistory from '../../islands/OrderHistory.vue';
-import { meWithToken } from '../../api/auth';
+import Layout from '../../../layouts/Layout.astro';
+import LogoutButton from '../../../islands/LogoutButton.vue';
+import Addresses from '../../../islands/Addresses.vue';
+import OrderHistory from '../../../islands/OrderHistory.vue';
+import { meWithToken } from '../../../api/auth';
+import { isLang, localePath } from '../../../lib/i18n';
 
 export const prerender = false;
 
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+
 // SSR-guard: the access cookie is httpOnly but readable server-side.
+const loginUrl = localePath(
+  lang,
+  `auth?next=${encodeURIComponent(localePath(lang, 'account'))}`,
+);
 const access = Astro.cookies.get('access')?.value;
-if (!access) return Astro.redirect('/auth?next=/account');
+if (!access) return Astro.redirect(loginUrl);
 
 const user = await meWithToken(access);
-if (!user) return Astro.redirect('/auth?next=/account');
+if (!user) return Astro.redirect(loginUrl);
 ---
 
 <Layout title="Кабинет">
   <div class="mx-auto max-w-[1360px] px-5 py-10">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-ink">Кабинет</h1>
-      <LogoutButton client:idle />
+      <LogoutButton client:idle lang={lang} />
     </div>
 
     <div class="mt-8 grid gap-8 lg:grid-cols-2">
