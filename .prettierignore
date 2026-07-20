@@ -1,0 +1,3 @@
+# Generated lockfile — pnpm owns its format; prettier would fight it and break
+# format:check after every install.
+pnpm-lock.yaml
