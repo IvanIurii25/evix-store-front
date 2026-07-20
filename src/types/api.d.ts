@@ -1317,6 +1317,8 @@ export interface components {
       breadcrumbs?: components['schemas']['Breadcrumb'][];
       /** Children */
       children?: components['schemas']['CategoryNode'][];
+      /** Slugs */
+      slugs?: components['schemas']['CategorySlug'][];
     };
     /**
      * CategoryMoveRequest
@@ -1383,6 +1385,16 @@ export interface components {
     CategoryReorderRequest: {
       /** Items */
       items: components['schemas']['CategoryReorderItem'][];
+    };
+    /**
+     * CategorySlug
+     * @description A ``(lang, slug)`` pair powering hreflang / the category switcher (§2.1.1).
+     */
+    CategorySlug: {
+      /** Lang */
+      lang: string;
+      /** Slug */
+      slug: string;
     };
     /**
      * CategoryTranslationIn

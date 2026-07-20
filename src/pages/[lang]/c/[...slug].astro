@@ -3,7 +3,12 @@ import Layout from '../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import CatalogControls from '../../../islands/CatalogControls.vue';
 import { getCategory, listProducts, getFacets } from '../../../api/catalog';
-import { isLang, localePath } from '../../../lib/i18n';
+import {
+  isLang,
+  localePath,
+  DEFAULT_LOCALE,
+  type Alternate,
+} from '../../../lib/i18n';
 import { breadcrumbJsonLd } from '../../../lib/seo';
 
 // On-demand SSR (SSG per-category is a later optimization, plan §2). The island
@@ -31,9 +36,26 @@ try {
   return new Response('Category not found', { status: 404 });
 }
 
-// Category detail exposes only the current-locale slug (no slugs[]), so there
-// is no reliable cross-language equivalent — emit canonical only (no hreflang).
-const canonical = localePath(lang, `c/${parts.join('/')}`);
+// Categories resolve by leaf slug (the ancestor path in the URL is decorative),
+// so the canonical is the leaf form — matching how nav/breadcrumbs link here.
+const canonical = localePath(lang, `c/${catSlug}`);
+
+// Per-locale slugs from the backend → real hreflang equivalents + switcher.
+const alternates: Alternate[] = [];
+for (const s of category.slugs ?? []) {
+  if (isLang(s.lang)) {
+    alternates.push({ lang: s.lang, path: localePath(s.lang, `c/${s.slug}`) });
+  }
+}
+const defaultSlug = (category.slugs ?? []).find(
+  (s) => s.lang === DEFAULT_LOCALE,
+)?.slug;
+if (defaultSlug) {
+  alternates.push({
+    lang: 'x-default',
+    path: localePath(DEFAULT_LOCALE, `c/${defaultSlug}`),
+  });
+}
 
 // Category breadcrumbs already include the category itself as the last item,
 // so drop it and pass the category as `current` (no duplicate trail entry).
@@ -52,6 +74,7 @@ const jsonLd = [
   description={category.seo_description ?? ''}
   lang={lang}
   canonical={canonical}
+  alternates={alternates}
   jsonLd={jsonLd}
 >
   <div class="mx-auto max-w-[1360px] px-5 py-6">
