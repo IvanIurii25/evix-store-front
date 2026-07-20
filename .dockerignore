@@ -1,0 +1,12 @@
+node_modules
+dist
+.astro
+.lighthouseci
+.git
+.github
+*.log
+.env
+.env.*
+playwright-report
+test-results
+.playwright-mcp
