@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { z } from 'zod';
 import { login, register } from '../api/auth';
 import { mergeCart } from '../api/cart';
 
@@ -13,13 +12,10 @@ const password = ref('');
 const error = ref('');
 const loading = ref(false);
 
-const passwordSchema = z.string().min(6, 'Пароль — минимум 6 символов');
-
 async function submit() {
   error.value = '';
-  const pw = passwordSchema.safeParse(password.value);
-  if (!pw.success) {
-    error.value = pw.error.issues[0].message;
+  if (password.value.length < 6) {
+    error.value = 'Пароль — минимум 6 символов';
     return;
   }
   loading.value = true;

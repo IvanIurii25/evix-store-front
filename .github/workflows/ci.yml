@@ -36,3 +36,9 @@ jobs:
 
       - name: Unit tests (vitest)
         run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: JS budget gate (size-limit ≤ 120 kB)
+        run: pnpm size

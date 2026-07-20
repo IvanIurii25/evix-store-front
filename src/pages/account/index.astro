@@ -19,7 +19,7 @@ if (!user) return Astro.redirect('/auth?next=/account');
   <div class="mx-auto max-w-[1360px] px-5 py-10">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-ink">Кабинет</h1>
-      <LogoutButton client:load />
+      <LogoutButton client:idle />
     </div>
 
     <div class="mt-8 grid gap-8 lg:grid-cols-2">
@@ -42,14 +42,14 @@ if (!user) return Astro.redirect('/auth?next=/account');
 
         <h2 class="mt-8 font-semibold text-ink">Адреса доставки</h2>
         <div class="mt-3">
-          <Addresses client:load />
+          <Addresses client:visible />
         </div>
       </section>
 
       <section>
         <h2 class="font-semibold text-ink">История заказов</h2>
         <div class="mt-3">
-          <OrderHistory client:load />
+          <OrderHistory client:visible />
         </div>
       </section>
     </div>

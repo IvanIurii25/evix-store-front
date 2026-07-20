@@ -14,6 +14,8 @@ const active = ref(props.images[0]?.url ?? '');
         v-if="active"
         :src="active"
         :alt="alt"
+        fetchpriority="high"
+        decoding="async"
         class="max-h-full object-contain"
       />
       <span v-else class="text-subtle">нет фото</span>
