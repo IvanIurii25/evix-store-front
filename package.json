@@ -20,7 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "gen:api": "openapi-typescript ${API_OPENAPI:-http://localhost:58000/openapi.json} -o src/types/api.d.ts",
+    "gen:api": "openapi-typescript ${API_OPENAPI:-http://localhost:58000/openapi.json} -o src/types/api.d.ts && prettier --write src/types/api.d.ts",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
     "size": "size-limit"
   },
