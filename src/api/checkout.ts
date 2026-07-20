@@ -3,15 +3,16 @@ import type { components } from '../types/api';
 
 export type QuoteOut = components['schemas']['QuoteOut'];
 export type OrderOut = components['schemas']['OrderOut'];
+export type DeliveryAddressIn = components['schemas']['DeliveryAddressIn'];
 
 export async function quote(
   deliveryType: string,
-  addressId?: number,
+  deliveryAddress?: DeliveryAddressIn | null,
 ): Promise<QuoteOut | null> {
   const { data, error } = await api.POST('/api/v1/checkout/quote', {
     body: {
       delivery_type: deliveryType,
-      delivery_address_id: addressId ?? null,
+      delivery_address: deliveryAddress ?? null,
     },
     credentials: 'include',
   });
@@ -23,7 +24,7 @@ export async function checkout(body: {
   email: string;
   phone: string;
   delivery_type: string;
-  delivery_address_id?: number | null;
+  delivery_address?: DeliveryAddressIn | null;
 }): Promise<OrderOut> {
   const { data, error, response } = await api.POST('/api/v1/checkout', {
     body,

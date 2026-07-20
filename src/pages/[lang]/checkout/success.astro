@@ -42,6 +42,16 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
                 {order.delivery_type === 'pickup' ? 'Самовывоз' : 'Курьер'}
               </span>
             </div>
+            {order.delivery_name && (
+              <div class="mt-1 flex justify-between gap-4 text-sm">
+                <span class="text-subtle">Адрес</span>
+                <span class="text-right text-ink">
+                  {order.delivery_name}, {order.delivery_city},{' '}
+                  {order.delivery_street}
+                  {order.delivery_zip ? `, ${order.delivery_zip}` : ''}
+                </span>
+              </div>
+            )}
             <ul class="mt-4 divide-y divide-fill">
               {(order.items ?? []).map((it) => (
                 <li class="flex justify-between gap-4 py-2 text-sm">

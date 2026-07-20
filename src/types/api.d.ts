@@ -1485,9 +1485,26 @@ export interface components {
       delivery_type: string;
       /**
        * Delivery Address Id
-       * @description Delivery address id (required for courier).
+       * @description Saved address id (courier; logged-in users).
        */
       delivery_address_id?: number | null;
+      /** @description Inline courier address (guest or user). Alternative to id. */
+      delivery_address?: components['schemas']['DeliveryAddressIn'] | null;
+    };
+    /**
+     * DeliveryAddressIn
+     * @description Inline courier address (guest or user), snapshotted onto the order so it
+     *     survives independently of any saved address (§2.4 snapshot pattern).
+     */
+    DeliveryAddressIn: {
+      /** Full Name */
+      full_name: string;
+      /** City */
+      city: string;
+      /** Street */
+      street: string;
+      /** Zip */
+      zip?: string | null;
     };
     /**
      * FacetAttribute
@@ -1623,6 +1640,14 @@ export interface components {
       delivery_type: string;
       /** Delivery Address Id */
       delivery_address_id: number | null;
+      /** Delivery Name */
+      delivery_name?: string | null;
+      /** Delivery City */
+      delivery_city?: string | null;
+      /** Delivery Street */
+      delivery_street?: string | null;
+      /** Delivery Zip */
+      delivery_zip?: string | null;
       /** Payment Method */
       payment_method: string;
       /**
@@ -1902,9 +1927,11 @@ export interface components {
       delivery_type: string;
       /**
        * Delivery Address Id
-       * @description Delivery address id (required for courier).
+       * @description Saved address id (courier; logged-in users).
        */
       delivery_address_id?: number | null;
+      /** @description Inline courier address (guest or user). Alternative to id. */
+      delivery_address?: components['schemas']['DeliveryAddressIn'] | null;
     };
     /**
      * RefreshRequest
