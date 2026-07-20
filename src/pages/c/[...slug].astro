@@ -1,0 +1,72 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { getCategory, listProducts } from '../../api/catalog';
+import { DEFAULT_LANG } from '../../config/env';
+
+// On-demand SSR in F1 (SSG per-category is a later optimization, plan §2).
+export const prerender = false;
+
+const { slug } = Astro.params;
+const lang = DEFAULT_LANG;
+const parts = (slug ?? '').split('/').filter(Boolean);
+const catSlug = parts[parts.length - 1];
+
+if (!catSlug) return Astro.redirect('/');
+
+let category;
+let listing;
+try {
+  category = await getCategory(catSlug, lang);
+  listing = await listProducts(catSlug, lang);
+} catch {
+  return new Response('Category not found', { status: 404 });
+}
+---
+
+<Layout
+  title={category.seo_title ?? category.name}
+  description={category.seo_description ?? ''}
+>
+  <div class="mx-auto max-w-[1360px] px-5 py-6">
+    <Breadcrumbs items={category.breadcrumbs ?? []} current={category.name} />
+    <h1 class="mt-4 text-2xl font-bold text-ink">{category.name}</h1>
+
+    <div class="mt-6 flex gap-6">
+      <aside class="hidden w-64 shrink-0 lg:block">
+        <div class="rounded-2xl border-2 border-fill p-4 text-sm text-subtle">
+          Фильтры — скоро
+        </div>
+        {
+          category.children && category.children.length > 0 && (
+            <nav class="mt-4 space-y-1">
+              {category.children.map((c) => (
+                <a
+                  href={`/c/${c.slug}`}
+                  class="block rounded-lg px-3 py-1.5 text-sm text-body hover:bg-fill"
+                >
+                  {c.name}
+                </a>
+              ))}
+            </nav>
+          )
+        }
+      </aside>
+
+      <div class="flex-1">
+        {
+          listing.data.length > 0 ? (
+            <div class="grid grid-cols-2 gap-6 md:grid-cols-3">
+              {listing.data.map((p) => (
+                <ProductCard product={p} />
+              ))}
+            </div>
+          ) : (
+            <p class="text-subtle">В этой категории пока нет товаров.</p>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</Layout>

@@ -1,1 +1,26 @@
 @import 'tailwindcss';
+
+/* Design tokens — «по мотивам ecom» (default Ecom theme, rebuilt on Tailwind). */
+@theme {
+  --font-sans: 'Onest', ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #436bef; /* interface accent: links, add-to-cart, active */
+  --color-primary-hover: #3656bf;
+  --color-price: #31a72f; /* signature: product price is green */
+  --color-ink: #101010; /* headings / strong text */
+  --color-body: #292929;
+  --color-subtle: #7f7f7f;
+  --color-fill: #f2f2f2; /* search / input fill, light card borders */
+  --color-footer: #101010;
+  --color-danger: #e53935;
+  --color-badge-sale: #238821;
+  --color-badge-sale-bg: #d8f9d7;
+
+  --breakpoint-2xl: 1360px;
+}
+
+body {
+  letter-spacing: -0.02em;
+  font-family: var(--font-sans);
+  color: var(--color-body);
+}

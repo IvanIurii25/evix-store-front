@@ -1,0 +1,42 @@
+---
+// Dark contrast footer «по мотивам ecom» (#101010, 3-column link grid).
+const columns = [
+  { title: 'Магазин', links: ['Каталог', 'Акции', 'Новинки', 'Бренды'] },
+  {
+    title: 'Помощь',
+    links: ['Доставка и оплата', 'Возврат', 'Гарантия', 'Контакты'],
+  },
+  { title: 'Компания', links: ['О нас', 'Вакансии', 'Партнёрам', 'Блог'] },
+];
+---
+
+<footer class="mt-16 bg-footer text-gray-300">
+  <div class="mx-auto max-w-[1360px] px-5 py-12">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-3">
+      {
+        columns.map((col) => (
+          <div>
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              {col.title}
+            </h3>
+            <ul class="mt-3 space-y-2 text-sm">
+              {col.links.map((l) => (
+                <li>
+                  <a
+                    href="#"
+                    class="text-gray-300 transition hover:text-primary"
+                  >
+                    {l}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+    <div class="mt-10 border-t border-white/10 pt-6 text-sm text-gray-500">
+      © 2026 evix-store — single-tenant storefront (MDL).
+    </div>
+  </div>
+</footer>

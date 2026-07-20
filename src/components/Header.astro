@@ -1,0 +1,80 @@
+---
+// Storefront header «по мотивам ecom»: logo · Каталог button · big central
+// search · right icons. Static in F1; catalog mega-menu / live search are F2 islands.
+---
+
+<header class="border-b border-fill">
+  <div class="mx-auto flex h-20 max-w-[1360px] items-center gap-4 px-5">
+    <a href="/" class="shrink-0 text-xl font-bold text-ink">
+      evix<span class="text-primary">store</span>
+    </a>
+
+    <button
+      class="hidden h-12 shrink-0 items-center gap-2 rounded-[10px] bg-primary px-5 font-semibold text-white transition hover:bg-primary-hover md:flex"
+    >
+      <svg
+        class="h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"></path>
+      </svg>
+      Каталог
+    </button>
+
+    <div
+      class="flex h-12 flex-1 items-center gap-2 rounded-[10px] bg-fill px-4"
+    >
+      <svg
+        class="h-5 w-5 text-subtle"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="11" cy="11" r="7"></circle><path
+          d="m20 20-3-3"
+          stroke-linecap="round"></path>
+      </svg>
+      <input
+        type="search"
+        placeholder="Поиск товаров…"
+        class="w-full bg-transparent text-body outline-none placeholder:text-subtle"
+      />
+    </div>
+
+    <nav class="flex shrink-0 items-center gap-5 text-ink">
+      <a href="/account" aria-label="Кабинет" class="hover:text-primary">
+        <svg
+          class="h-6 w-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="8" r="4"></circle><path
+            d="M4 20a8 8 0 0 1 16 0"
+            stroke-linecap="round"></path>
+        </svg>
+      </a>
+      <a href="/cart" aria-label="Корзина" class="relative hover:text-primary">
+        <svg
+          class="h-6 w-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            d="M3 4h2l2.4 12.4a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L21 8H6"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+          <circle cx="9" cy="20" r="1"></circle><circle cx="18" cy="20" r="1"
+          ></circle>
+        </svg>
+      </a>
+    </nav>
+  </div>
+</header>
