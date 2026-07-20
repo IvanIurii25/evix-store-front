@@ -42,3 +42,33 @@ jobs:
 
       - name: JS budget gate (size-limit ≤ 120 kB)
         run: pnpm size
+
+  lighthouse:
+    # Gates the home shell (SEO / a11y / best-practices / perf) on the built
+    # SSR server. Self-contained: with no backend reachable the home page
+    # renders its graceful fallback (still 200), so scores reflect the shell,
+    # meta/hreflang and JS budget. Extending to category/PDP needs a backend or
+    # the API mock-server (separate debt).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Lighthouse CI
+        run: pnpm lhci
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
