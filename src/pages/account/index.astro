@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import LogoutButton from '../../islands/LogoutButton.vue';
+import Addresses from '../../islands/Addresses.vue';
+import OrderHistory from '../../islands/OrderHistory.vue';
 import { meWithToken } from '../../api/auth';
 
 export const prerender = false;
@@ -15,26 +17,41 @@ if (!user) return Astro.redirect('/auth?next=/account');
 
 <Layout title="Кабинет">
   <div class="mx-auto max-w-[1360px] px-5 py-10">
-    <h1 class="text-2xl font-bold text-ink">Кабинет</h1>
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-ink">Кабинет</h1>
+      <LogoutButton client:load />
+    </div>
 
-    <div class="mt-6 max-w-md rounded-2xl border-2 border-fill p-6">
-      <dl class="space-y-2 text-sm">
-        <div class="flex justify-between gap-4">
-          <dt class="text-subtle">Email</dt>
-          <dd class="text-ink">{user.email}</dd>
+    <div class="mt-8 grid gap-8 lg:grid-cols-2">
+      <section>
+        <h2 class="font-semibold text-ink">Профиль</h2>
+        <dl class="mt-3 space-y-2 rounded-2xl border-2 border-fill p-6 text-sm">
+          <div class="flex justify-between gap-4">
+            <dt class="text-subtle">Email</dt>
+            <dd class="text-ink">{user.email}</dd>
+          </div>
+          {
+            user.phone && (
+              <div class="flex justify-between gap-4">
+                <dt class="text-subtle">Телефон</dt>
+                <dd class="text-ink">{user.phone}</dd>
+              </div>
+            )
+          }
+        </dl>
+
+        <h2 class="mt-8 font-semibold text-ink">Адреса доставки</h2>
+        <div class="mt-3">
+          <Addresses client:load />
         </div>
-        {
-          user.phone && (
-            <div class="flex justify-between gap-4">
-              <dt class="text-subtle">Телефон</dt>
-              <dd class="text-ink">{user.phone}</dd>
-            </div>
-          )
-        }
-      </dl>
-      <div class="mt-6">
-        <LogoutButton client:load />
-      </div>
+      </section>
+
+      <section>
+        <h2 class="font-semibold text-ink">История заказов</h2>
+        <div class="mt-3">
+          <OrderHistory client:load />
+        </div>
+      </section>
     </div>
   </div>
 </Layout>
