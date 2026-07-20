@@ -15,6 +15,9 @@ COPY . .
 # both browser islands and SSR fetch go to this base.
 ARG PUBLIC_API_BASE=https://shop.evix.md
 ENV PUBLIC_API_BASE=$PUBLIC_API_BASE
+# Canonical/hreflang/sitemap base (Astro `site`).
+ARG SITE_URL=https://shop.evix.md
+ENV SITE_URL=$SITE_URL
 RUN pnpm build
 
 FROM node:22-slim AS runtime

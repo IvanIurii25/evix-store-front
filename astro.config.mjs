@@ -7,8 +7,9 @@ import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
-  // Public site URL (canonical / sitemap). Override per environment.
-  site: 'https://evix-store.md',
+  // Public site URL (canonical / hreflang / sitemap). Env-driven so the built
+  // image is deploy-agnostic; defaults to the prod domain.
+  site: process.env.SITE_URL ?? 'https://shop.evix.md',
 
   // Indexable pages live under /[lang]/ (ro default, ru). Transactional pages
   // (cart/checkout/auth/account) stay at root for now.
