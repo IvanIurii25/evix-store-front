@@ -1,0 +1,15 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Cart from '../islands/Cart.vue';
+
+export const prerender = false;
+---
+
+<Layout title="Корзина">
+  <div class="mx-auto max-w-[1360px] px-5 py-8">
+    <h1 class="text-2xl font-bold text-ink">Корзина</h1>
+    <div class="mt-6">
+      <Cart client:load />
+    </div>
+  </div>
+</Layout>

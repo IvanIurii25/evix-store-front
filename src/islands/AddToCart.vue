@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { addToCart } from '../api/cart';
+import { notifyCartChanged } from '../lib/cart-events';
 
 const props = defineProps<{ productId: number; inStock: boolean }>();
 
@@ -12,6 +13,7 @@ async function add() {
   state.value = 'loading';
   try {
     await addToCart(props.productId, qty.value);
+    notifyCartChanged();
     state.value = 'done';
     setTimeout(() => (state.value = 'idle'), 2000);
   } catch {

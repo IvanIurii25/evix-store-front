@@ -2,6 +2,7 @@
 // Storefront header «по мотивам ecom»: logo · Каталог button · big central
 // live-search island · right icons. Catalog mega-menu remains a later island.
 import SearchBox from '../islands/SearchBox.vue';
+import CartCount from '../islands/CartCount.vue';
 
 // httpOnly access cookie is readable on the server → reflect auth state in SSR.
 const loggedIn = Boolean(Astro.cookies.get('access')?.value);
@@ -63,6 +64,7 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
           <circle cx="9" cy="20" r="1"></circle><circle cx="18" cy="20" r="1"
           ></circle>
         </svg>
+        <CartCount client:idle />
       </a>
     </nav>
   </div>
