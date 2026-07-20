@@ -76,3 +76,13 @@ export async function getProduct(slug: string, lang: string) {
   if (error || !data) return null; // 404 -> null
   return data;
 }
+
+export type SitemapData = components['schemas']['SitemapData'];
+
+// Flat feed of all published categories + products with per-language slugs +
+// updated_at — one request powers the per-locale sitemaps with hreflang.
+export async function getSitemap(): Promise<SitemapData> {
+  const { data, error } = await api.GET('/api/v1/catalog/sitemap');
+  if (error || !data) throw new Error('getSitemap failed');
+  return data;
+}

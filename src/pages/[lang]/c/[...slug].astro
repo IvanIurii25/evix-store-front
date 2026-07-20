@@ -78,11 +78,7 @@ const jsonLd = [
   jsonLd={jsonLd}
 >
   <div class="mx-auto max-w-[1360px] px-5 py-6">
-    <Breadcrumbs
-      items={category.breadcrumbs ?? []}
-      current={category.name}
-      lang={lang}
-    />
+    <Breadcrumbs items={ancestors} current={category.name} lang={lang} />
     <h1 class="mt-4 text-2xl font-bold text-ink">{category.name}</h1>
 
     {

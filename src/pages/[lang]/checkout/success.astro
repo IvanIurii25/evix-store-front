@@ -16,7 +16,7 @@ const order = number && email ? await getOrder(number, email) : null;
 const loggedIn = Boolean(Astro.cookies.get('access')?.value);
 ---
 
-<Layout title="Заказ оформлен">
+<Layout title="Заказ оформлен" lang={lang}>
   <div class="mx-auto max-w-2xl px-5 py-12">
     {
       order ? (

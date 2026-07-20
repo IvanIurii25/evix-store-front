@@ -23,7 +23,7 @@ const user = await meWithToken(access);
 if (!user) return Astro.redirect(loginUrl);
 ---
 
-<Layout title="Кабинет">
+<Layout title="Кабинет" lang={lang}>
   <div class="mx-auto max-w-[1360px] px-5 py-10">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-ink">Кабинет</h1>

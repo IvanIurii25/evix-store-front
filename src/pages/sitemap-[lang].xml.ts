@@ -1,38 +1,59 @@
 import type { APIRoute } from 'astro';
-import { getCategoryTree, listProducts } from '../api/catalog';
-import { isLang, localePath, type Lang } from '../lib/i18n';
+import { getSitemap, type SitemapData } from '../api/catalog';
+import {
+  isLang,
+  localePath,
+  LANGS,
+  DEFAULT_LOCALE,
+  type Lang,
+} from '../lib/i18n';
 
-// Per-locale sitemap of published, indexable URLs (home + categories +
-// products). Only the storefront-public API is walked, so unpublished entities
-// never leak in. Cross-language hreflang is already emitted on-page (Layout);
-// sitemap-level xhtml:link alternates are a later addition (needs a backend
-// dual-slug endpoint to be efficient at scale).
+// Per-locale sitemap of published, indexable URLs with hreflang alternates.
+// Data comes from one flat backend feed (dual-slug + updated_at), so no tree
+// walk or per-entity round-trips.
 export const prerender = false;
 
-interface CatNode {
-  slug: string;
-  children?: CatNode[];
+type Entry = NonNullable<SitemapData['categories']>[number];
+
+const abs = (base: URL, path: string): string => new URL(path, base).href;
+
+function slugFor(entry: Entry, lang: Lang): string | undefined {
+  return (entry.slugs ?? []).find((s) => s.lang === lang)?.slug;
 }
 
-function flatten(nodes: CatNode[], out: string[] = []): string[] {
-  for (const node of nodes) {
-    out.push(node.slug);
-    if (node.children?.length) flatten(node.children, out);
+// <xhtml:link> alternates for every locale the entity has + x-default.
+function alternates(base: URL, kind: 'c' | 'p', entry: Entry): string[] {
+  const links = (entry.slugs ?? [])
+    .filter((s) => isLang(s.lang))
+    .map(
+      (s) =>
+        `    <xhtml:link rel="alternate" hreflang="${s.lang}" href="${abs(base, localePath(s.lang as Lang, `${kind}/${s.slug}`))}"/>`,
+    );
+  const def = slugFor(entry, DEFAULT_LOCALE);
+  if (def) {
+    links.push(
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${abs(base, localePath(DEFAULT_LOCALE, `${kind}/${def}`))}"/>`,
+    );
   }
-  return out;
+  return links;
 }
 
-async function productSlugs(lang: Lang, catSlugs: string[]): Promise<string[]> {
-  const seen = new Set<string>();
-  for (const slug of catSlugs) {
-    let cursor: string | undefined;
-    do {
-      const listing = await listProducts(slug, lang, { cursor });
-      for (const p of listing.data ?? []) seen.add(p.slug);
-      cursor = listing.next_cursor ?? undefined;
-    } while (cursor);
-  }
-  return [...seen];
+// A <url> block for one entity in the requested locale, or null if it has no
+// slug there (not indexable in that language).
+function urlBlock(
+  base: URL,
+  lang: Lang,
+  kind: 'c' | 'p',
+  entry: Entry,
+): string | null {
+  const slug = slugFor(entry, lang);
+  if (!slug) return null;
+  const loc = abs(base, localePath(lang, `${kind}/${slug}`));
+  const lastmod = entry.updated_at
+    ? `\n    <lastmod>${entry.updated_at.slice(0, 10)}</lastmod>`
+    : '';
+  const links = alternates(base, kind, entry).join('\n');
+  return `  <url>\n    <loc>${loc}</loc>${lastmod}\n${links}\n  </url>`;
 }
 
 export const GET: APIRoute = async ({ params, site, request }) => {
@@ -40,20 +61,27 @@ export const GET: APIRoute = async ({ params, site, request }) => {
   if (!isLang(lang)) return new Response('Not found', { status: 404 });
 
   const base = site ?? new URL(new URL(request.url).origin);
-  const catSlugs = flatten((await getCategoryTree(lang)) as CatNode[]);
-  const slugs = await productSlugs(lang, catSlugs);
+  const data = await getSitemap();
 
-  const paths = [
-    localePath(lang),
-    ...catSlugs.map((s) => localePath(lang, `c/${s}`)),
-    ...slugs.map((s) => localePath(lang, `p/${s}`)),
-  ];
+  // Home: present in every locale, alternates to each locale's home.
+  const homeAlternates = [
+    ...LANGS.map(
+      (l) =>
+        `    <xhtml:link rel="alternate" hreflang="${l}" href="${abs(base, localePath(l))}"/>`,
+    ),
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${abs(base, localePath(DEFAULT_LOCALE))}"/>`,
+  ].join('\n');
+  const blocks: string[] = [
+    `  <url>\n    <loc>${abs(base, localePath(lang))}</loc>\n${homeAlternates}\n  </url>`,
+    ...(data.categories ?? []).map((c) => urlBlock(base, lang, 'c', c)),
+    ...(data.products ?? []).map((p) => urlBlock(base, lang, 'p', p)),
+  ].filter((b): b is string => b !== null);
+
   const body =
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-    paths
-      .map((p) => `  <url><loc>${new URL(p, base).href}</loc></url>`)
-      .join('\n') +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
+    'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+    blocks.join('\n') +
     '\n</urlset>\n';
 
   return new Response(body, {

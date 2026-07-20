@@ -30,6 +30,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/catalog/sitemap': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Sitemap
+     * @description Flat feed of all published categories + products with per-language slugs.
+     */
+    get: operations['get_sitemap_api_v1_catalog_sitemap_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/catalog/categories': {
     parameters: {
       query?: never;
@@ -1940,6 +1960,36 @@ export interface components {
       page_size: number;
     };
     /**
+     * SitemapData
+     * @description All published, indexable entities for building per-locale sitemaps.
+     */
+    SitemapData: {
+      /** Categories */
+      categories?: components['schemas']['SitemapEntry'][];
+      /** Products */
+      products?: components['schemas']['SitemapEntry'][];
+    };
+    /**
+     * SitemapEntry
+     * @description One published entity: its per-language slugs + last-modified time.
+     */
+    SitemapEntry: {
+      /** Slugs */
+      slugs?: components['schemas']['SitemapSlug'][];
+      /** Updated At */
+      updated_at?: string | null;
+    };
+    /**
+     * SitemapSlug
+     * @description A ``(lang, slug)`` pair for one indexable entity.
+     */
+    SitemapSlug: {
+      /** Lang */
+      lang: string;
+      /** Slug */
+      slug: string;
+    };
+    /**
      * TokenPair
      * @description Access + refresh token pair returned by login/refresh.
      */
@@ -2044,6 +2094,26 @@ export interface operations {
           'application/json': {
             [key: string]: string;
           };
+        };
+      };
+    };
+  };
+  get_sitemap_api_v1_catalog_sitemap_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SitemapData'];
         };
       };
     };

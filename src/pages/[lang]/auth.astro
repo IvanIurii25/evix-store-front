@@ -18,7 +18,7 @@ const next = nextRaw.startsWith('/') ? nextRaw : fallback;
 if (access) return Astro.redirect(next);
 ---
 
-<Layout title="Вход в аккаунт">
+<Layout title="Вход в аккаунт" lang={lang}>
   <div class="mx-auto max-w-[1360px] px-5 py-16">
     <AuthForm client:load next={next} lang={lang} />
   </div>
