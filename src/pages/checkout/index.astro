@@ -1,0 +1,16 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CheckoutForm from '../../islands/CheckoutForm.vue';
+
+// No auth-guard — guest checkout is allowed (plan §9).
+export const prerender = false;
+---
+
+<Layout title="Оформление заказа">
+  <div class="mx-auto max-w-[1360px] px-5 py-8">
+    <h1 class="text-2xl font-bold text-ink">Оформление заказа</h1>
+    <div class="mt-6">
+      <CheckoutForm client:load />
+    </div>
+  </div>
+</Layout>
