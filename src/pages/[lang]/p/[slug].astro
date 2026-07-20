@@ -3,6 +3,7 @@ import Layout from '../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import ProductGallery from '../../../islands/ProductGallery.vue';
 import AddToCart from '../../../islands/AddToCart.vue';
+import ProductTabs from '../../../islands/ProductTabs.vue';
 import { getProduct } from '../../../api/catalog';
 import { price } from '../../../lib/format';
 import {
@@ -104,32 +105,11 @@ const jsonLd = [
           />
         </div>
 
-        {
-          product.description && (
-            <section class="mt-8">
-              <h2 class="font-semibold text-ink">Описание</h2>
-              <p class="mt-2 text-body">{product.description}</p>
-            </section>
-          )
-        }
-
-        {
-          product.attributes && product.attributes.length > 0 && (
-            <section class="mt-8">
-              <h2 class="font-semibold text-ink">Характеристики</h2>
-              <dl class="mt-2 divide-y divide-fill">
-                {product.attributes.map((a) => (
-                  <div class="flex justify-between gap-4 py-2 text-sm">
-                    <dt class="text-subtle">{a.name}</dt>
-                    <dd class="text-right text-ink">
-                      {(a.values ?? []).join(', ')}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          )
-        }
+        <ProductTabs
+          client:visible
+          description={product.description}
+          attributes={product.attributes ?? []}
+        />
       </div>
     </div>
   </div>

@@ -1,0 +1,80 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+
+interface Attr {
+  name: string;
+  values?: (string | null)[] | null;
+}
+
+const props = defineProps<{
+  description?: string | null;
+  attributes?: Attr[] | null;
+}>();
+
+const hasDescription = computed(() => Boolean(props.description));
+const hasAttributes = computed(() => (props.attributes?.length ?? 0) > 0);
+
+type TabKey = 'description' | 'attributes';
+// Default to whichever section exists first. Both panels stay in the DOM
+// (v-show) so the content is present in SSR HTML for SEO.
+const active = ref<TabKey>(hasDescription.value ? 'description' : 'attributes');
+
+const tabClass = (isActive: boolean) =>
+  isActive
+    ? 'border-primary text-ink'
+    : 'border-transparent text-subtle hover:text-ink';
+</script>
+
+<template>
+  <div v-if="hasDescription || hasAttributes" class="mt-8">
+    <div class="flex gap-6 border-b border-fill" role="tablist">
+      <button
+        v-if="hasDescription"
+        type="button"
+        role="tab"
+        :aria-selected="active === 'description'"
+        class="-mb-px border-b-2 pb-2 text-sm font-semibold transition"
+        :class="tabClass(active === 'description')"
+        @click="active = 'description'"
+      >
+        Описание
+      </button>
+      <button
+        v-if="hasAttributes"
+        type="button"
+        role="tab"
+        :aria-selected="active === 'attributes'"
+        class="-mb-px border-b-2 pb-2 text-sm font-semibold transition"
+        :class="tabClass(active === 'attributes')"
+        @click="active = 'attributes'"
+      >
+        Характеристики
+      </button>
+    </div>
+
+    <div
+      v-show="hasDescription && active === 'description'"
+      role="tabpanel"
+      class="mt-4"
+    >
+      <p class="text-body">{{ description }}</p>
+    </div>
+
+    <div
+      v-show="hasAttributes && active === 'attributes'"
+      role="tabpanel"
+      class="mt-4"
+    >
+      <dl class="divide-y divide-fill">
+        <div
+          v-for="a in attributes"
+          :key="a.name"
+          class="flex justify-between gap-4 py-2 text-sm"
+        >
+          <dt class="text-subtle">{{ a.name }}</dt>
+          <dd class="text-right text-ink">{{ (a.values ?? []).join(', ') }}</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</template>
