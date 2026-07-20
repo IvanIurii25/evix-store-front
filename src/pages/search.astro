@@ -1,0 +1,77 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { search } from '../api/search';
+import type { SearchResponse } from '../api/search';
+import { DEFAULT_LANG } from '../config/env';
+
+// SSR: results are in the initial HTML (plan §2). Live-search is the header island.
+export const prerender = false;
+
+const url = new URL(Astro.request.url);
+const q = (url.searchParams.get('q') ?? '').trim();
+const page = Math.max(1, Number(url.searchParams.get('page') ?? '1') || 1);
+const lang = DEFAULT_LANG;
+
+let results: SearchResponse = { data: [], total: 0, page, page_size: 0 };
+if (q) {
+  try {
+    results = await search(q, lang, page);
+  } catch {
+    results = { data: [], total: 0, page, page_size: 0 };
+  }
+}
+
+const totalPages =
+  results.page_size > 0 ? Math.ceil(results.total / results.page_size) : 1;
+const href = (p: number) => `/search?q=${encodeURIComponent(q)}&page=${p}`;
+---
+
+<Layout title={q ? `Поиск: ${q}` : 'Поиск'}>
+  <div class="mx-auto max-w-[1360px] px-5 py-6">
+    <h1 class="text-2xl font-bold text-ink">
+      {q ? `Результаты по «${q}»` : 'Поиск'}
+    </h1>
+    {q && <p class="mt-1 text-sm text-subtle">{results.total} товаров</p>}
+
+    {
+      !q ? (
+        <p class="mt-6 text-subtle">Введите запрос в строке поиска.</p>
+      ) : (results.data ?? []).length === 0 ? (
+        <p class="mt-6 text-subtle">Ничего не найдено по «{q}».</p>
+      ) : (
+        <div class="mt-6 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
+          {(results.data ?? []).map((hit) => (
+            <ProductCard product={hit.card} />
+          ))}
+        </div>
+      )
+    }
+
+    {
+      q && totalPages > 1 && (
+        <nav class="mt-8 flex items-center justify-center gap-4 text-sm">
+          {page > 1 && (
+            <a
+              href={href(page - 1)}
+              class="rounded-lg border-2 border-fill px-4 py-1.5 text-body hover:border-primary hover:text-primary"
+            >
+              ← Назад
+            </a>
+          )}
+          <span class="text-subtle">
+            {page} / {totalPages}
+          </span>
+          {page < totalPages && (
+            <a
+              href={href(page + 1)}
+              class="rounded-lg border-2 border-fill px-4 py-1.5 text-body hover:border-primary hover:text-primary"
+            >
+              Вперёд →
+            </a>
+          )}
+        </nav>
+      )
+    }
+  </div>
+</Layout>

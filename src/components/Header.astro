@@ -1,6 +1,7 @@
 ---
 // Storefront header «по мотивам ecom»: logo · Каталог button · big central
-// search · right icons. Static in F1; catalog mega-menu / live search are F2 islands.
+// live-search island · right icons. Catalog mega-menu remains a later island.
+import SearchBox from '../islands/SearchBox.vue';
 ---
 
 <header class="border-b border-fill">
@@ -24,26 +25,7 @@
       Каталог
     </button>
 
-    <div
-      class="flex h-12 flex-1 items-center gap-2 rounded-[10px] bg-fill px-4"
-    >
-      <svg
-        class="h-5 w-5 text-subtle"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <circle cx="11" cy="11" r="7"></circle><path
-          d="m20 20-3-3"
-          stroke-linecap="round"></path>
-      </svg>
-      <input
-        type="search"
-        placeholder="Поиск товаров…"
-        class="w-full bg-transparent text-body outline-none placeholder:text-subtle"
-      />
-    </div>
+    <SearchBox client:idle />
 
     <nav class="flex shrink-0 items-center gap-5 text-ink">
       <a href="/account" aria-label="Кабинет" class="hover:text-primary">

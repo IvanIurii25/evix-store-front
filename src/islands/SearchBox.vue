@@ -1,0 +1,103 @@
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+import { search, type SearchHit } from '../api/search';
+import { price } from '../lib/format';
+import { DEFAULT_LANG } from '../config/env';
+
+const q = ref('');
+const results = ref<SearchHit[]>([]);
+const open = ref(false);
+const loading = ref(false);
+const root = ref<HTMLElement | null>(null);
+let timer: ReturnType<typeof setTimeout> | undefined;
+
+function onInput() {
+  clearTimeout(timer);
+  const query = q.value.trim();
+  if (query.length < 2) {
+    results.value = [];
+    open.value = false;
+    return;
+  }
+  loading.value = true;
+  // debounce so typing doesn't spam the API
+  timer = setTimeout(async () => {
+    try {
+      const res = await search(query, DEFAULT_LANG, 1);
+      results.value = (res.data ?? []).slice(0, 6);
+      open.value = true;
+    } finally {
+      loading.value = false;
+    }
+  }, 250);
+}
+
+function submit() {
+  const query = q.value.trim();
+  if (query) location.href = `/search?q=${encodeURIComponent(query)}`;
+}
+
+function onDocClick(e: MouseEvent) {
+  if (root.value && !root.value.contains(e.target as Node)) open.value = false;
+}
+onMounted(() => document.addEventListener('click', onDocClick));
+onUnmounted(() => document.removeEventListener('click', onDocClick));
+</script>
+
+<template>
+  <form
+    ref="root"
+    class="relative flex h-12 flex-1 items-center gap-2 rounded-[10px] bg-fill px-4"
+    @submit.prevent="submit"
+  >
+    <svg
+      class="h-5 w-5 text-subtle"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3-3" stroke-linecap="round" />
+    </svg>
+    <input
+      v-model="q"
+      type="search"
+      placeholder="Поиск товаров…"
+      class="w-full bg-transparent text-body outline-none placeholder:text-subtle"
+      @input="onInput"
+      @focus="open = results.length > 0"
+    />
+
+    <div
+      v-if="open && results.length"
+      class="absolute left-0 top-14 z-20 w-full rounded-xl border-2 border-fill bg-white p-2 shadow-lg"
+    >
+      <a
+        v-for="hit in results"
+        :key="hit.card.product_id"
+        :href="`/p/${hit.card.slug}`"
+        class="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-fill"
+      >
+        <img
+          v-if="hit.card.main_image_url"
+          :src="hit.card.main_image_url"
+          alt=""
+          class="h-8 w-8 shrink-0 object-contain"
+        />
+        <span class="flex-1 truncate text-sm text-ink">{{
+          hit.card.name
+        }}</span>
+        <span class="text-sm font-semibold text-price">{{
+          price(hit.card.price)
+        }}</span>
+      </a>
+      <button
+        type="submit"
+        class="mt-1 w-full rounded-lg py-1.5 text-center text-sm font-medium text-primary hover:bg-fill"
+      >
+        Все результаты →
+      </button>
+    </div>
+  </form>
+</template>
