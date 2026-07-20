@@ -27,13 +27,33 @@ const cursor = ref<string | null>(props.initialCursor);
 const sort = ref<ProductSort>('newest');
 const priceMin = ref<number | null>(null);
 const priceMax = ref<number | null>(null);
+const selectedValues = ref<number[]>([]);
 const loading = ref(false);
+
+function optsFromState() {
+  return {
+    sort: sort.value,
+    priceMin: priceMin.value ?? undefined,
+    priceMax: priceMax.value ?? undefined,
+    valueIds: selectedValues.value.length
+      ? [...selectedValues.value]
+      : undefined,
+  };
+}
+
+function toggleValue(id: number) {
+  const i = selectedValues.value.indexOf(id);
+  if (i === -1) selectedValues.value.push(id);
+  else selectedValues.value.splice(i, 1);
+  reload();
+}
 
 function writeUrl() {
   const p = new URLSearchParams();
   if (sort.value !== 'newest') p.set('sort', sort.value);
   if (priceMin.value != null) p.set('price_min', String(priceMin.value));
   if (priceMax.value != null) p.set('price_max', String(priceMax.value));
+  for (const v of selectedValues.value) p.append('value_ids', String(v));
   const qs = p.toString();
   history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
 }
@@ -46,17 +66,18 @@ function readUrl() {
   const hi = p.get('price_max');
   if (lo) priceMin.value = Number(lo);
   if (hi) priceMax.value = Number(hi);
+  selectedValues.value = p.getAll('value_ids').map(Number);
 }
 
 async function reload() {
   loading.value = true;
   writeUrl();
   try {
-    const res = await listProducts(props.categorySlug, props.lang, {
-      sort: sort.value,
-      priceMin: priceMin.value ?? undefined,
-      priceMax: priceMax.value ?? undefined,
-    });
+    const res = await listProducts(
+      props.categorySlug,
+      props.lang,
+      optsFromState(),
+    );
     products.value = res.data;
     cursor.value = res.next_cursor ?? null;
   } finally {
@@ -69,10 +90,8 @@ async function loadMore() {
   loading.value = true;
   try {
     const res = await listProducts(props.categorySlug, props.lang, {
-      sort: sort.value,
+      ...optsFromState(),
       cursor: cursor.value,
-      priceMin: priceMin.value ?? undefined,
-      priceMax: priceMax.value ?? undefined,
     });
     products.value = [...products.value, ...res.data];
     cursor.value = res.next_cursor ?? null;
@@ -84,7 +103,10 @@ async function loadMore() {
 onMounted(() => {
   readUrl();
   const filtered =
-    sort.value !== 'newest' || priceMin.value != null || priceMax.value != null;
+    sort.value !== 'newest' ||
+    priceMin.value != null ||
+    priceMax.value != null ||
+    selectedValues.value.length > 0;
   if (filtered) reload(); // restore state from a shared URL
 });
 </script>
@@ -115,17 +137,28 @@ onMounted(() => {
           Применить
         </button>
 
-        <!-- Attribute facets: shown with counts. Filtering by them needs a
-             backend param the listing endpoint doesn't take yet (display-only). -->
+        <!-- Attribute facets: clickable filters (OR within, AND across attrs;
+             backend value_ids param). -->
         <div
           v-for="a in facets.attributes ?? []"
           :key="a.attribute_id"
           class="mt-5"
         >
           <h3 class="text-sm font-semibold text-ink">{{ a.name }}</h3>
-          <ul class="mt-2 space-y-1 text-sm text-subtle">
+          <ul class="mt-2 space-y-1 text-sm">
             <li v-for="v in a.values ?? []" :key="v.value_id">
-              {{ v.value }} <span class="text-xs">({{ v.count }})</span>
+              <label class="flex cursor-pointer items-center gap-2 text-body">
+                <input
+                  type="checkbox"
+                  class="accent-primary"
+                  :checked="selectedValues.includes(v.value_id)"
+                  @change="toggleValue(v.value_id)"
+                />
+                <span
+                  >{{ v.value }}
+                  <span class="text-xs text-subtle">({{ v.count }})</span></span
+                >
+              </label>
             </li>
           </ul>
         </div>

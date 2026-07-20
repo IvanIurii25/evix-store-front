@@ -13,6 +13,7 @@ export interface ListOpts {
   cursor?: string;
   priceMin?: number;
   priceMax?: number;
+  valueIds?: number[];
 }
 
 export async function getCategoryTree(lang: string) {
@@ -46,6 +47,7 @@ export async function listProducts(
           cursor: opts.cursor,
           price_min: opts.priceMin,
           price_max: opts.priceMax,
+          value_ids: opts.valueIds,
         },
       },
     },

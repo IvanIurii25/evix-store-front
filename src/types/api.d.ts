@@ -2109,6 +2109,7 @@ export interface operations {
         cursor?: string | null;
         price_min?: number | string | null;
         price_max?: number | string | null;
+        value_ids?: number[] | null;
         /** @description Language code (ru|ro). */
         lang?: string | null;
       };
