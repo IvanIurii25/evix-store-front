@@ -1,8 +1,25 @@
 import { randomUUID } from 'node:crypto';
 
+import { middleware as i18nMiddleware } from 'astro:i18n';
+import { sequence } from 'astro:middleware';
 import type { MiddlewareHandler } from 'astro';
 
 import { API_BASE } from './config/env';
+
+// i18n routing runs in `manual` mode (astro.config) so we can exempt the admin
+// panel. Astro's built-in i18n middleware, under prefixDefaultLocale, treats a
+// non-localized first segment ("admin") as an invalid locale and 404s it — so
+// /admin/* is passed straight through, while the storefront keeps the same
+// prefix/redirect behaviour as before.
+const i18n = i18nMiddleware({
+  prefixDefaultLocale: true,
+  redirectToDefaultLocale: true,
+});
+
+const i18nRouting: MiddlewareHandler = (context, next) => {
+  if (context.url.pathname.startsWith('/admin')) return next();
+  return i18n(context, next);
+};
 
 // First-party analytics: on each storefront HTML navigation we assign/read a
 // rotating `sid` cookie and fire a non-blocking pageview to the backend track
@@ -29,7 +46,7 @@ function isTrackablePath(pathname: string): boolean {
   return !last.includes('.');
 }
 
-export const onRequest: MiddlewareHandler = async (context, next) => {
+const analytics: MiddlewareHandler = async (context, next) => {
   const { request, cookies, url, clientAddress } = context;
 
   if (request.method !== 'GET' || !isTrackablePath(url.pathname)) {
@@ -72,3 +89,6 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   return next();
 };
+
+// i18n routing first (exempting /admin), then first-party analytics.
+export const onRequest = sequence(i18nRouting, analytics);

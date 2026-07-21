@@ -13,10 +13,13 @@ export default defineConfig({
 
   // Indexable pages live under /[lang]/ (ro default, ru). Transactional pages
   // (cart/checkout/auth/account) stay at root for now.
+  // Manual routing so we run Astro's i18n middleware ourselves and can exempt
+  // the non-localized admin panel (/admin/*) — otherwise prefixDefaultLocale
+  // treats "admin" as an invalid locale and 404s it. See src/middleware.ts.
   i18n: {
     defaultLocale: 'ro',
     locales: ['ro', 'ru'],
-    routing: { prefixDefaultLocale: true, redirectToDefaultLocale: true },
+    routing: 'manual',
   },
 
   integrations: [vue()],
