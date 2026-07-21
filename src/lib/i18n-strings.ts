@@ -51,3 +51,54 @@ const HOME: Record<Lang, HomeStrings> = {
 export function homeStrings(lang: Lang): HomeStrings {
   return HOME[lang];
 }
+
+// Shared storefront chrome strings (header, product card, search island).
+export interface UiStrings {
+  catalog: string;
+  account: string;
+  login: string;
+  cart: string;
+  language: string;
+  searchPlaceholder: string;
+  searchAllResults: string;
+  inStock: string;
+  outOfStock: string;
+  addToCart: string;
+  noPhoto: string;
+  saleBadge: string;
+}
+
+const UI: Record<Lang, UiStrings> = {
+  ro: {
+    catalog: 'Catalog',
+    account: 'Cont',
+    login: 'Autentificare',
+    cart: 'Coș',
+    language: 'Limbă',
+    searchPlaceholder: 'Caută produse…',
+    searchAllResults: 'Toate rezultatele →',
+    inStock: 'În stoc',
+    outOfStock: 'Stoc epuizat',
+    addToCart: 'Adaugă în coș',
+    noPhoto: 'fără foto',
+    saleBadge: 'Reducere',
+  },
+  ru: {
+    catalog: 'Каталог',
+    account: 'Кабинет',
+    login: 'Войти',
+    cart: 'Корзина',
+    language: 'Язык',
+    searchPlaceholder: 'Поиск товаров…',
+    searchAllResults: 'Все результаты →',
+    inStock: 'В наличии',
+    outOfStock: 'Нет в наличии',
+    addToCart: 'В корзину',
+    noPhoto: 'нет фото',
+    saleBadge: 'Скидка',
+  },
+};
+
+export function ui(lang: Lang): UiStrings {
+  return UI[lang];
+}

@@ -3,8 +3,10 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { search, type SearchHit } from '../api/search';
 import { price } from '../lib/format';
 import { localePath, type Lang } from '../lib/i18n';
+import { ui } from '../lib/i18n-strings';
 
 const props = defineProps<{ lang: Lang }>();
+const t = ui(props.lang);
 
 const q = ref('');
 const results = ref<SearchHit[]>([]);
@@ -69,7 +71,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
     <input
       v-model="q"
       type="search"
-      placeholder="Поиск товаров…"
+      :placeholder="t.searchPlaceholder"
       class="w-full bg-transparent text-body outline-none placeholder:text-subtle"
       @input="onInput"
       @focus="open = results.length > 0"
@@ -102,7 +104,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
         type="submit"
         class="mt-1 w-full rounded-lg py-1.5 text-center text-sm font-medium text-primary hover:bg-fill"
       >
-        Все результаты →
+        {{ t.searchAllResults }}
       </button>
     </div>
   </form>

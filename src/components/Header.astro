@@ -10,6 +10,7 @@ import {
   LANGS,
   type Alternate,
 } from '../lib/i18n';
+import { ui } from '../lib/i18n-strings';
 
 interface Props {
   lang?: string;
@@ -25,6 +26,7 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
 // Prefer the page-provided locale; fall back to the URL (Header renders
 // outside the [lang] route param).
 const lang = isLang(langProp) ? langProp : langFromPath(Astro.url.pathname);
+const t = ui(lang);
 
 // Language switcher target for the given locale: the page's equivalent path if
 // known (PDP dual-slug / home / search), else that locale's home (safe).
@@ -52,7 +54,7 @@ function switchHref(target: (typeof LANGS)[number]): string {
       >
         <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"></path>
       </svg>
-      Каталог
+      {t.catalog}
     </button>
 
     <SearchBox client:idle lang={lang} />
@@ -60,7 +62,7 @@ function switchHref(target: (typeof LANGS)[number]): string {
     <nav class="flex shrink-0 items-center gap-5 text-ink">
       <a
         href={loggedIn ? localePath(lang, 'account') : localePath(lang, 'auth')}
-        aria-label={loggedIn ? 'Кабинет' : 'Войти'}
+        aria-label={loggedIn ? t.account : t.login}
         class="hover:text-primary"
       >
         <svg
@@ -77,7 +79,7 @@ function switchHref(target: (typeof LANGS)[number]): string {
       </a>
       <a
         href={localePath(lang, 'cart')}
-        aria-label="Корзина"
+        aria-label={t.cart}
         class="relative hover:text-primary"
       >
         <svg
@@ -99,7 +101,7 @@ function switchHref(target: (typeof LANGS)[number]): string {
 
       <div
         class="flex items-center gap-1 text-sm font-medium uppercase"
-        aria-label="Язык"
+        aria-label={t.language}
       >
         {
           LANGS.map((l, i) => (
