@@ -1,13 +1,17 @@
 ---
 // Dark contrast footer «по мотивам ecom» (#101010, 3-column link grid).
-const columns = [
-  { title: 'Магазин', links: ['Каталог', 'Акции', 'Новинки', 'Бренды'] },
-  {
-    title: 'Помощь',
-    links: ['Доставка и оплата', 'Возврат', 'Гарантия', 'Контакты'],
-  },
-  { title: 'Компания', links: ['О нас', 'Вакансии', 'Партнёрам', 'Блог'] },
-];
+import { langFromPath, isLang, type Lang } from '../lib/i18n';
+import { footerColumns } from '../lib/i18n-strings';
+
+interface Props {
+  lang?: string;
+}
+
+const { lang: langProp } = Astro.props;
+const lang: Lang = isLang(langProp)
+  ? langProp
+  : langFromPath(Astro.url.pathname);
+const columns = footerColumns(lang);
 ---
 
 <footer class="mt-16 bg-footer text-gray-300">

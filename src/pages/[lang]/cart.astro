@@ -2,16 +2,18 @@
 import Layout from '../../layouts/Layout.astro';
 import Cart from '../../islands/Cart.vue';
 import { isLang } from '../../lib/i18n';
+import { cartStrings } from '../../lib/i18n-strings';
 
 export const prerender = false;
 
 const { lang } = Astro.params;
 if (!isLang(lang)) return new Response('Not found', { status: 404 });
+const t = cartStrings(lang);
 ---
 
-<Layout title="Корзина" lang={lang}>
+<Layout title={t.title} lang={lang}>
   <div class="mx-auto max-w-[1360px] px-5 py-8">
-    <h1 class="text-2xl font-bold text-ink">Корзина</h1>
+    <h1 class="text-2xl font-bold text-ink">{t.title}</h1>
     <div class="mt-6">
       <Cart client:load lang={lang} />
     </div>

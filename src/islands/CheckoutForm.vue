@@ -8,8 +8,10 @@ import {
 } from '../api/checkout';
 import { price } from '../lib/format';
 import { localePath, type Lang } from '../lib/i18n';
+import { checkoutStrings } from '../lib/i18n-strings';
 
 const props = defineProps<{ lang: Lang }>();
+const t = checkoutStrings(props.lang);
 
 const email = ref('');
 const phone = ref('');
@@ -49,7 +51,7 @@ async function refreshQuote() {
   quoteError.value = '';
   q.value = await quote(deliveryType.value, deliveryAddress.value);
   if (!q.value && deliveryType.value === 'courier') {
-    quoteError.value = 'Укажите адрес доставки (имя, город, улица).';
+    quoteError.value = t.errAddress;
   }
 }
 
@@ -70,19 +72,19 @@ function canSubmit() {
 async function submit() {
   error.value = '';
   if (!email.value.includes('@')) {
-    error.value = 'Введите корректный email';
+    error.value = t.errEmail;
     return;
   }
   if (phone.value.trim().length < 5) {
-    error.value = 'Введите телефон';
+    error.value = t.errPhone;
     return;
   }
   if (!consent.value) {
-    error.value = 'Подтвердите согласие с условиями';
+    error.value = t.errConsent;
     return;
   }
   if (!q.value) {
-    error.value = quoteError.value || 'Расчёт недоступен';
+    error.value = quoteError.value || t.errCalc;
     return;
   }
   loading.value = true;
@@ -98,7 +100,7 @@ async function submit() {
       `checkout/success?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(email.value)}`,
     );
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Ошибка';
+    error.value = e instanceof Error ? e.message : t.errGeneric;
   } finally {
     loading.value = false;
   }
@@ -109,7 +111,7 @@ async function submit() {
   <div class="flex flex-col gap-8 lg:flex-row">
     <form class="flex-1 space-y-6" @submit.prevent="submit">
       <section>
-        <h2 class="font-semibold text-ink">Контакты</h2>
+        <h2 class="font-semibold text-ink">{{ t.contacts }}</h2>
         <div class="mt-3 space-y-3">
           <input
             v-model="email"
@@ -118,14 +120,14 @@ async function submit() {
           />
           <input
             v-model="phone"
-            placeholder="Телефон"
+            :placeholder="t.phone"
             class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
           />
         </div>
       </section>
 
       <section>
-        <h2 class="font-semibold text-ink">Доставка</h2>
+        <h2 class="font-semibold text-ink">{{ t.delivery }}</h2>
         <div class="mt-3 space-y-2">
           <label class="flex items-center gap-2">
             <input
@@ -134,7 +136,7 @@ async function submit() {
               value="pickup"
               class="accent-primary"
             />
-            Самовывоз (бесплатно)
+            {{ t.pickup }}
           </label>
           <label class="flex items-center gap-2">
             <input
@@ -143,29 +145,29 @@ async function submit() {
               value="courier"
               class="accent-primary"
             />
-            Курьер
+            {{ t.courier }}
           </label>
         </div>
 
         <div v-if="deliveryType === 'courier'" class="mt-3 space-y-3">
           <input
             v-model="addrName"
-            placeholder="Имя получателя"
+            :placeholder="t.recipientName"
             class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
           />
           <input
             v-model="addrCity"
-            placeholder="Город"
+            :placeholder="t.city"
             class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
           />
           <input
             v-model="addrStreet"
-            placeholder="Улица, дом, квартира"
+            :placeholder="t.street"
             class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
           />
           <input
             v-model="addrZip"
-            placeholder="Индекс (необязательно)"
+            :placeholder="t.zipOptional"
             class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
           />
         </div>
@@ -176,9 +178,9 @@ async function submit() {
       </section>
 
       <section>
-        <h2 class="font-semibold text-ink">Оплата</h2>
+        <h2 class="font-semibold text-ink">{{ t.payment }}</h2>
         <p class="mt-2 text-sm text-body">
-          Оплата при получении (наличными или картой курьеру / в пункте выдачи).
+          {{ t.paymentInfo }}
         </p>
       </section>
 
@@ -188,39 +190,37 @@ async function submit() {
           type="checkbox"
           class="mt-0.5 accent-primary"
         />
-        Согласен с условиями оформления заказа
+        {{ t.consent }}
       </label>
       <p v-if="error" class="text-sm text-danger">{{ error }}</p>
     </form>
 
     <aside class="lg:w-80">
       <div class="rounded-2xl border-2 border-fill p-6">
-        <h2 class="font-semibold text-ink">Ваш заказ</h2>
+        <h2 class="font-semibold text-ink">{{ t.yourOrder }}</h2>
         <dl v-if="q" class="mt-4 space-y-2 text-sm">
           <div class="flex justify-between">
-            <dt class="text-subtle">Товары ({{ q.item_count }})</dt>
+            <dt class="text-subtle">{{ t.items }} ({{ q.item_count }})</dt>
             <dd>{{ price(q.subtotal) }}</dd>
           </div>
           <div class="flex justify-between">
-            <dt class="text-subtle">Доставка</dt>
+            <dt class="text-subtle">{{ t.delivery }}</dt>
             <dd>
               {{
-                Number(q.delivery_cost) > 0
-                  ? price(q.delivery_cost)
-                  : 'бесплатно'
+                Number(q.delivery_cost) > 0 ? price(q.delivery_cost) : t.free
               }}
             </dd>
           </div>
           <div
             class="flex items-baseline justify-between border-t border-fill pt-2"
           >
-            <dt class="font-semibold text-ink">Итого</dt>
+            <dt class="font-semibold text-ink">{{ t.total }}</dt>
             <dd class="text-xl font-semibold text-price">
               {{ price(q.total) }}
             </dd>
           </div>
         </dl>
-        <p v-else class="mt-4 text-sm text-subtle">Расчёт недоступен.</p>
+        <p v-else class="mt-4 text-sm text-subtle">{{ t.quoteUnavailable }}</p>
 
         <button
           type="button"
@@ -228,7 +228,7 @@ async function submit() {
           class="mt-5 w-full rounded-xl bg-primary py-3 font-medium text-white transition hover:bg-primary-hover disabled:opacity-50"
           @click="submit"
         >
-          {{ loading ? '…' : 'Оформить заказ' }}
+          {{ loading ? '…' : t.placeOrder }}
         </button>
       </div>
     </aside>

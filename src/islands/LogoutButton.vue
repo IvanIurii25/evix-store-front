@@ -2,8 +2,10 @@
 import { ref } from 'vue';
 import { logout } from '../api/auth';
 import { localePath, type Lang } from '../lib/i18n';
+import { accountStrings } from '../lib/i18n-strings';
 
 const props = defineProps<{ lang: Lang }>();
+const t = accountStrings(props.lang);
 
 const loading = ref(false);
 
@@ -24,6 +26,6 @@ async function doLogout() {
     class="rounded-xl border-2 border-fill px-5 py-2 text-sm font-medium text-body transition hover:border-danger hover:text-danger disabled:opacity-50"
     @click="doLogout"
   >
-    {{ loading ? '…' : 'Выйти' }}
+    {{ loading ? '…' : t.logout }}
   </button>
 </template>

@@ -3,8 +3,10 @@ import { ref } from 'vue';
 import { login, register } from '../api/auth';
 import { mergeCart } from '../api/cart';
 import { localePath, type Lang } from '../lib/i18n';
+import { authStrings } from '../lib/i18n-strings';
 
 const props = defineProps<{ next?: string; lang: Lang }>();
+const t = authStrings(props.lang);
 
 const mode = ref<'login' | 'register'>('login');
 const email = ref('');
@@ -16,14 +18,14 @@ const loading = ref(false);
 async function submit() {
   error.value = '';
   if (password.value.length < 6) {
-    error.value = 'Пароль — минимум 6 символов';
+    error.value = t.errPasswordMin;
     return;
   }
   loading.value = true;
   try {
     if (mode.value === 'register') {
       if (!email.value.includes('@')) {
-        error.value = 'Введите корректный email';
+        error.value = t.errEmail;
         return;
       }
       await register(email.value, password.value, phone.value || undefined);
@@ -45,7 +47,7 @@ async function submit() {
     location.href =
       next && next.startsWith('/') ? next : localePath(props.lang, 'account');
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Ошибка';
+    error.value = e instanceof Error ? e.message : t.errGeneric;
   } finally {
     loading.value = false;
   }
@@ -61,7 +63,7 @@ async function submit() {
         :class="mode === 'login' ? 'bg-primary text-white' : 'text-subtle'"
         @click="mode = 'login'"
       >
-        Вход
+        {{ t.login }}
       </button>
       <button
         type="button"
@@ -69,26 +71,26 @@ async function submit() {
         :class="mode === 'register' ? 'bg-primary text-white' : 'text-subtle'"
         @click="mode = 'register'"
       >
-        Регистрация
+        {{ t.register }}
       </button>
     </div>
 
     <form class="mt-5 space-y-3" @submit.prevent="submit">
       <input
         v-model="email"
-        :placeholder="mode === 'login' ? 'Email или телефон' : 'Email'"
+        :placeholder="mode === 'login' ? t.emailOrPhone : 'Email'"
         class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
       />
       <input
         v-if="mode === 'register'"
         v-model="phone"
-        placeholder="Телефон (необязательно)"
+        :placeholder="t.phoneOptional"
         class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
       />
       <input
         v-model="password"
         type="password"
-        placeholder="Пароль"
+        :placeholder="t.password"
         class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
       />
       <p v-if="error" class="text-sm text-danger">{{ error }}</p>
@@ -97,7 +99,7 @@ async function submit() {
         :disabled="loading"
         class="w-full rounded-xl bg-primary py-2.5 font-medium text-white transition hover:bg-primary-hover disabled:opacity-50"
       >
-        {{ loading ? '…' : mode === 'login' ? 'Войти' : 'Зарегистрироваться' }}
+        {{ loading ? '…' : mode === 'login' ? t.signIn : t.signUp }}
       </button>
     </form>
   </div>

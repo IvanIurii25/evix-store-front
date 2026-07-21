@@ -4,8 +4,10 @@ import { getCart, updateItem, removeItem, type CartOut } from '../api/cart';
 import { price } from '../lib/format';
 import { notifyCartChanged } from '../lib/cart-events';
 import { localePath, type Lang } from '../lib/i18n';
+import { cartStrings } from '../lib/i18n-strings';
 
 const props = defineProps<{ lang: Lang }>();
+const t = cartStrings(props.lang);
 
 const cart = ref<CartOut>({ items: [], subtotal: '0', item_count: 0 });
 const loading = ref(true);
@@ -45,13 +47,13 @@ onMounted(load);
 </script>
 
 <template>
-  <div v-if="loading" class="text-subtle">Загрузка…</div>
+  <div v-if="loading" class="text-subtle">{{ t.loading }}</div>
 
   <div v-else-if="!cart.items || cart.items.length === 0" class="text-subtle">
-    Корзина пуста.
-    <a :href="localePath(props.lang)" class="text-primary hover:underline"
-      >В каталог →</a
-    >
+    {{ t.empty }}
+    <a :href="localePath(props.lang)" class="text-primary hover:underline">{{
+      t.toCatalog
+    }}</a>
   </div>
 
   <div v-else class="flex flex-col gap-6 lg:flex-row">
@@ -63,7 +65,9 @@ onMounted(load);
       >
         <div class="min-w-0 flex-1">
           <div class="truncate font-medium text-ink">{{ it.name }}</div>
-          <div class="text-sm text-subtle">{{ price(it.price) }} / шт</div>
+          <div class="text-sm text-subtle">
+            {{ price(it.price) }} {{ t.perUnit }}
+          </div>
         </div>
         <div
           class="flex h-10 shrink-0 items-center rounded-xl border-2 border-fill"
@@ -90,7 +94,7 @@ onMounted(load);
         <button
           type="button"
           class="shrink-0 text-subtle transition hover:text-danger"
-          aria-label="Удалить"
+          :aria-label="t.remove"
           @click="remove(it.product_id)"
         >
           ✕
@@ -101,7 +105,7 @@ onMounted(load);
     <aside class="lg:w-80">
       <div class="rounded-2xl border-2 border-fill p-6">
         <div class="flex items-baseline justify-between">
-          <span class="text-subtle">Итого</span>
+          <span class="text-subtle">{{ t.total }}</span>
           <span class="text-2xl font-semibold text-price">{{
             price(cart.subtotal)
           }}</span>
@@ -110,7 +114,7 @@ onMounted(load);
           :href="localePath(props.lang, 'checkout')"
           class="mt-5 block rounded-xl bg-primary py-3 text-center font-medium text-white transition hover:bg-primary-hover"
         >
-          Оформить заказ
+          {{ t.checkout }}
         </a>
       </div>
     </aside>

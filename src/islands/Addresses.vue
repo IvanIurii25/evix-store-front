@@ -7,6 +7,11 @@ import {
   setDefaultAddress,
   type AddressOut,
 } from '../api/account';
+import { type Lang } from '../lib/i18n';
+import { accountStrings } from '../lib/i18n-strings';
+
+const props = defineProps<{ lang: Lang }>();
+const t = accountStrings(props.lang);
 
 const addresses = ref<AddressOut[]>([]);
 const loading = ref(true);
@@ -64,7 +69,7 @@ async function makeDefault(id: number) {
 
 <template>
   <div>
-    <div v-if="loading" class="text-subtle">Загрузка…</div>
+    <div v-if="loading" class="text-subtle">{{ t.loading }}</div>
 
     <template v-else>
       <ul v-if="addresses.length" class="space-y-3">
@@ -79,7 +84,7 @@ async function makeDefault(id: number) {
               <span
                 v-if="a.is_default"
                 class="ml-2 rounded-full bg-badge-sale-bg px-2 py-0.5 text-xs text-badge-sale"
-                >по умолчанию</span
+                >{{ t.addrDefault }}</span
               >
             </div>
             <div class="text-subtle">
@@ -95,7 +100,7 @@ async function makeDefault(id: number) {
               :disabled="busy"
               @click="makeDefault(a.id)"
             >
-              Сделать основным
+              {{ t.addrMakeDefault }}
             </button>
             <button
               type="button"
@@ -103,38 +108,38 @@ async function makeDefault(id: number) {
               :disabled="busy"
               @click="remove(a.id)"
             >
-              Удалить
+              {{ t.addrRemove }}
             </button>
           </div>
         </li>
       </ul>
-      <p v-else class="text-subtle">Адресов пока нет.</p>
+      <p v-else class="text-subtle">{{ t.addrNone }}</p>
 
       <form v-if="showForm" class="mt-4 space-y-2" @submit.prevent="add">
         <div class="grid grid-cols-2 gap-2">
           <input
             v-model="form.full_name"
-            placeholder="Получатель"
+            :placeholder="t.addrRecipient"
             class="rounded-lg bg-fill px-3 py-2 text-sm outline-none"
           />
           <input
             v-model="form.phone"
-            placeholder="Телефон"
+            :placeholder="t.phone"
             class="rounded-lg bg-fill px-3 py-2 text-sm outline-none"
           />
           <input
             v-model="form.city"
-            placeholder="Город"
+            :placeholder="t.addrCity"
             class="rounded-lg bg-fill px-3 py-2 text-sm outline-none"
           />
           <input
             v-model="form.street"
-            placeholder="Улица, дом"
+            :placeholder="t.addrStreet"
             class="rounded-lg bg-fill px-3 py-2 text-sm outline-none"
           />
           <input
             v-model="form.zip"
-            placeholder="Индекс (опц.)"
+            :placeholder="t.addrZip"
             class="rounded-lg bg-fill px-3 py-2 text-sm outline-none"
           />
         </div>
@@ -144,14 +149,14 @@ async function makeDefault(id: number) {
             type="checkbox"
             class="accent-primary"
           />
-          Сделать основным
+          {{ t.addrMakeDefault }}
         </label>
         <button
           type="submit"
           :disabled="busy"
           class="rounded-xl bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-50"
         >
-          Сохранить
+          {{ t.addrSave }}
         </button>
       </form>
       <button
@@ -160,7 +165,7 @@ async function makeDefault(id: number) {
         class="mt-4 rounded-xl border-2 border-fill px-5 py-2 text-sm font-medium text-body hover:border-primary hover:text-primary"
         @click="showForm = true"
       >
-        + Добавить адрес
+        {{ t.addrAdd }}
       </button>
     </template>
   </div>

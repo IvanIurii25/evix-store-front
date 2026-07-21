@@ -3,11 +3,13 @@ import Layout from '../../../layouts/Layout.astro';
 import { getOrder } from '../../../api/checkout';
 import { price } from '../../../lib/format';
 import { isLang, localePath } from '../../../lib/i18n';
+import { checkoutStrings } from '../../../lib/i18n-strings';
 
 export const prerender = false;
 
 const { lang } = Astro.params;
 if (!isLang(lang)) return new Response('Not found', { status: 404 });
+const t = checkoutStrings(lang);
 
 const url = new URL(Astro.request.url);
 const number = url.searchParams.get('number') ?? '';
@@ -16,7 +18,7 @@ const order = number && email ? await getOrder(number, email) : null;
 const loggedIn = Boolean(Astro.cookies.get('access')?.value);
 ---
 
-<Layout title="Заказ оформлен" lang={lang}>
+<Layout title={t.successTitle} lang={lang}>
   <div class="mx-auto max-w-2xl px-5 py-12">
     {
       order ? (
@@ -24,27 +26,29 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
           <div class="rounded-2xl border-2 border-fill p-8 text-center">
             <div class="text-4xl text-price">✓</div>
             <h1 class="mt-3 text-2xl font-bold text-ink">
-              Заказ {order.number} оформлен
+              {t.orderPlacedPre} {order.number} {t.orderPlacedPost}
             </h1>
             <p class="mt-2 text-subtle">
-              Мы свяжемся с вами по телефону {order.phone} для подтверждения.
+              {t.willContactPre} {order.phone} {t.willContactPost}
             </p>
           </div>
 
           <div class="mt-6 rounded-2xl border-2 border-fill p-6">
             <div class="flex justify-between text-sm">
-              <span class="text-subtle">Оплата</span>
-              <span class="text-ink">При получении (COD)</span>
+              <span class="text-subtle">{t.payment}</span>
+              <span class="text-ink">{t.paymentCod}</span>
             </div>
             <div class="mt-1 flex justify-between text-sm">
-              <span class="text-subtle">Доставка</span>
+              <span class="text-subtle">{t.delivery}</span>
               <span class="text-ink">
-                {order.delivery_type === 'pickup' ? 'Самовывоз' : 'Курьер'}
+                {order.delivery_type === 'pickup'
+                  ? t.pickupShort
+                  : t.courierShort}
               </span>
             </div>
             {order.delivery_name && (
               <div class="mt-1 flex justify-between gap-4 text-sm">
-                <span class="text-subtle">Адрес</span>
+                <span class="text-subtle">{t.address}</span>
                 <span class="text-right text-ink">
                   {order.delivery_name}, {order.delivery_city},{' '}
                   {order.delivery_street}
@@ -65,7 +69,7 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
               ))}
             </ul>
             <div class="mt-4 flex justify-between border-t border-fill pt-3">
-              <span class="font-semibold text-ink">Итого</span>
+              <span class="font-semibold text-ink">{t.total}</span>
               <span class="text-xl font-semibold text-price">
                 {price(order.total)}
               </span>
@@ -77,23 +81,23 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
               href={localePath(lang)}
               class="rounded-xl bg-primary px-6 py-2.5 font-medium text-white transition hover:bg-primary-hover"
             >
-              В каталог
+              {t.toCatalog}
             </a>
             {!loggedIn && (
               <a
                 href={localePath(lang, 'auth')}
                 class="rounded-xl border-2 border-fill px-6 py-2.5 font-medium text-body transition hover:border-primary hover:text-primary"
               >
-                Создать аккаунт
+                {t.createAccount}
               </a>
             )}
           </div>
         </div>
       ) : (
         <p class="text-subtle">
-          Заказ не найден. Проверьте ссылку или{' '}
+          {t.notFoundPre}{' '}
           <a href={localePath(lang)} class="text-primary hover:underline">
-            вернитесь в каталог
+            {t.backToCatalog}
           </a>
           .
         </p>
