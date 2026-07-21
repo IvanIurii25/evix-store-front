@@ -2366,6 +2366,8 @@ export interface components {
       code: string;
       /** Price */
       price: string;
+      /** Old Price */
+      old_price?: string | null;
       /** Is Active */
       is_active: boolean;
       /** Name */

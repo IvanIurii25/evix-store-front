@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue';
 
 import {
-  getProduct,
   listProducts,
   updateProduct,
   type ProductSearchItem,
@@ -24,7 +23,10 @@ function money(x: string | number): string {
 }
 
 // Discount percentage from the two prices, rounded to a whole number.
-function discountPercent(oldPrice: string, price: string): number {
+function discountPercent(
+  oldPrice: string | null | undefined,
+  price: string,
+): number {
   const original = Number(oldPrice);
   const current = Number(price);
   if (!(original > 0) || !(current >= 0) || current >= original) return 0;
@@ -70,38 +72,10 @@ function cancelEdit() {
   rowError.value = '';
 }
 
-// Cache of old_price per product id (the search list item has no old_price,
-// so we fetch the full product once to reveal the struck-through original).
-const oldPrices = ref<Record<number, string>>({});
-
-async function hydrateOldPrices(rows: ProductSearchItem[]) {
-  const results = await Promise.all(
-    rows.map(async (row) => {
-      try {
-        const full = await getProduct(row.id);
-        return [row.id, full.old_price] as const;
-      } catch {
-        return [row.id, null] as const;
-      }
-    }),
-  );
-  const next: Record<number, string> = {};
-  for (const [id, oldPrice] of results) {
-    if (oldPrice != null) next[id] = oldPrice;
-  }
-  oldPrices.value = next;
-}
-
-// Fetch the per-row old_price whenever the on-sale list changes.
+// old_price arrives on every list row (ProductSearchItem.old_price), so the
+// struck-through original + discount render directly — no per-row fetch.
 async function refresh() {
   await loadOnSale();
-  await hydrateOldPrices(onSale.value);
-}
-
-onMounted(() => hydrateOldPrices(onSale.value));
-
-function oldPriceFor(id: number): string {
-  return oldPrices.value[id] ?? '';
 }
 
 async function saveEdit(id: number) {
@@ -412,10 +386,10 @@ async function putOnSale() {
                   />
                 </template>
                 <span
-                  v-else-if="oldPriceFor(p.id)"
+                  v-else-if="p.old_price"
                   class="text-subtle line-through"
                 >
-                  {{ money(oldPriceFor(p.id)) }}
+                  {{ money(p.old_price) }}
                 </span>
                 <span v-else class="text-subtle">—</span>
               </td>
@@ -439,10 +413,10 @@ async function putOnSale() {
               <!-- Discount badge -->
               <td class="px-4 py-3">
                 <span
-                  v-if="discountPercent(oldPriceFor(p.id), p.price) > 0"
+                  v-if="discountPercent(p.old_price, p.price) > 0"
                   class="rounded-lg bg-badge-sale-bg px-2 py-1 text-xs font-semibold text-badge-sale"
                 >
-                  -{{ discountPercent(oldPriceFor(p.id), p.price) }}%
+                  -{{ discountPercent(p.old_price, p.price) }}%
                 </span>
                 <span v-else class="text-subtle">—</span>
               </td>
@@ -471,7 +445,7 @@ async function putOnSale() {
                     <button
                       type="button"
                       class="rounded-xl border-2 border-fill px-3 py-1.5 font-medium text-body hover:border-primary"
-                      @click="startEdit(p, oldPriceFor(p.id))"
+                      @click="startEdit(p, p.old_price ?? '')"
                     >
                       Изменить
                     </button>
