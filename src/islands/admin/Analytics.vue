@@ -88,15 +88,17 @@ function polyline(key: 'pageviews' | 'unique_visitors'): string {
   const data = points.value;
   const peak = chartMax.value;
   if (data.length === 0 || peak <= 0) return '';
-  const usableW = CHART_W - PAD * 2;
   const usableH = CHART_H - PAD * 2;
-  const step = data.length > 1 ? usableW / (data.length - 1) : 0;
+  const yFor = (v: number) => CHART_H - PAD - (v / peak) * usableH;
+  // A single day would make a one-point polyline (renders nothing) — draw a
+  // flat line across the chart at that value so the metric is still visible.
+  if (data.length === 1) {
+    const y = yFor(data[0][key]).toFixed(1);
+    return `${PAD},${y} ${CHART_W - PAD},${y}`;
+  }
+  const step = (CHART_W - PAD * 2) / (data.length - 1);
   return data
-    .map((p, i) => {
-      const x = PAD + step * i;
-      const y = CHART_H - PAD - (p[key] / peak) * usableH;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
+    .map((p, i) => `${(PAD + step * i).toFixed(1)},${yFor(p[key]).toFixed(1)}`)
     .join(' ');
 }
 

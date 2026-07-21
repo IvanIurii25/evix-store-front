@@ -14,6 +14,7 @@ import { API_BASE } from './config/env';
 const i18n = i18nMiddleware({
   prefixDefaultLocale: true,
   redirectToDefaultLocale: true,
+  fallbackType: 'redirect',
 });
 
 const i18nRouting: MiddlewareHandler = (context, next) => {
