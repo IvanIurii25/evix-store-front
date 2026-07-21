@@ -1,4 +1,6 @@
 // @ts-check
+import process from 'node:process';
+
 import { defineConfig } from 'astro/config';
 
 import vue from '@astrojs/vue';
