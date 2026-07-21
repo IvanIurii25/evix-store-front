@@ -7,6 +7,7 @@ export interface HomeStrings {
   heroSubtitle: string;
   heroCta: string;
   categoriesTitle: string;
+  popularTitle: string;
   newestTitle: string;
   dealsTitle: string;
   benefits: { title: string; text: string }[];
@@ -19,6 +20,7 @@ const HOME: Record<Lang, HomeStrings> = {
       'Mii de produse la prețuri bune. Plata la primire, ridicare gratuită.',
     heroCta: 'Vezi catalogul',
     categoriesTitle: 'Categorii',
+    popularTitle: 'Populare',
     newestTitle: 'Noutăți',
     dealsTitle: 'Reduceri',
     benefits: [
@@ -34,6 +36,7 @@ const HOME: Record<Lang, HomeStrings> = {
       'Тысячи товаров по выгодным ценам. Оплата при получении, самовывоз бесплатно.',
     heroCta: 'В каталог',
     categoriesTitle: 'Категории',
+    popularTitle: 'Популярные',
     newestTitle: 'Новинки',
     dealsTitle: 'Скидки',
     benefits: [

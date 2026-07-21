@@ -59,6 +59,7 @@ export async function listProducts(
 export interface ListAllOpts {
   sort?: ProductSort;
   onSale?: boolean;
+  featured?: boolean;
   cursor?: string;
   priceMin?: number;
   priceMax?: number;
@@ -76,6 +77,7 @@ export async function listAllProducts(
         lang,
         sort: opts.sort,
         on_sale: opts.onSale,
+        featured: opts.featured,
         cursor: opts.cursor,
         price_min: opts.priceMin,
         price_max: opts.priceMax,

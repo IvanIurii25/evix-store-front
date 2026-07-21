@@ -29,8 +29,8 @@ try {
 const topCats = categories.slice(0, 8);
 
 // Fetch in parallel: a first-page listing per top category (for tile covers)
-// plus the two store-wide rails (newest + on-sale).
-const [covers, newest, deals] = await Promise.all([
+// plus the three store-wide rails (featured + newest + on-sale).
+const [covers, featured, newest, deals] = await Promise.all([
   Promise.all(
     topCats.map((c) =>
       listProducts(c.slug, lang, { sort: 'newest' })
@@ -38,6 +38,9 @@ const [covers, newest, deals] = await Promise.all([
         .catch(() => ({ cat: c, image: null })),
     ),
   ),
+  listAllProducts(lang, { featured: true })
+    .then((r) => r.data)
+    .catch(() => []),
   listAllProducts(lang, { sort: 'newest' })
     .then((r) => r.data)
     .catch(() => []),
@@ -87,6 +90,16 @@ const alternates = hreflangAlternates((l) => localePath(l));
           ))}
         </div>
       </section>
+    )
+  }
+
+  {
+    featured.length > 0 && (
+      <ProductRail
+        title={t.popularTitle}
+        products={featured.slice(0, 10)}
+        lang={lang}
+      />
     )
   }
 

@@ -154,12 +154,14 @@ export interface paths {
      * List All Products
      * @description Return a keyset-paginated product listing across the whole store.
      *
-     *     Powers the homepage store-wide rails ("newest", "on sale"). Same read-model
-     *     and cursor contract as the category listing, without a category constraint.
+     *     Powers the homepage store-wide rails ("newest", "on sale", "featured"). Same
+     *     read-model and cursor contract as the category listing, without a category
+     *     constraint.
      *
      *     Args:
      *         sort: Sort order.
      *         on_sale: Keep only products with a struck-through ``old_price``.
+     *         featured: Keep only manually-curated (featured) products.
      *         cursor: Opaque cursor from a previous page (``None`` = first page).
      *         price_min: Optional inclusive lower price bound.
      *         price_max: Optional inclusive upper price bound.
@@ -2265,6 +2267,11 @@ export interface components {
        * @default false
        */
       is_active: boolean;
+      /**
+       * Is Featured
+       * @default false
+       */
+      is_featured: boolean;
       /** Translations */
       translations?: components['schemas']['ProductTranslationIn'][];
     };
@@ -2336,6 +2343,11 @@ export interface components {
       qty: number;
       /** Is Active */
       is_active: boolean;
+      /**
+       * Is Featured
+       * @default false
+       */
+      is_featured: boolean;
       /** Translations */
       translations?: components['schemas']['ProductTranslationOut'][];
       /** Media */
@@ -2439,6 +2451,8 @@ export interface components {
       qty?: number | null;
       /** Is Active */
       is_active?: boolean | null;
+      /** Is Featured */
+      is_featured?: boolean | null;
     };
     /**
      * QuoteOut
@@ -2958,6 +2972,7 @@ export interface operations {
       query?: {
         sort?: components['schemas']['ProductSort'];
         on_sale?: boolean;
+        featured?: boolean;
         cursor?: string | null;
         price_min?: number | string | null;
         price_max?: number | string | null;
