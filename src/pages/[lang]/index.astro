@@ -1,49 +1,106 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getCategoryTree } from '../../api/catalog';
+import Hero from '../../components/Hero.astro';
+import CategoryTile from '../../components/CategoryTile.astro';
+import ProductRail from '../../components/ProductRail.astro';
+import Benefits from '../../components/Benefits.astro';
+import { getCategoryTree, listProducts } from '../../api/catalog';
 import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
+import { homeStrings } from '../../lib/i18n-strings';
 
 export const prerender = false;
 
 const { lang } = Astro.params;
 if (!isLang(lang)) return new Response('Not found', { status: 404 });
 
+const t = homeStrings(lang);
+
+// Top-level categories power the tiles (cap at 8).
 let categories: Awaited<ReturnType<typeof getCategoryTree>>;
 try {
   categories = await getCategoryTree(lang);
 } catch {
   categories = [];
 }
+const topCats = categories.slice(0, 8);
+
+// One newest-listing fetch per top category (parallel). Each result feeds BOTH
+// the tile cover (first product image) and the product rails — no extra calls.
+const listings = await Promise.all(
+  topCats.map((c) =>
+    listProducts(c.slug, lang, { sort: 'newest' })
+      .then((r) => ({ cat: c, products: r.data }))
+      .catch(() => ({ cat: c, products: [] })),
+  ),
+);
+
+const tiles = listings.map((l) => ({
+  name: l.cat.name,
+  slug: l.cat.slug,
+  imageUrl: l.products[0]?.main_image_url ?? null,
+}));
+
+// Rails: first two categories with enough products to fill a row.
+const rails = listings.filter((l) => l.products.length >= 4).slice(0, 2);
+
+// Hero image: newest product photo from the first non-empty listing.
+const heroImage =
+  listings.find((l) => l.products.length > 0)?.products[0]?.main_image_url ??
+  null;
 
 const alternates = hreflangAlternates((l) => localePath(l));
 ---
 
 <Layout
-  title="evix-store — каталог"
+  title="evix-store"
   lang={lang}
   canonical={localePath(lang)}
   alternates={alternates}
 >
-  <div class="mx-auto max-w-[1360px] px-5 py-10">
-    <h1 class="text-3xl font-bold text-ink">Каталог</h1>
+  <Hero
+    title={t.heroTitle}
+    subtitle={t.heroSubtitle}
+    ctaLabel={t.heroCta}
+    ctaHref="#categories"
+    imageUrl={heroImage}
+  />
 
-    {
-      categories.length > 0 ? (
+  {
+    tiles.length > 0 && (
+      <section id="categories" class="mx-auto max-w-[1360px] px-5 pt-14">
+        <h2 class="text-2xl font-bold text-ink">{t.categoriesTitle}</h2>
         <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {categories.map((c) => (
-            <a
-              href={localePath(lang, `c/${c.slug}`)}
-              class="rounded-2xl border-2 border-fill p-6 transition hover:shadow-[0_6px_24px_rgba(0,0,0,0.1)]"
-            >
-              <span class="font-semibold text-ink">{c.name}</span>
-            </a>
+          {tiles.map((tile) => (
+            <CategoryTile
+              name={tile.name}
+              href={localePath(lang, `c/${tile.slug}`)}
+              imageUrl={tile.imageUrl}
+            />
           ))}
         </div>
-      ) : (
-        <p class="mt-6 text-subtle">
-          Каталог недоступен — проверь, что бэкенд запущен ({lang}).
-        </p>
-      )
-    }
-  </div>
+      </section>
+    )
+  }
+
+  {
+    rails.map((r) => (
+      <ProductRail
+        title={`${t.newInPrefix} ${r.cat.name}`}
+        seeAllLabel={t.seeAll}
+        seeAllHref={localePath(lang, `c/${r.cat.slug}`)}
+        products={r.products.slice(0, 5)}
+        lang={lang}
+      />
+    ))
+  }
+
+  <Benefits items={t.benefits} />
+
+  {
+    categories.length === 0 && (
+      <p class="mx-auto max-w-[1360px] px-5 py-10 text-subtle">
+        Каталог недоступен — проверь, что бэкенд запущен ({lang}).
+      </p>
+    )
+  }
 </Layout>

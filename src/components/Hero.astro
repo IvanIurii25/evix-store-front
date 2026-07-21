@@ -1,0 +1,45 @@
+---
+// Static homepage hero (Phase 0): brand-gradient panel with headline + CTA.
+// No carousel/CMS yet — copy comes localized from i18n-strings; the optional
+// image is a product photo passed by the page (we have no marketing assets v1).
+interface Props {
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaHref: string;
+  imageUrl?: string | null;
+}
+
+const { title, subtitle, ctaLabel, ctaHref, imageUrl } = Astro.props;
+---
+
+<section class="mx-auto max-w-[1360px] px-5 pt-8">
+  <div
+    class="relative overflow-hidden rounded-3xl bg-linear-to-br from-primary to-primary-hover px-8 py-12 md:px-14 md:py-20"
+  >
+    <div class="relative z-10 max-w-xl">
+      <h1 class="text-3xl font-bold leading-tight text-white md:text-5xl">
+        {title}
+      </h1>
+      <p class="mt-4 text-base text-white/85 md:text-lg">{subtitle}</p>
+      <a
+        href={ctaHref}
+        class="mt-8 inline-block rounded-xl bg-white px-7 py-3 text-sm font-semibold text-primary transition hover:bg-white/90"
+      >
+        {ctaLabel}
+      </a>
+    </div>
+
+    {
+      imageUrl && (
+        <img
+          src={imageUrl}
+          alt=""
+          loading="eager"
+          fetchpriority="high"
+          class="pointer-events-none absolute right-6 top-1/2 hidden max-h-[78%] -translate-y-1/2 object-contain drop-shadow-2xl md:block"
+        />
+      )
+    }
+  </div>
+</section>
