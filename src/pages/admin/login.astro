@@ -1,0 +1,24 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminLogin from '../../islands/admin/AdminLogin.vue';
+import { meWithToken } from '../../api/auth';
+
+export const prerender = false;
+
+// Already-authenticated staff skip the form.
+const access = Astro.cookies.get('access')?.value;
+if (access) {
+  const user = await meWithToken(access);
+  if (user?.is_staff) return Astro.redirect('/admin');
+}
+
+const nextParam = Astro.url.searchParams.get('next') ?? '/admin';
+// Only allow internal /admin targets (avoid open redirect).
+const next = nextParam.startsWith('/admin') ? nextParam : '/admin';
+---
+
+<AdminLayout title="Вход">
+  <div class="flex min-h-[70vh] items-center justify-center">
+    <AdminLogin client:load next={next} />
+  </div>
+</AdminLayout>

@@ -1,0 +1,16 @@
+---
+import { logout } from '../../api/auth';
+
+export const prerender = false;
+
+// Best-effort refresh-token blacklist on the backend, then drop the local
+// cookies and bounce to the login page.
+try {
+  await logout();
+} catch {
+  // Ignore — we clear cookies regardless so the session ends locally.
+}
+Astro.cookies.delete('access', { path: '/' });
+Astro.cookies.delete('refresh', { path: '/' });
+return Astro.redirect('/admin/login');
+---

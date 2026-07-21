@@ -1,0 +1,19 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import CustomerDetail from '../../../islands/admin/CustomerDetail.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+
+export const prerender = false;
+
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+
+const { id } = Astro.params;
+if (!id || Number.isNaN(Number(id))) {
+  return new Response('Not found', { status: 404 });
+}
+---
+
+<AdminLayout title="Клиент" email={guard.user.email} active="customers">
+  <CustomerDetail client:load customerId={Number(id)} />
+</AdminLayout>

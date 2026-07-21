@@ -1,0 +1,17 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import OrderDetail from '../../../islands/admin/OrderDetail.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+
+export const prerender = false;
+
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+
+const { number } = Astro.params;
+if (!number) return new Response('Not found', { status: 404 });
+---
+
+<AdminLayout title="Заказ" email={guard.user.email} active="orders">
+  <OrderDetail client:load number={number} />
+</AdminLayout>

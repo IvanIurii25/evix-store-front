@@ -33,6 +33,9 @@ const {
 
 const site = Astro.site ?? new URL('http://localhost:4321');
 const canonicalURL = new URL(canonical ?? Astro.url.pathname, site).href;
+// Pre-launch: keep the store out of search indexes. Runtime flag so launch is
+// just `SITE_NOINDEX=false` + restart (no rebuild). Also drives robots.txt.
+const noindex = import.meta.env.SSR && process.env.SITE_NOINDEX === 'true';
 const alternateLinks = alternates.map((a) => ({
   hreflang: a.lang,
   href: new URL(a.path, site).href,
@@ -44,6 +47,7 @@ const alternateLinks = alternates.map((a) => ({
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

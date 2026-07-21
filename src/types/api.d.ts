@@ -668,7 +668,11 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /**
+     * List Categories
+     * @description Return every category (active or not) as a flat, tree-orderable list.
+     */
+    get: operations['list_categories_api_v1_admin_categories_get'];
     put?: never;
     /**
      * Create Category
@@ -774,7 +778,7 @@ export interface paths {
     };
     /**
      * Search Products
-     * @description Search back-office products by ``code`` or translated name.
+     * @description Search back-office products by ``code`` or translated name, with filters.
      */
     get: operations['search_products_api_v1_admin_products_get'];
     put?: never;
@@ -796,7 +800,11 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /**
+     * Get Product
+     * @description Return one product's full admin view (structure + translations + media).
+     */
+    get: operations['get_product_api_v1_admin_products__product_id__get'];
     put?: never;
     post?: never;
     /**
@@ -868,6 +876,46 @@ export interface paths {
      */
     post: operations['upload_product_media_api_v1_admin_products__product_id__media_post'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/products/{product_id}/media/reorder': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Reorder Product Media
+     * @description Set the display order of a product's images (first id = main image).
+     */
+    put: operations['reorder_product_media_api_v1_admin_products__product_id__media_reorder_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/products/{product_id}/media/{media_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Product Media
+     * @description Remove one image from a product (DB row + best-effort stored object).
+     */
+    delete: operations['delete_product_media_api_v1_admin_products__product_id__media__media_id__delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -1059,6 +1107,223 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/customers': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Customers
+     * @description Return a paginated customer roster with per-customer order stats (§6.2).
+     */
+    get: operations['list_customers_api_v1_admin_customers_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/customers/{user_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Customer
+     * @description Return one customer's full profile, addresses, orders and stats (§6.2).
+     */
+    get: operations['get_customer_api_v1_admin_customers__user_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/dashboard/summary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Dashboard Summary
+     * @description Return the business-health summary for the window (default last 30d).
+     */
+    get: operations['dashboard_summary_api_v1_admin_dashboard_summary_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/dashboard/revenue-series': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Revenue Series
+     * @description Return the per-day revenue + orders series for the window.
+     */
+    get: operations['revenue_series_api_v1_admin_dashboard_revenue_series_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/analytics/summary': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Analytics Summary
+     * @description Return the first-party traffic summary for the window.
+     */
+    get: operations['analytics_summary_api_v1_admin_analytics_summary_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/analytics/traffic-series': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Traffic Series
+     * @description Return the per-day pageviews + unique-visitors series for the window.
+     */
+    get: operations['traffic_series_api_v1_admin_analytics_traffic_series_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/settings/seo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Seo
+     * @description Return the site-wide SEO defaults.
+     */
+    get: operations['get_seo_api_v1_admin_settings_seo_get'];
+    /**
+     * Put Seo
+     * @description Persist the site-wide SEO defaults and return the stored block.
+     */
+    put: operations['put_seo_api_v1_admin_settings_seo_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/staff': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Staff
+     * @description Return the staff roster (newest first).
+     */
+    get: operations['list_staff_api_v1_admin_staff_get'];
+    put?: never;
+    /**
+     * Create Staff
+     * @description Create a new staff user, or promote + reset an existing one by email.
+     */
+    post: operations['create_staff_api_v1_admin_staff_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/staff/{user_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Update Staff
+     * @description (De)activate a staff user or toggle their staff flag (lockout-guarded).
+     */
+    patch: operations['update_staff_api_v1_admin_staff__user_id__patch'];
+    trace?: never;
+  };
+  '/api/v1/track/pageview': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Track Pageview
+     * @description Record one storefront pageview (§6.3).
+     *
+     *     Args:
+     *         payload: The path, session id and optional referrer.
+     *         request: The incoming request (source of the User-Agent).
+     *         user: The authenticated user, or ``None`` for a guest.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         TrackAck: A minimal ``{"ok": true}`` acknowledgement.
+     */
+    post: operations['track_pageview_api_v1_track_pageview_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1137,6 +1402,24 @@ export interface components {
       zip?: string | null;
       /** Is Default */
       is_default?: boolean | null;
+    };
+    /**
+     * AnalyticsSummary
+     * @description First-party traffic summary for the resolved window (§6.3).
+     */
+    AnalyticsSummary: {
+      /** Pageviews */
+      pageviews: number;
+      /** Unique Visitors */
+      unique_visitors: number;
+      /** Bot Pageviews */
+      bot_pageviews: number;
+      /** Top Paths */
+      top_paths?: components['schemas']['NameCount'][];
+      /** Top Referrers */
+      top_referrers?: components['schemas']['NameCount'][];
+      /** Device Breakdown */
+      device_breakdown?: components['schemas']['NameCount'][];
     };
     /**
      * AttributeCreate
@@ -1492,6 +1775,121 @@ export interface components {
       delivery_address?: components['schemas']['DeliveryAddressIn'] | null;
     };
     /**
+     * CustomerAddress
+     * @description A saved delivery address shown on the customer detail.
+     */
+    CustomerAddress: {
+      /** Id */
+      id: number;
+      /** Full Name */
+      full_name: string;
+      /** Phone */
+      phone: string;
+      /** City */
+      city: string;
+      /** Street */
+      street: string;
+      /** Zip */
+      zip?: string | null;
+      /** Is Default */
+      is_default: boolean;
+    };
+    /**
+     * CustomerDetail
+     * @description Full back-office view of one customer (§6.2).
+     */
+    CustomerDetail: {
+      /** Id */
+      id: number;
+      /** Email */
+      email: string;
+      /** Phone */
+      phone?: string | null;
+      /** Is Active */
+      is_active: boolean;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Loyalty Points */
+      loyalty_points: string;
+      /** Orders Count */
+      orders_count: number;
+      /** Total Spent */
+      total_spent: string;
+      /** Last Order At */
+      last_order_at?: string | null;
+      /** Addresses */
+      addresses?: components['schemas']['CustomerAddress'][];
+      /** Orders */
+      orders?: components['schemas']['CustomerOrderSummary'][];
+    };
+    /**
+     * CustomerListItem
+     * @description One customer row in the back-office roster (§6.2).
+     */
+    CustomerListItem: {
+      /** Id */
+      id: number;
+      /** Email */
+      email: string;
+      /** Phone */
+      phone?: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Orders Count */
+      orders_count: number;
+      /** Total Spent */
+      total_spent: string;
+      /** Last Order At */
+      last_order_at?: string | null;
+    };
+    /**
+     * CustomerOrderSummary
+     * @description A compact order row in the customer's history.
+     */
+    CustomerOrderSummary: {
+      /** Number */
+      number: string;
+      /** Status */
+      status: string;
+      /** Payment Status */
+      payment_status: string;
+      /** Total */
+      total: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /**
+     * DashboardSummary
+     * @description Business-health summary for the resolved window (§6.3).
+     */
+    DashboardSummary: {
+      /** Revenue */
+      revenue: string;
+      /** Orders Count */
+      orders_count: number;
+      /** Paid Orders Count */
+      paid_orders_count: number;
+      /** Avg Order Value */
+      avg_order_value: string;
+      /** Status Distribution */
+      status_distribution?: components['schemas']['NameCount'][];
+      /** Low Stock Count */
+      low_stock_count: number;
+      /** Low Stock */
+      low_stock?: components['schemas']['LowStockItem'][];
+      /** Top Products */
+      top_products?: components['schemas']['TopProductOut'][];
+    };
+    /**
      * DeliveryAddressIn
      * @description Inline courier address (guest or user), snapshotted onto the order so it
      *     survives independently of any saved address (§2.4 snapshot pattern).
@@ -1570,6 +1968,18 @@ export interface components {
       password: string;
     };
     /**
+     * LowStockItem
+     * @description A product in the low-stock queue.
+     */
+    LowStockItem: {
+      /** Id */
+      id: number;
+      /** Code */
+      code: string;
+      /** Qty */
+      qty: number;
+    };
+    /**
      * MediaAdminOut
      * @description A stored product image row (v1: one url per row, no derivatives — §2.1).
      */
@@ -1586,6 +1996,14 @@ export interface components {
       position: number;
     };
     /**
+     * MediaListOut
+     * @description Envelope for a product's ordered media list (reorder response).
+     */
+    MediaListOut: {
+      /** Data */
+      data?: components['schemas']['MediaAdminOut'][];
+    };
+    /**
      * MediaOut
      * @description A single product image (v1: one url per row, no derivatives — §2.1).
      */
@@ -1598,6 +2016,27 @@ export interface components {
       kind: string;
       /** Position */
       position: number;
+    };
+    /**
+     * MediaReorderRequest
+     * @description Reorder a product's images: ``ordered_ids`` is the full new display order.
+     *
+     *     Must be a permutation of the product's current media ids; the first id
+     *     becomes the main image (§4.1). Empty is rejected — reordering needs items.
+     */
+    MediaReorderRequest: {
+      /** Ordered Ids */
+      ordered_ids: number[];
+    };
+    /**
+     * NameCount
+     * @description A generic ``{name, count}`` breakdown row (status, path, device, ...).
+     */
+    NameCount: {
+      /** Name */
+      name: string;
+      /** Count */
+      count: number;
     };
     /**
      * OrderItemOut
@@ -1658,6 +2097,17 @@ export interface components {
       /** Items */
       items?: components['schemas']['OrderItemOut'][];
     };
+    /** Page[CustomerListItem] */
+    Page_CustomerListItem_: {
+      /** Data */
+      data: components['schemas']['CustomerListItem'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
     /** Page[OrderOut] */
     Page_OrderOut_: {
       /** Data */
@@ -1668,6 +2118,18 @@ export interface components {
       page: number;
       /** Page Size */
       page_size: number;
+    };
+    /**
+     * PageviewIn
+     * @description Body of ``POST /track/pageview`` — one storefront navigation (§6.3).
+     */
+    PageviewIn: {
+      /** Path */
+      path: string;
+      /** Session Id */
+      session_id: string;
+      /** Referrer */
+      referrer?: string | null;
     };
     /**
      * ProductAttributeSetRequest
@@ -1957,6 +2419,29 @@ export interface components {
       phone?: string | null;
     };
     /**
+     * RevenuePointOut
+     * @description One day of the revenue series.
+     */
+    RevenuePointOut: {
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Revenue */
+      revenue: string;
+      /** Orders Count */
+      orders_count: number;
+    };
+    /**
+     * RevenueSeries
+     * @description Per-day revenue + orders over the window.
+     */
+    RevenueSeries: {
+      /** Data */
+      data?: components['schemas']['RevenuePointOut'][];
+    };
+    /**
      * SearchHit
      * @description A single search result: a listing card plus its relevance rank.
      *
@@ -1985,6 +2470,42 @@ export interface components {
       page: number;
       /** Page Size */
       page_size: number;
+    };
+    /**
+     * SeoSettings
+     * @description Site-wide SEO defaults (per-language title/description + suffix, §6.4).
+     */
+    SeoSettings: {
+      /**
+       * Title Ru
+       * @default
+       */
+      title_ru: string;
+      /**
+       * Title Ro
+       * @default
+       */
+      title_ro: string;
+      /**
+       * Description Ru
+       * @default
+       */
+      description_ru: string;
+      /**
+       * Description Ro
+       * @default
+       */
+      description_ro: string;
+      /**
+       * Title Suffix
+       * @default
+       */
+      title_suffix: string;
+      /**
+       * Og Image Url
+       * @default
+       */
+      og_image_url: string;
     };
     /**
      * SitemapData
@@ -2017,6 +2538,59 @@ export interface components {
       slug: string;
     };
     /**
+     * StaffCreate
+     * @description Create a new staff user, or promote + reset an existing one by email.
+     */
+    StaffCreate: {
+      /** Email */
+      email: string;
+      /** Password */
+      password: string;
+      /** Phone */
+      phone?: string | null;
+    };
+    /**
+     * StaffItem
+     * @description A staff user as shown in the back-office roster.
+     */
+    StaffItem: {
+      /** Id */
+      id: number;
+      /** Email */
+      email: string;
+      /** Phone */
+      phone?: string | null;
+      /** Is Active */
+      is_active: boolean;
+      /** Is Staff */
+      is_staff: boolean;
+      /** Role */
+      role?: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /**
+     * StaffList
+     * @description Envelope for the staff roster.
+     */
+    StaffList: {
+      /** Data */
+      data?: components['schemas']['StaffItem'][];
+    };
+    /**
+     * StaffUpdate
+     * @description Partial update of a staff user's activation / staff flag.
+     */
+    StaffUpdate: {
+      /** Is Active */
+      is_active?: boolean | null;
+      /** Is Staff */
+      is_staff?: boolean | null;
+    };
+    /**
      * TokenPair
      * @description Access + refresh token pair returned by login/refresh.
      */
@@ -2025,6 +2599,54 @@ export interface components {
       access: string;
       /** Refresh */
       refresh: string;
+    };
+    /**
+     * TopProductOut
+     * @description A best-selling product line on the dashboard.
+     */
+    TopProductOut: {
+      /** Product Id */
+      product_id?: number | null;
+      /** Name */
+      name: string;
+      /** Qty Sold */
+      qty_sold: number;
+      /** Revenue */
+      revenue: string;
+    };
+    /**
+     * TrackAck
+     * @description Minimal acknowledgement (the client ignores the body).
+     */
+    TrackAck: {
+      /**
+       * Ok
+       * @default true
+       */
+      ok: boolean;
+    };
+    /**
+     * TrafficPointOut
+     * @description One day of the traffic series.
+     */
+    TrafficPointOut: {
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Pageviews */
+      pageviews: number;
+      /** Unique Visitors */
+      unique_visitors: number;
+    };
+    /**
+     * TrafficSeries
+     * @description Per-day pageviews + unique visitors over the window.
+     */
+    TrafficSeries: {
+      /** Data */
+      data?: components['schemas']['TrafficPointOut'][];
     };
     /**
      * TransitionRequest
@@ -2921,6 +3543,26 @@ export interface operations {
       };
     };
   };
+  list_categories_api_v1_admin_categories_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CategoryOut'][];
+        };
+      };
+    };
+  };
   create_category_api_v1_admin_categories_post: {
     parameters: {
       query?: never;
@@ -3124,6 +3766,12 @@ export interface operations {
       query?: {
         search?: string | null;
         limit?: number;
+        /** @description Restrict to active (true) / inactive (false) products. */
+        is_active?: boolean | null;
+        /** @description Only products at or below the low-stock threshold. */
+        low_stock?: boolean;
+        /** @description Only products on sale (old_price set and > price). */
+        on_sale?: boolean;
       };
       header?: never;
       path?: never;
@@ -3166,6 +3814,37 @@ export interface operations {
     responses: {
       /** @description Successful Response */
       201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_product_api_v1_admin_products__product_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
         headers: {
           [name: string]: unknown;
         };
@@ -3341,6 +4020,71 @@ export interface operations {
         content: {
           'application/json': components['schemas']['MediaAdminOut'];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  reorder_product_media_api_v1_admin_products__product_id__media_reorder_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MediaReorderRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MediaListOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_product_media_api_v1_admin_products__product_id__media__media_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+        media_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation Error */
       422: {
@@ -3640,6 +4384,375 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OrderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_customers_api_v1_admin_customers_get: {
+    parameters: {
+      query?: {
+        /** @description Search over email / phone. */
+        q?: string | null;
+        /** @description 1-based page number. */
+        page?: number;
+        /** @description Items per page. */
+        page_size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Page_CustomerListItem_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_customer_api_v1_admin_customers__user_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CustomerDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  dashboard_summary_api_v1_admin_dashboard_summary_get: {
+    parameters: {
+      query?: {
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DashboardSummary'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  revenue_series_api_v1_admin_dashboard_revenue_series_get: {
+    parameters: {
+      query?: {
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RevenueSeries'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  analytics_summary_api_v1_admin_analytics_summary_get: {
+    parameters: {
+      query?: {
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AnalyticsSummary'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  traffic_series_api_v1_admin_analytics_traffic_series_get: {
+    parameters: {
+      query?: {
+        date_from?: string | null;
+        date_to?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrafficSeries'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_seo_api_v1_admin_settings_seo_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SeoSettings'];
+        };
+      };
+    };
+  };
+  put_seo_api_v1_admin_settings_seo_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SeoSettings'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SeoSettings'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_staff_api_v1_admin_staff_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StaffList'];
+        };
+      };
+    };
+  };
+  create_staff_api_v1_admin_staff_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StaffCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StaffItem'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_staff_api_v1_admin_staff__user_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StaffUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StaffItem'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  track_pageview_api_v1_track_pageview_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PageviewIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TrackAck'];
         };
       };
       /** @description Validation Error */

@@ -1,0 +1,14 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Analytics from '../../../islands/admin/Analytics.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+
+export const prerender = false;
+
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout title="Аналитика" email={guard.user.email} active="analytics">
+  <Analytics client:load />
+</AdminLayout>

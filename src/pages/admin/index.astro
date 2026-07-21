@@ -1,0 +1,14 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Dashboard from '../../islands/admin/Dashboard.vue';
+import { requireStaff } from '../../lib/admin-guard';
+
+export const prerender = false;
+
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout title="Дашборд" email={guard.user.email} active="dashboard">
+  <Dashboard client:load />
+</AdminLayout>

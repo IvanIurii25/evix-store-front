@@ -7,16 +7,22 @@ export const prerender = false;
 
 export const GET: APIRoute = ({ site, request }) => {
   const base = site ?? new URL(new URL(request.url).origin);
-  const lines = [
-    'User-agent: *',
-    'Allow: /',
-    'Disallow: /*/cart',
-    'Disallow: /*/checkout',
-    'Disallow: /*/account',
-    'Disallow: /*/auth',
-    ...LANGS.map((l) => `Sitemap: ${new URL(`/sitemap-${l}.xml`, base).href}`),
-    '',
-  ];
+  // Pre-launch: block everything (paired with the noindex meta tag).
+  const lines =
+    process.env.SITE_NOINDEX === 'true'
+      ? ['User-agent: *', 'Disallow: /', '']
+      : [
+          'User-agent: *',
+          'Allow: /',
+          'Disallow: /*/cart',
+          'Disallow: /*/checkout',
+          'Disallow: /*/account',
+          'Disallow: /*/auth',
+          ...LANGS.map(
+            (l) => `Sitemap: ${new URL(`/sitemap-${l}.xml`, base).href}`,
+          ),
+          '',
+        ];
   return new Response(lines.join('\n'), {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });

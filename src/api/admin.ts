@@ -1,0 +1,387 @@
+// Typed admin API wrappers over the shared openapi-fetch client.
+//
+// All calls run from Vue islands in the browser with the httpOnly `access`
+// cookie, so every request sends `credentials: 'include'`. Errors come back in
+// the unified `{ error: { code, message } }` envelope; `fail()` turns them into
+// a thrown Error carrying the human message for the island's catch block.
+import { api } from './client';
+import type { components } from '../types/api';
+
+type Schemas = components['schemas'];
+
+export type ProductSearchItem = Schemas['ProductSearchItem'];
+export type ProductOut = Schemas['ProductOut'];
+export type ProductCreate = Schemas['ProductCreate'];
+export type ProductUpdate = Schemas['ProductUpdate'];
+export type ProductTranslationIn = Schemas['ProductTranslationIn'];
+export type MediaAdminOut = Schemas['MediaAdminOut'];
+export type CategoryOut = Schemas['CategoryOut'];
+export type CategoryCreate = Schemas['CategoryCreate'];
+export type CategoryUpdate = Schemas['CategoryUpdate'];
+export type CategoryTranslationIn = Schemas['CategoryTranslationIn'];
+export type OrderOut = Schemas['OrderOut'];
+export type CustomerListItem = Schemas['CustomerListItem'];
+export type CustomerDetail = Schemas['CustomerDetail'];
+export type DashboardSummary = Schemas['DashboardSummary'];
+export type RevenueSeries = Schemas['RevenueSeries'];
+export type AnalyticsSummary = Schemas['AnalyticsSummary'];
+export type TrafficSeries = Schemas['TrafficSeries'];
+export type StaffItem = Schemas['StaffItem'];
+export type StaffCreate = Schemas['StaffCreate'];
+export type StaffUpdate = Schemas['StaffUpdate'];
+export type SeoSettings = Schemas['SeoSettings'];
+
+const CREDS = { credentials: 'include' as const };
+
+// Shape of the unified error envelope body.
+type ErrorBody = { error?: { code?: string; message?: string } };
+
+function fail(error: unknown, fallback: string): never {
+  const body = error as ErrorBody | undefined;
+  throw new Error(body?.error?.message ?? fallback);
+}
+
+// --------------------------------------------------------------------------- //
+// Products + catalog
+// --------------------------------------------------------------------------- //
+export interface ProductFilters {
+  search?: string;
+  is_active?: boolean;
+  low_stock?: boolean;
+  on_sale?: boolean;
+  limit?: number;
+}
+
+export async function listProducts(
+  filters: ProductFilters = {},
+): Promise<ProductSearchItem[]> {
+  const { data, error } = await api.GET('/api/v1/admin/products', {
+    params: { query: filters },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить товары');
+  return data?.data ?? [];
+}
+
+export async function getProduct(id: number): Promise<ProductOut> {
+  const { data, error } = await api.GET('/api/v1/admin/products/{product_id}', {
+    params: { path: { product_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Товар не найден');
+  return data;
+}
+
+export async function createProduct(body: ProductCreate): Promise<ProductOut> {
+  const { data, error } = await api.POST('/api/v1/admin/products', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось создать товар');
+  return data;
+}
+
+export async function updateProduct(
+  id: number,
+  body: ProductUpdate,
+): Promise<ProductOut> {
+  const { data, error } = await api.PATCH(
+    '/api/v1/admin/products/{product_id}',
+    {
+      params: { path: { product_id: id } },
+      body,
+      ...CREDS,
+    },
+  );
+  if (error) fail(error, 'Не удалось сохранить товар');
+  return data;
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+  const { error } = await api.DELETE('/api/v1/admin/products/{product_id}', {
+    params: { path: { product_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось удалить товар');
+}
+
+export async function setProductTranslation(
+  id: number,
+  body: ProductTranslationIn,
+): Promise<void> {
+  const { error } = await api.PUT(
+    '/api/v1/admin/products/{product_id}/translations',
+    { params: { path: { product_id: id } }, body, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось сохранить перевод');
+}
+
+export async function uploadProductMedia(
+  id: number,
+  file: File,
+): Promise<MediaAdminOut> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data, error } = await api.POST(
+    '/api/v1/admin/products/{product_id}/media',
+    // openapi-fetch sends FormData as multipart automatically.
+    { params: { path: { product_id: id } }, body: form as never, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось загрузить изображение');
+  return data;
+}
+
+export async function deleteProductMedia(
+  id: number,
+  mediaId: number,
+): Promise<void> {
+  const { error } = await api.DELETE(
+    '/api/v1/admin/products/{product_id}/media/{media_id}',
+    { params: { path: { product_id: id, media_id: mediaId } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось удалить изображение');
+}
+
+export async function reorderProductMedia(
+  id: number,
+  orderedIds: number[],
+): Promise<MediaAdminOut[]> {
+  const { data, error } = await api.PUT(
+    '/api/v1/admin/products/{product_id}/media/reorder',
+    {
+      params: { path: { product_id: id } },
+      body: { ordered_ids: orderedIds },
+      ...CREDS,
+    },
+  );
+  if (error) fail(error, 'Не удалось изменить порядок');
+  return data?.data ?? [];
+}
+
+// --------------------------------------------------------------------------- //
+// Categories
+// --------------------------------------------------------------------------- //
+export async function listCategories(): Promise<CategoryOut[]> {
+  // Admin categories list: all categories (active or not), flat + tree-orderable.
+  const { data, error } = await api.GET('/api/v1/admin/categories', CREDS);
+  if (error) fail(error, 'Не удалось загрузить категории');
+  return data ?? [];
+}
+
+export async function createCategory(
+  body: CategoryCreate,
+): Promise<CategoryOut> {
+  const { data, error } = await api.POST('/api/v1/admin/categories', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось создать категорию');
+  return data;
+}
+
+export async function updateCategory(
+  id: number,
+  body: CategoryUpdate,
+): Promise<CategoryOut> {
+  const { data, error } = await api.PATCH(
+    '/api/v1/admin/categories/{category_id}',
+    { params: { path: { category_id: id } }, body, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось сохранить категорию');
+  return data;
+}
+
+export async function setCategoryTranslation(
+  id: number,
+  body: CategoryTranslationIn,
+): Promise<void> {
+  const { error } = await api.PUT(
+    '/api/v1/admin/categories/{category_id}/translations',
+    { params: { path: { category_id: id } }, body, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось сохранить перевод');
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  const { error } = await api.DELETE('/api/v1/admin/categories/{category_id}', {
+    params: { path: { category_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось удалить категорию');
+}
+
+// --------------------------------------------------------------------------- //
+// Orders
+// --------------------------------------------------------------------------- //
+export interface OrderFilters {
+  status?: string;
+  q?: string;
+  page?: number;
+  page_size?: number;
+}
+export interface OrderPage {
+  data: OrderOut[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function listOrders(
+  filters: OrderFilters = {},
+): Promise<OrderPage> {
+  const { data, error } = await api.GET('/api/v1/admin/orders', {
+    params: { query: filters },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить заказы');
+  return data as OrderPage;
+}
+
+export async function getOrder(number: string): Promise<OrderOut> {
+  const { data, error } = await api.GET('/api/v1/admin/orders/{number}', {
+    params: { path: { number } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Заказ не найден');
+  return data;
+}
+
+export async function transitionOrder(
+  number: string,
+  body: { to_status?: string | null; to_payment_status?: string | null },
+): Promise<OrderOut> {
+  const { data, error } = await api.POST(
+    '/api/v1/admin/orders/{number}/transition',
+    { params: { path: { number } }, body, ...CREDS },
+  );
+  if (error) fail(error, 'Недопустимый переход статуса');
+  return data;
+}
+
+// --------------------------------------------------------------------------- //
+// Customers
+// --------------------------------------------------------------------------- //
+export interface CustomerPage {
+  data: CustomerListItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function listCustomers(
+  filters: { q?: string; page?: number; page_size?: number } = {},
+): Promise<CustomerPage> {
+  const { data, error } = await api.GET('/api/v1/admin/customers', {
+    params: { query: filters },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить клиентов');
+  return data as CustomerPage;
+}
+
+export async function getCustomer(id: number): Promise<CustomerDetail> {
+  const { data, error } = await api.GET('/api/v1/admin/customers/{user_id}', {
+    params: { path: { user_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Клиент не найден');
+  return data;
+}
+
+// --------------------------------------------------------------------------- //
+// Dashboard + analytics
+// --------------------------------------------------------------------------- //
+export interface DateRange {
+  date_from?: string;
+  date_to?: string;
+}
+
+export async function dashboardSummary(
+  range: DateRange = {},
+): Promise<DashboardSummary> {
+  const { data, error } = await api.GET('/api/v1/admin/dashboard/summary', {
+    params: { query: range },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить сводку');
+  return data;
+}
+
+export async function revenueSeries(
+  range: DateRange = {},
+): Promise<RevenueSeries> {
+  const { data, error } = await api.GET(
+    '/api/v1/admin/dashboard/revenue-series',
+    { params: { query: range }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось загрузить график');
+  return data;
+}
+
+export async function analyticsSummary(
+  range: DateRange = {},
+): Promise<AnalyticsSummary> {
+  const { data, error } = await api.GET('/api/v1/admin/analytics/summary', {
+    params: { query: range },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить аналитику');
+  return data;
+}
+
+export async function trafficSeries(
+  range: DateRange = {},
+): Promise<TrafficSeries> {
+  const { data, error } = await api.GET(
+    '/api/v1/admin/analytics/traffic-series',
+    { params: { query: range }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось загрузить график трафика');
+  return data;
+}
+
+// --------------------------------------------------------------------------- //
+// Settings (staff + SEO)
+// --------------------------------------------------------------------------- //
+export async function listStaff(): Promise<StaffItem[]> {
+  const { data, error } = await api.GET('/api/v1/admin/staff', CREDS);
+  if (error) fail(error, 'Не удалось загрузить сотрудников');
+  return data?.data ?? [];
+}
+
+export async function createStaff(body: StaffCreate): Promise<StaffItem> {
+  const { data, error } = await api.POST('/api/v1/admin/staff', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось создать сотрудника');
+  return data;
+}
+
+export async function updateStaff(
+  id: number,
+  body: StaffUpdate,
+): Promise<StaffItem> {
+  const { data, error } = await api.PATCH('/api/v1/admin/staff/{user_id}', {
+    params: { path: { user_id: id } },
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось обновить сотрудника');
+  return data;
+}
+
+export async function getSeo(): Promise<SeoSettings> {
+  const { data, error } = await api.GET('/api/v1/admin/settings/seo', CREDS);
+  if (error) fail(error, 'Не удалось загрузить SEO');
+  return data;
+}
+
+export async function putSeo(body: SeoSettings): Promise<SeoSettings> {
+  const { data, error } = await api.PUT('/api/v1/admin/settings/seo', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось сохранить SEO');
+  return data;
+}

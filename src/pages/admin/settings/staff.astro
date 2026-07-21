@@ -1,0 +1,28 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import StaffSettings from '../../../islands/admin/StaffSettings.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+export const prerender = false;
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout
+  title="Настройки — Сотрудники"
+  email={guard.user.email}
+  active="settings"
+>
+  <div class="mb-4 flex gap-2 text-sm">
+    <a
+      href="/admin/settings/staff"
+      class="rounded-lg bg-primary px-3 py-1.5 font-medium text-white"
+      >Сотрудники</a
+    >
+    <a
+      href="/admin/settings/seo"
+      class="rounded-lg border-2 border-fill px-3 py-1.5 font-medium text-body hover:bg-fill"
+      >SEO</a
+    >
+  </div>
+  <StaffSettings client:load />
+</AdminLayout>
