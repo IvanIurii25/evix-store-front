@@ -143,6 +143,44 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/catalog/products': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List All Products
+     * @description Return a keyset-paginated product listing across the whole store.
+     *
+     *     Powers the homepage store-wide rails ("newest", "on sale"). Same read-model
+     *     and cursor contract as the category listing, without a category constraint.
+     *
+     *     Args:
+     *         sort: Sort order.
+     *         on_sale: Keep only products with a struck-through ``old_price``.
+     *         cursor: Opaque cursor from a previous page (``None`` = first page).
+     *         price_min: Optional inclusive lower price bound.
+     *         price_max: Optional inclusive upper price bound.
+     *         lang: Resolved request language.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         ProductListing: ``{data, next_cursor}`` envelope.
+     *
+     *     Raises:
+     *         HTTPException: 400 for a bad cursor.
+     */
+    get: operations['list_all_products_api_v1_catalog_products_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/catalog/products/{slug}': {
     parameters: {
       query?: never;
@@ -881,6 +919,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/assets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Upload Asset
+     * @description Store an uploaded image asset and return its public URL — no DB row.
+     *
+     *     For inline content that needs a stable public URL but is not product gallery
+     *     media (e.g. rehosted description-image banners). Uses the same storage
+     *     backend (local dir or S3/MinIO) as product media.
+     */
+    post: operations['upload_asset_api_v1_admin_assets_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/products/{product_id}/media/reorder': {
     parameters: {
       query?: never;
@@ -1422,6 +1484,14 @@ export interface components {
       device_breakdown?: components['schemas']['NameCount'][];
     };
     /**
+     * AssetOut
+     * @description Public URL of a stored asset (no DB row) — see ``POST /admin/assets``.
+     */
+    AssetOut: {
+      /** Url */
+      url: string;
+    };
+    /**
      * AttributeCreate
      * @description Create an attribute dictionary entry with its translations.
      */
@@ -1535,6 +1605,11 @@ export interface components {
       /** Translations */
       translations?:
         components['schemas']['AttributeValueTranslationIn'][] | null;
+    };
+    /** Body_upload_asset_api_v1_admin_assets_post */
+    Body_upload_asset_api_v1_admin_assets_post: {
+      /** File */
+      file: string;
     };
     /** Body_upload_product_media_api_v1_admin_products__product_id__media_post */
     Body_upload_product_media_api_v1_admin_products__product_id__media_post: {
@@ -2872,6 +2947,43 @@ export interface operations {
       };
     };
   };
+  list_all_products_api_v1_catalog_products_get: {
+    parameters: {
+      query?: {
+        sort?: components['schemas']['ProductSort'];
+        on_sale?: boolean;
+        cursor?: string | null;
+        price_min?: number | string | null;
+        price_max?: number | string | null;
+        /** @description Language code (ru|ro). */
+        lang?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductListing'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   get_product_api_v1_catalog_products__slug__get: {
     parameters: {
       query?: {
@@ -4019,6 +4131,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['MediaAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  upload_asset_api_v1_admin_assets_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_upload_asset_api_v1_admin_assets_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AssetOut'];
         };
       };
       /** @description Validation Error */

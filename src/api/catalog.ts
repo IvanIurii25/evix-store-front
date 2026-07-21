@@ -56,6 +56,36 @@ export async function listProducts(
   return data;
 }
 
+export interface ListAllOpts {
+  sort?: ProductSort;
+  onSale?: boolean;
+  cursor?: string;
+  priceMin?: number;
+  priceMax?: number;
+}
+
+// Store-wide listing (not scoped to a category) — powers the homepage rails
+// ("newest", "on sale"). Same {data, next_cursor} keyset contract as listProducts.
+export async function listAllProducts(
+  lang: string,
+  opts: ListAllOpts = {},
+): Promise<ProductListing> {
+  const { data, error } = await api.GET('/api/v1/catalog/products', {
+    params: {
+      query: {
+        lang,
+        sort: opts.sort,
+        on_sale: opts.onSale,
+        cursor: opts.cursor,
+        price_min: opts.priceMin,
+        price_max: opts.priceMax,
+      },
+    },
+  });
+  if (error || !data) throw new Error('listAllProducts failed');
+  return data;
+}
+
 export async function getFacets(
   slug: string,
   lang: string,

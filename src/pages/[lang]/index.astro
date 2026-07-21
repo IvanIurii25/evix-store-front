@@ -4,7 +4,11 @@ import Hero from '../../components/Hero.astro';
 import CategoryTile from '../../components/CategoryTile.astro';
 import ProductRail from '../../components/ProductRail.astro';
 import Benefits from '../../components/Benefits.astro';
-import { getCategoryTree, listProducts } from '../../api/catalog';
+import {
+  getCategoryTree,
+  listProducts,
+  listAllProducts,
+} from '../../api/catalog';
 import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
 import { homeStrings } from '../../lib/i18n-strings';
 
@@ -24,29 +28,32 @@ try {
 }
 const topCats = categories.slice(0, 8);
 
-// One newest-listing fetch per top category (parallel). Each result feeds BOTH
-// the tile cover (first product image) and the product rails — no extra calls.
-const listings = await Promise.all(
-  topCats.map((c) =>
-    listProducts(c.slug, lang, { sort: 'newest' })
-      .then((r) => ({ cat: c, products: r.data }))
-      .catch(() => ({ cat: c, products: [] })),
+// Fetch in parallel: a first-page listing per top category (for tile covers)
+// plus the two store-wide rails (newest + on-sale).
+const [covers, newest, deals] = await Promise.all([
+  Promise.all(
+    topCats.map((c) =>
+      listProducts(c.slug, lang, { sort: 'newest' })
+        .then((r) => ({ cat: c, image: r.data[0]?.main_image_url ?? null }))
+        .catch(() => ({ cat: c, image: null })),
+    ),
   ),
-);
+  listAllProducts(lang, { sort: 'newest' })
+    .then((r) => r.data)
+    .catch(() => []),
+  listAllProducts(lang, { onSale: true })
+    .then((r) => r.data)
+    .catch(() => []),
+]);
 
-const tiles = listings.map((l) => ({
-  name: l.cat.name,
-  slug: l.cat.slug,
-  imageUrl: l.products[0]?.main_image_url ?? null,
+const tiles = covers.map((c) => ({
+  name: c.cat.name,
+  slug: c.cat.slug,
+  imageUrl: c.image,
 }));
 
-// Rails: first two categories with enough products to fill a row.
-const rails = listings.filter((l) => l.products.length >= 4).slice(0, 2);
-
-// Hero image: newest product photo from the first non-empty listing.
-const heroImage =
-  listings.find((l) => l.products.length > 0)?.products[0]?.main_image_url ??
-  null;
+// Hero image: the newest product photo across the store.
+const heroImage = newest[0]?.main_image_url ?? null;
 
 const alternates = hreflangAlternates((l) => localePath(l));
 ---
@@ -83,15 +90,23 @@ const alternates = hreflangAlternates((l) => localePath(l));
   }
 
   {
-    rails.map((r) => (
+    newest.length > 0 && (
       <ProductRail
-        title={`${t.newInPrefix} ${r.cat.name}`}
-        seeAllLabel={t.seeAll}
-        seeAllHref={localePath(lang, `c/${r.cat.slug}`)}
-        products={r.products.slice(0, 5)}
+        title={t.newestTitle}
+        products={newest.slice(0, 10)}
         lang={lang}
       />
-    ))
+    )
+  }
+
+  {
+    deals.length > 0 && (
+      <ProductRail
+        title={t.dealsTitle}
+        products={deals.slice(0, 10)}
+        lang={lang}
+      />
+    )
   }
 
   <Benefits items={t.benefits} />

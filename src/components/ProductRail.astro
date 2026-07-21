@@ -8,24 +8,28 @@ import type { Lang } from '../lib/i18n';
 // page, so the rail paints instantly (no lazy-load jank).
 interface Props {
   title: string;
-  seeAllLabel: string;
-  seeAllHref: string;
   products: components['schemas']['ProductCardOut'][];
   lang: Lang;
+  seeAllLabel?: string;
+  seeAllHref?: string;
 }
 
-const { title, seeAllLabel, seeAllHref, products, lang } = Astro.props;
+const { title, products, lang, seeAllLabel, seeAllHref } = Astro.props;
 ---
 
 <section class="mx-auto max-w-[1360px] px-5 pt-14">
   <div class="flex items-baseline justify-between gap-4">
     <h2 class="text-2xl font-bold text-ink">{title}</h2>
-    <a
-      href={seeAllHref}
-      class="shrink-0 text-sm font-medium text-primary transition hover:text-primary-hover"
-    >
-      {seeAllLabel}
-    </a>
+    {
+      seeAllHref && seeAllLabel && (
+        <a
+          href={seeAllHref}
+          class="shrink-0 text-sm font-medium text-primary transition hover:text-primary-hover"
+        >
+          {seeAllLabel}
+        </a>
+      )
+    }
   </div>
   <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
     {products.map((p) => <ProductCard product={p} lang={lang} />)}
