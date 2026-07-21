@@ -49,7 +49,8 @@ const [covers, newest, deals] = await Promise.all([
 const tiles = covers.map((c) => ({
   name: c.cat.name,
   slug: c.cat.slug,
-  imageUrl: c.image,
+  // Prefer the category's own cover; fall back to its first product's photo.
+  imageUrl: c.cat.cover_image_url ?? c.image,
 }));
 
 // Hero image: the newest product photo across the store.

@@ -1723,6 +1723,8 @@ export interface components {
       depth: number;
       /** Position */
       position: number;
+      /** Cover Image Url */
+      cover_image_url?: string | null;
       /** Children */
       children?: components['schemas']['CategoryNode'][];
     };
@@ -1743,6 +1745,8 @@ export interface components {
       position: number;
       /** Is Active */
       is_active: boolean;
+      /** Cover Image Url */
+      cover_image_url?: string | null;
       /** Translations */
       translations?: components['schemas']['CategoryTranslationOut'][];
     };
@@ -1817,6 +1821,8 @@ export interface components {
       position?: number | null;
       /** Is Active */
       is_active?: boolean | null;
+      /** Cover Image Url */
+      cover_image_url?: string | null;
     };
     /**
      * CheckoutRequest
