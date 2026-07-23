@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
+import { optimizeDescriptionHtml } from '../lib/description';
+
 interface Attr {
   name: string;
   values?: (string | null)[] | null;
@@ -12,6 +14,9 @@ const props = defineProps<{
 }>();
 
 const hasDescription = computed(() => Boolean(props.description));
+// Sanitized + image-optimized HTML for v-html (source renders as escaped text
+// otherwise, and its media images are served as lazy WebP).
+const descriptionHtml = computed(() => optimizeDescriptionHtml(props.description));
 const hasAttributes = computed(() => (props.attributes?.length ?? 0) > 0);
 
 type TabKey = 'description' | 'attributes';
@@ -55,10 +60,9 @@ const tabClass = (isActive: boolean) =>
     <div
       v-show="hasDescription && active === 'description'"
       role="tabpanel"
-      class="mt-4"
-    >
-      <p class="text-body">{{ description }}</p>
-    </div>
+      class="prod-description mt-4 text-body"
+      v-html="descriptionHtml"
+    ></div>
 
     <div
       v-show="hasAttributes && active === 'attributes'"
@@ -78,3 +82,22 @@ const tabClass = (isActive: boolean) =>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* v-html'd product description: keep imported images responsive + readable flow. */
+.prod-description :deep(img),
+.prod-description :deep(picture) {
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem auto;
+  display: block;
+}
+.prod-description :deep(p) {
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+.prod-description :deep(a) {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+</style>
