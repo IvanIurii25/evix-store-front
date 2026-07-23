@@ -2,6 +2,7 @@
 import { price } from '../lib/format';
 import type { ProductCard } from '../api/catalog';
 import { localePath, type Lang } from '../lib/i18n';
+import { webpSrcset } from '../lib/img';
 
 const props = defineProps<{ product: ProductCard; lang: Lang }>();
 </script>
@@ -17,13 +18,19 @@ const props = defineProps<{ product: ProductCard; lang: Lang }>();
         class="absolute left-0 top-0 rounded-md bg-badge-sale-bg px-2 py-0.5 text-xs font-medium text-badge-sale"
         >{{ product.badge }}</span
       >
-      <img
-        v-if="product.main_image_url"
-        :src="product.main_image_url"
-        :alt="product.name"
-        loading="lazy"
-        class="max-h-full object-contain"
-      />
+      <picture v-if="product.main_image_url">
+        <source
+          type="image/webp"
+          :srcset="webpSrcset(product.main_image_url)"
+          sizes="(min-width: 768px) 220px, 45vw"
+        />
+        <img
+          :src="product.main_image_url"
+          :alt="product.name"
+          loading="lazy"
+          class="max-h-full object-contain"
+        />
+      </picture>
       <span v-else class="text-sm text-subtle">нет фото</span>
     </div>
 

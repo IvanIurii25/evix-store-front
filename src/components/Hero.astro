@@ -10,6 +10,8 @@ interface Props {
   imageUrl?: string | null;
 }
 
+import { webpSrcset } from '../lib/img';
+
 const { title, subtitle, ctaLabel, ctaHref, imageUrl } = Astro.props;
 ---
 
@@ -32,13 +34,20 @@ const { title, subtitle, ctaLabel, ctaHref, imageUrl } = Astro.props;
 
     {
       imageUrl && (
-        <img
-          src={imageUrl}
-          alt=""
-          loading="eager"
-          fetchpriority="high"
-          class="pointer-events-none absolute right-6 top-1/2 hidden max-h-[78%] -translate-y-1/2 object-contain drop-shadow-2xl md:block"
-        />
+        <picture>
+          <source
+            type="image/webp"
+            srcset={webpSrcset(imageUrl)}
+            sizes="(min-width: 768px) 40vw, 1px"
+          />
+          <img
+            src={imageUrl}
+            alt=""
+            loading="eager"
+            fetchpriority="high"
+            class="pointer-events-none absolute right-6 top-1/2 hidden max-h-[78%] -translate-y-1/2 object-contain drop-shadow-2xl md:block"
+          />
+        </picture>
       )
     }
   </div>

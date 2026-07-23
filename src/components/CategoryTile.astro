@@ -7,6 +7,8 @@ interface Props {
   imageUrl?: string | null;
 }
 
+import { webpSrcset } from '../lib/img';
+
 const { name, href, imageUrl } = Astro.props;
 ---
 
@@ -16,12 +18,19 @@ const { name, href, imageUrl } = Astro.props;
 >
   {
     imageUrl ? (
-      <img
-        src={imageUrl}
-        alt={name}
-        loading="lazy"
-        class="absolute inset-0 h-full w-full object-contain p-5 transition duration-300 group-hover:scale-105"
-      />
+      <picture>
+        <source
+          type="image/webp"
+          srcset={webpSrcset(imageUrl)}
+          sizes="(min-width: 768px) 300px, 45vw"
+        />
+        <img
+          src={imageUrl}
+          alt={name}
+          loading="lazy"
+          class="absolute inset-0 h-full w-full object-contain p-5 transition duration-300 group-hover:scale-105"
+        />
+      </picture>
     ) : (
       <div class="absolute inset-0 bg-linear-to-br from-primary/10 to-primary/25" />
     )

@@ -4,6 +4,7 @@ import { search, type SearchHit } from '../api/search';
 import { price } from '../lib/format';
 import { localePath, type Lang } from '../lib/i18n';
 import { ui } from '../lib/i18n-strings';
+import { webpSrcset } from '../lib/img';
 
 const props = defineProps<{ lang: Lang }>();
 const t = ui(props.lang);
@@ -87,12 +88,18 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
         :href="localePath(props.lang, `p/${hit.card.slug}`)"
         class="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-fill"
       >
-        <img
-          v-if="hit.card.main_image_url"
-          :src="hit.card.main_image_url"
-          alt=""
-          class="h-8 w-8 shrink-0 object-contain"
-        />
+        <picture v-if="hit.card.main_image_url">
+          <source
+            type="image/webp"
+            :srcset="webpSrcset(hit.card.main_image_url)"
+            sizes="32px"
+          />
+          <img
+            :src="hit.card.main_image_url"
+            alt=""
+            class="h-8 w-8 shrink-0 object-contain"
+          />
+        </picture>
         <span class="flex-1 truncate text-sm text-ink">{{
           hit.card.name
         }}</span>

@@ -1,5 +1,6 @@
 ---
 import { price } from '../lib/format';
+import { webpSrcset } from '../lib/img';
 import type { components } from '../types/api';
 import type { Lang } from '../lib/i18n';
 import { localePath } from '../lib/i18n';
@@ -28,12 +29,19 @@ const t = ui(lang);
     }
     {
       product.main_image_url ? (
-        <img
-          src={product.main_image_url}
-          alt={product.name}
-          loading="lazy"
-          class="max-h-full object-contain"
-        />
+        <picture>
+          <source
+            type="image/webp"
+            srcset={webpSrcset(product.main_image_url)}
+            sizes="(min-width: 768px) 220px, 45vw"
+          />
+          <img
+            src={product.main_image_url}
+            alt={product.name}
+            loading="lazy"
+            class="max-h-full object-contain"
+          />
+        </picture>
       ) : (
         <span class="text-sm text-subtle">{t.noPhoto}</span>
       )

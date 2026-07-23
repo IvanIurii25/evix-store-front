@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
+import { webpSrcset } from '../lib/img';
+
 const props = defineProps<{ images: { url: string }[]; alt: string }>();
 const active = ref(props.images[0]?.url ?? '');
 </script>
@@ -10,14 +12,20 @@ const active = ref(props.images[0]?.url ?? '');
     <div
       class="flex aspect-square items-center justify-center rounded-2xl border-2 border-fill bg-white p-6"
     >
-      <img
-        v-if="active"
-        :src="active"
-        :alt="alt"
-        fetchpriority="high"
-        decoding="async"
-        class="max-h-full object-contain"
-      />
+      <picture v-if="active">
+        <source
+          type="image/webp"
+          :srcset="webpSrcset(active)"
+          sizes="(min-width: 768px) 45vw, 90vw"
+        />
+        <img
+          :src="active"
+          :alt="alt"
+          fetchpriority="high"
+          decoding="async"
+          class="max-h-full object-contain"
+        />
+      </picture>
       <span v-else class="text-subtle">нет фото</span>
     </div>
 
@@ -30,7 +38,14 @@ const active = ref(props.images[0]?.url ?? '');
         :class="active === img.url ? 'border-primary' : 'border-fill'"
         @click="active = img.url"
       >
-        <img :src="img.url" alt="" class="h-full w-full object-contain" />
+        <picture>
+          <source
+            type="image/webp"
+            :srcset="webpSrcset(img.url)"
+            sizes="80px"
+          />
+          <img :src="img.url" alt="" class="h-full w-full object-contain" />
+        </picture>
       </button>
     </div>
   </div>
