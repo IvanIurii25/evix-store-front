@@ -6,6 +6,7 @@ import AddToCart from '../../../islands/AddToCart.vue';
 import RestockNotify from '../../../islands/RestockNotify.vue';
 import ProductTabs from '../../../islands/ProductTabs.vue';
 import ProductRail from '../../../components/ProductRail.astro';
+import RecentlyViewed from '../../../islands/RecentlyViewed.vue';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
 import { price } from '../../../lib/format';
 import {
@@ -138,4 +139,15 @@ const jsonLd = [
       />
     )
   }
+
+  <RecentlyViewed
+    client:load
+    lang={lang}
+    current={{
+      slug: product.slug,
+      name: product.name,
+      image: media[0]?.url ?? null,
+      price: product.price,
+    }}
+  />
 </Layout>
