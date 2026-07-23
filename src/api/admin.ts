@@ -385,3 +385,58 @@ export async function putSeo(body: SeoSettings): Promise<SeoSettings> {
   if (error) fail(error, 'Не удалось сохранить SEO');
   return data;
 }
+
+// --- Content pages (info/legal) ---------------------------------------------
+export type ContentPageAdminOut = Schemas['ContentPageAdminOut'];
+export type ContentPageCreate = Schemas['ContentPageCreate'];
+export type ContentPageUpdate = Schemas['ContentPageUpdate'];
+export type ContentPageTranslationIn = Schemas['ContentPageTranslationIn'];
+
+export async function listContentPages(): Promise<ContentPageAdminOut[]> {
+  const { data, error } = await api.GET('/api/v1/admin/content-pages', CREDS);
+  if (error) fail(error, 'Не удалось загрузить страницы');
+  return data;
+}
+
+export async function getContentPageAdmin(
+  id: number,
+): Promise<ContentPageAdminOut> {
+  const { data, error } = await api.GET('/api/v1/admin/content-pages/{page_id}', {
+    params: { path: { page_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить страницу');
+  return data;
+}
+
+export async function createContentPage(
+  body: ContentPageCreate,
+): Promise<ContentPageAdminOut> {
+  const { data, error } = await api.POST('/api/v1/admin/content-pages', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось создать страницу');
+  return data;
+}
+
+export async function updateContentPage(
+  id: number,
+  body: ContentPageUpdate,
+): Promise<ContentPageAdminOut> {
+  const { data, error } = await api.PUT('/api/v1/admin/content-pages/{page_id}', {
+    params: { path: { page_id: id } },
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось сохранить страницу');
+  return data;
+}
+
+export async function deleteContentPage(id: number): Promise<void> {
+  const { error } = await api.DELETE('/api/v1/admin/content-pages/{page_id}', {
+    params: { path: { page_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось удалить страницу');
+}

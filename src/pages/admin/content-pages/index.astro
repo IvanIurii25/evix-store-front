@@ -1,0 +1,12 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ContentPages from '../../../islands/admin/ContentPages.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+export const prerender = false;
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout title="Страницы" email={guard.user.email} active="content">
+  <ContentPages client:load />
+</AdminLayout>
