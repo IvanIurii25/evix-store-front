@@ -28,8 +28,14 @@ export default getViteConfig({
       ],
       exclude: ['src/types/**', '**/*.d.ts', '**/*.{test,spec}.ts'],
       reporter: ['text', 'json-summary', 'html'],
-      // Hard gate (`test:coverage`) is enabled in the final phase; omitted here
-      // so iterative runs don't fail while coverage is still being built up.
+      // Hard gate: `pnpm test:coverage` fails below 90% on any metric.
+      // Current: ~99% stmts/funcs/lines, ~97% branches — floor guards regressions.
+      thresholds: {
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90,
+      },
     },
   },
 });
