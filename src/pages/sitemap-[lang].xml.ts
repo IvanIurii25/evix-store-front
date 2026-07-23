@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSitemap, type SitemapData } from '../api/catalog';
+import { loadFooterPages } from '../api/site';
 import {
   isLang,
   localePath,
@@ -56,12 +57,27 @@ function urlBlock(
   return `  <url>\n    <loc>${loc}</loc>${lastmod}\n${links}\n  </url>`;
 }
 
+// A <url> block for a content page (info/legal). Its slug is shared across
+// locales and both translations exist, so it alternates to every locale + x-default.
+function infoBlock(base: URL, lang: Lang, slug: string): string {
+  const loc = abs(base, localePath(lang, `info/${slug}`));
+  const links = [
+    ...LANGS.map(
+      (l) =>
+        `    <xhtml:link rel="alternate" hreflang="${l}" href="${abs(base, localePath(l, `info/${slug}`))}"/>`,
+    ),
+    `    <xhtml:link rel="alternate" hreflang="x-default" href="${abs(base, localePath(DEFAULT_LOCALE, `info/${slug}`))}"/>`,
+  ].join('\n');
+  return `  <url>\n    <loc>${loc}</loc>\n${links}\n  </url>`;
+}
+
 export const GET: APIRoute = async ({ params, site, request }) => {
   const lang = params.lang;
   if (!isLang(lang)) return new Response('Not found', { status: 404 });
 
   const base = site ?? new URL(new URL(request.url).origin);
   const data = await getSitemap();
+  const pages = await loadFooterPages(lang);
 
   // Home: present in every locale, alternates to each locale's home.
   const homeAlternates = [
@@ -75,6 +91,7 @@ export const GET: APIRoute = async ({ params, site, request }) => {
     `  <url>\n    <loc>${abs(base, localePath(lang))}</loc>\n${homeAlternates}\n  </url>`,
     ...(data.categories ?? []).map((c) => urlBlock(base, lang, 'c', c)),
     ...(data.products ?? []).map((p) => urlBlock(base, lang, 'p', p)),
+    ...pages.map((p) => infoBlock(base, lang, p.slug)),
   ].filter((b): b is string => b !== null);
 
   const body =
