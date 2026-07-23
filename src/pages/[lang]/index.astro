@@ -11,6 +11,7 @@ import {
 } from '../../api/catalog';
 import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
 import { homeStrings } from '../../lib/i18n-strings';
+import { organizationJsonLd, websiteJsonLd } from '../../lib/seo';
 
 export const prerender = false;
 
@@ -60,12 +61,16 @@ const tiles = covers.map((c) => ({
 const heroImage = newest[0]?.main_image_url ?? null;
 
 const alternates = hreflangAlternates((l) => localePath(l));
+
+const origin = (Astro.site ?? new URL('http://localhost:4321')).href;
+const jsonLd = [organizationJsonLd(origin), websiteJsonLd(origin, lang)];
 ---
 
 <Layout
   lang={lang}
   canonical={localePath(lang)}
   alternates={alternates}
+  jsonLd={jsonLd}
 >
   <Hero
     title={t.heroTitle}

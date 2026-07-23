@@ -77,3 +77,36 @@ export function productJsonLd(
     },
   };
 }
+
+// Organization: brand identity for the knowledge panel / rich results. Emit once
+// (homepage). `logo` points at the site icon (an absolute URL is required).
+export function organizationJsonLd(origin: string): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'evix',
+    url: origin,
+    logo: abs(origin, '/favicon.svg'),
+  };
+}
+
+// WebSite + SearchAction: lets Google render a sitelinks search box that points
+// at the storefront's own search. The `{search_term_string}` placeholder must
+// stay un-encoded, so the query is concatenated rather than built via URL.
+export function websiteJsonLd(origin: string, lang: Lang): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'evix',
+    url: origin,
+    inLanguage: lang,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${abs(origin, localePath(lang, 'search'))}?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
