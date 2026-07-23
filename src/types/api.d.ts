@@ -214,6 +214,39 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/catalog/products/{slug}/related': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Related Products
+     * @description Return in-stock sibling products for cross-sell on the product page.
+     *
+     *     Best-effort: never 404s. An unknown slug, an uncategorized product, or a
+     *     category with no other in-stock products yields an empty list. Cards match
+     *     the listing cards field-for-field (same ``product_card`` read-model).
+     *
+     *     Args:
+     *         slug: Localized product slug.
+     *         limit: Maximum number of related cards (1..24, default 8).
+     *         lang: Resolved request language.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         list[ProductCardOut]: In-stock sibling cards, newest-first (may be empty).
+     */
+    get: operations['get_related_products_api_v1_catalog_products__slug__related_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/search': {
     parameters: {
       query?: never;
@@ -3499,6 +3532,41 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ProductDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_related_products_api_v1_catalog_products__slug__related_get: {
+    parameters: {
+      query?: {
+        limit?: number;
+        /** @description Language code (ru|ro). */
+        lang?: string | null;
+      };
+      header?: never;
+      path: {
+        slug: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductCardOut'][];
         };
       };
       /** @description Validation Error */

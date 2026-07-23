@@ -5,7 +5,8 @@ import ProductGallery from '../../../islands/ProductGallery.vue';
 import AddToCart from '../../../islands/AddToCart.vue';
 import RestockNotify from '../../../islands/RestockNotify.vue';
 import ProductTabs from '../../../islands/ProductTabs.vue';
-import { getProduct } from '../../../api/catalog';
+import ProductRail from '../../../components/ProductRail.astro';
+import { getProduct, getRelatedProducts } from '../../../api/catalog';
 import { price } from '../../../lib/format';
 import {
   isLang,
@@ -23,6 +24,8 @@ if (!isLang(lang)) return new Response('Not found', { status: 404 });
 const product = slug ? await getProduct(slug, lang) : null;
 
 if (!product) return new Response('Product not found', { status: 404 });
+
+const related = await getRelatedProducts(product.slug, lang, 8);
 
 const media = product.media ?? [];
 
@@ -125,4 +128,14 @@ const jsonLd = [
       </div>
     </div>
   </div>
+
+  {
+    related.length > 0 && (
+      <ProductRail
+        title={lang === 'ru' ? 'Похожие товары' : 'Produse similare'}
+        products={related}
+        lang={lang}
+      />
+    )
+  }
 </Layout>

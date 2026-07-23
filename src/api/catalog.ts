@@ -109,6 +109,21 @@ export async function getProduct(slug: string, lang: string) {
   return data;
 }
 
+// Cross-sell: other in-stock products from the same category (best-effort — []
+// on any failure so the product page never breaks over recommendations).
+export async function getRelatedProducts(
+  slug: string,
+  lang: string,
+  limit = 8,
+): Promise<ProductCard[]> {
+  const { data, error } = await api.GET(
+    '/api/v1/catalog/products/{slug}/related',
+    { params: { path: { slug }, query: { lang, limit } } },
+  );
+  if (error || !data) return [];
+  return data;
+}
+
 export type SitemapData = components['schemas']['SitemapData'];
 
 // Flat feed of all published categories + products with per-language slugs +
