@@ -6,6 +6,7 @@ import {
   deleteProduct,
   deleteProductMedia,
   getProduct,
+  getRestockWaiters,
   listCategories,
   reorderProductMedia,
   setProductTranslation,
@@ -18,6 +19,10 @@ import {
 const props = defineProps<{ productId?: number }>();
 
 const isEdit = computed(() => typeof props.productId === 'number');
+
+// Number of customers waiting for this product to come back in stock (demand
+// signal; a restock save fires their notifications).
+const waiters = ref(0);
 
 // ---- lifecycle state -------------------------------------------------------
 const loading = ref(true);
@@ -119,6 +124,7 @@ onMounted(async () => {
     if (isEdit.value) {
       try {
         await reloadProduct();
+        waiters.value = await getRestockWaiters(props.productId as number);
       } catch {
         notFound.value = true;
       }
@@ -336,6 +342,10 @@ const inputCls =
               min="0"
               :class="['mt-1', inputCls]"
             />
+            <p v-if="waiters > 0" class="mt-1 text-xs font-medium text-primary">
+              ⏳ {{ waiters }} ожидают поступления — сохранение с qty&nbsp;&gt;&nbsp;0
+              разошлёт уведомления
+            </p>
           </div>
 
           <div>

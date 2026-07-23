@@ -440,3 +440,13 @@ export async function deleteContentPage(id: number): Promise<void> {
   });
   if (error) fail(error, 'Не удалось удалить страницу');
 }
+
+// --- Restock waiters (demand signal) ----------------------------------------
+export async function getRestockWaiters(productId: number): Promise<number> {
+  const { data, error } = await api.GET(
+    '/api/v1/admin/products/{product_id}/restock-waiters',
+    { params: { path: { product_id: productId } }, ...CREDS },
+  );
+  if (error || !data) return 0;
+  return data.count;
+}
