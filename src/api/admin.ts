@@ -450,3 +450,14 @@ export async function getRestockWaiters(productId: number): Promise<number> {
   if (error || !data) return 0;
   return data.count;
 }
+
+export type DemandItem = Schemas['DemandItem'];
+
+export async function getRestockDemand(lang = 'ru'): Promise<DemandItem[]> {
+  const { data, error } = await api.GET('/api/v1/admin/restock/demand', {
+    params: { query: { lang } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить спрос');
+  return data;
+}

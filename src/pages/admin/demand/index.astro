@@ -1,0 +1,12 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import RestockDemand from '../../../islands/admin/RestockDemand.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+export const prerender = false;
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout title="Спрос" email={guard.user.email} active="demand">
+  <RestockDemand client:load />
+</AdminLayout>

@@ -890,6 +890,31 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/restock/demand': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Restock Demand
+     * @description Return the restock-demand overview: products people are waiting for (§9).
+     *
+     *     One aggregate row per product with active restock subscriptions, carrying the
+     *     waiter count and 7-day momentum plus enough catalog context (name, category,
+     *     stock, price, thumbnail) for the operator to decide what to restock. Ordered
+     *     by waiter count descending; the front-end re-sorts.
+     */
+    get: operations['get_restock_demand_api_v1_admin_restock_demand_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/products/{product_id}/translations': {
     parameters: {
       query?: never;
@@ -2361,6 +2386,39 @@ export interface components {
       street: string;
       /** Zip */
       zip?: string | null;
+    };
+    /**
+     * DemandItem
+     * @description One product in the admin restock-demand overview (§9).
+     *
+     *     Aggregates the active-waiter demand for a single out-of-stock (or any)
+     *     product so the operator can decide what to restock. ``price`` is serialized
+     *     as a string (like other money fields) so front-end arithmetic (waiters ×
+     *     price) is exact. ``in_stock`` is derived server-side from ``qty``.
+     */
+    DemandItem: {
+      /** Product Id */
+      product_id: number;
+      /** Name */
+      name: string;
+      /** Slug */
+      slug: string | null;
+      /** Category */
+      category: string | null;
+      /** Qty */
+      qty: number;
+      /** In Stock */
+      in_stock: boolean;
+      /** Price */
+      price: string;
+      /** Is Active */
+      is_active: boolean;
+      /** Image Url */
+      image_url: string | null;
+      /** Waiters */
+      waiters: number;
+      /** Waiters 7D */
+      waiters_7d: number;
     };
     /**
      * FacetAttribute
@@ -4532,6 +4590,38 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['RestockWaitersOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_restock_demand_api_v1_admin_restock_demand_get: {
+    parameters: {
+      query?: {
+        /** @description Language code (ru|ro). */
+        lang?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DemandItem'][];
         };
       };
       /** @description Validation Error */
