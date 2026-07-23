@@ -1359,6 +1359,58 @@ export interface paths {
     patch: operations['update_staff_api_v1_admin_staff__user_id__patch'];
     trace?: never;
   };
+  '/api/v1/admin/content-pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Pages
+     * @description Return every content page with all translations (ordered by position).
+     */
+    get: operations['list_pages_api_v1_admin_content_pages_get'];
+    put?: never;
+    /**
+     * Create Page
+     * @description Create a content page with both-language translations (409 on dup slug).
+     */
+    post: operations['create_page_api_v1_admin_content_pages_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/content-pages/{page_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Page
+     * @description Return one content page with all translations (404 if absent).
+     */
+    get: operations['get_page_api_v1_admin_content_pages__page_id__get'];
+    /**
+     * Update Page
+     * @description Fully update a content page (404 if absent; 409 on slug clash).
+     */
+    put: operations['update_page_api_v1_admin_content_pages__page_id__put'];
+    post?: never;
+    /**
+     * Delete Page
+     * @description Delete a content page and its translations (404 if absent).
+     */
+    delete: operations['delete_page_api_v1_admin_content_pages__page_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/site/seo': {
     parameters: {
       query?: never;
@@ -1377,6 +1429,64 @@ export interface paths {
      *         SeoSettings: A fully-formed block (empty strings on a fresh install).
      */
     get: operations['get_site_seo_api_v1_site_seo_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/site/pages': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Content Pages
+     * @description Return published footer content pages for the storefront (public).
+     *
+     *     Args:
+     *         lang: Requested language code (default ``ro``).
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         list[ContentPageListItem]: Ordered ``(slug, title)`` footer entries.
+     */
+    get: operations['list_content_pages_api_v1_site_pages_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/site/pages/{slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Content Page
+     * @description Return a single published content page rendered for ``lang`` (public).
+     *
+     *     Args:
+     *         slug: Page slug.
+     *         lang: Requested language code (default ``ro``).
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         ContentPageDetail: The rendered page.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the page is not published or the language is absent.
+     */
+    get: operations['get_content_page_api_v1_site_pages__slug__get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1882,6 +1992,136 @@ export interface components {
       delivery_address_id?: number | null;
       /** @description Inline courier address (guest or user). Alternative to id. */
       delivery_address?: components['schemas']['DeliveryAddressIn'] | null;
+    };
+    /**
+     * ContentPageAdminOut
+     * @description Full admin view of a content page (structure + translations).
+     */
+    ContentPageAdminOut: {
+      /** Id */
+      id: number;
+      /** Slug */
+      slug: string;
+      /** Is Published */
+      is_published: boolean;
+      /** Show In Footer */
+      show_in_footer: boolean;
+      /** Position */
+      position: number;
+      /** Translations */
+      translations?: components['schemas']['ContentPageTranslationOut'][];
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * ContentPageCreate
+     * @description Create a content page with both-language translations.
+     */
+    ContentPageCreate: {
+      /** Slug */
+      slug: string;
+      /**
+       * Is Published
+       * @default false
+       */
+      is_published: boolean;
+      /**
+       * Show In Footer
+       * @default true
+       */
+      show_in_footer: boolean;
+      /**
+       * Position
+       * @default 0
+       */
+      position: number;
+      /** Translations */
+      translations: components['schemas']['ContentPageTranslationIn'][];
+    };
+    /**
+     * ContentPageDetail
+     * @description A fully rendered content page for one language.
+     */
+    ContentPageDetail: {
+      /** Slug */
+      slug: string;
+      /** Title */
+      title: string;
+      /** Body */
+      body: string;
+      /** Seo Description */
+      seo_description?: string | null;
+    };
+    /**
+     * ContentPageListItem
+     * @description A footer/list entry the storefront links to (one language).
+     */
+    ContentPageListItem: {
+      /** Slug */
+      slug: string;
+      /** Title */
+      title: string;
+    };
+    /**
+     * ContentPageTranslationIn
+     * @description A single per-language content payload (title + Markdown body + SEO).
+     */
+    ContentPageTranslationIn: {
+      /** Lang */
+      lang: string;
+      /** Title */
+      title: string;
+      /** Body */
+      body: string;
+      /** Seo Description */
+      seo_description?: string | null;
+    };
+    /**
+     * ContentPageTranslationOut
+     * @description A page translation as returned to the back-office.
+     */
+    ContentPageTranslationOut: {
+      /** Lang */
+      lang: string;
+      /** Title */
+      title: string;
+      /** Body */
+      body: string;
+      /** Seo Description */
+      seo_description?: string | null;
+    };
+    /**
+     * ContentPageUpdate
+     * @description Full update of a content page (both-language translations replaced).
+     */
+    ContentPageUpdate: {
+      /** Slug */
+      slug: string;
+      /**
+       * Is Published
+       * @default false
+       */
+      is_published: boolean;
+      /**
+       * Show In Footer
+       * @default true
+       */
+      show_in_footer: boolean;
+      /**
+       * Position
+       * @default 0
+       */
+      position: number;
+      /** Translations */
+      translations: components['schemas']['ContentPageTranslationIn'][];
     };
     /**
      * CustomerAddress
@@ -4927,6 +5167,154 @@ export interface operations {
       };
     };
   };
+  list_pages_api_v1_admin_content_pages_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContentPageAdminOut'][];
+        };
+      };
+    };
+  };
+  create_page_api_v1_admin_content_pages_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContentPageCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContentPageAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_page_api_v1_admin_content_pages__page_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        page_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContentPageAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_page_api_v1_admin_content_pages__page_id__put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        page_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ContentPageUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContentPageAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_page_api_v1_admin_content_pages__page_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        page_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   get_site_seo_api_v1_site_seo_get: {
     parameters: {
       query?: never;
@@ -4943,6 +5331,70 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SeoSettings'];
+        };
+      };
+    };
+  };
+  list_content_pages_api_v1_site_pages_get: {
+    parameters: {
+      query?: {
+        lang?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContentPageListItem'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_content_page_api_v1_site_pages__slug__get: {
+    parameters: {
+      query?: {
+        lang?: string;
+      };
+      header?: never;
+      path: {
+        slug: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ContentPageDetail'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

@@ -36,6 +36,42 @@ export async function loadSeoDefaults(now = Date.now()): Promise<SeoDefaults> {
   return value;
 }
 
+// --- Content pages (info/legal, manager-editable) ---------------------------
+export type ContentPageListItem = components['schemas']['ContentPageListItem'];
+export type ContentPageDetail = components['schemas']['ContentPageDetail'];
+
+// Published footer pages change rarely — cache per-lang like the SEO defaults so
+// the footer (rendered on every SSR page) hits the API at most once per window.
+const footerCache = new Map<string, { value: ContentPageListItem[]; expiresAt: number }>();
+
+// Published, footer-visible pages for the given language (for the site footer).
+// Returns [] on any failure so the footer degrades to its static links.
+export async function loadFooterPages(
+  lang: string,
+  now = Date.now(),
+): Promise<ContentPageListItem[]> {
+  const hit = footerCache.get(lang);
+  if (hit && hit.expiresAt > now) return hit.value;
+  const { data, error } = await api.GET('/api/v1/site/pages', {
+    params: { query: { lang } },
+  });
+  const value = error || !data ? [] : data;
+  if (!error && data) footerCache.set(lang, { value, expiresAt: now + TTL_MS });
+  return value;
+}
+
+// One published content page for the language, or null (unknown/unpublished/404).
+export async function getContentPage(
+  slug: string,
+  lang: string,
+): Promise<ContentPageDetail | null> {
+  const { data, error } = await api.GET('/api/v1/site/pages/{slug}', {
+    params: { path: { slug }, query: { lang } },
+  });
+  if (error || !data) return null;
+  return data;
+}
+
 export interface MetaInput {
   lang: string;
   // Page-specific title; when omitted the site title is used as-is (homepage).

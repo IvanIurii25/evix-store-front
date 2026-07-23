@@ -1,0 +1,95 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getContentPage } from '../../../api/site';
+import { renderMarkdown } from '../../../lib/markdown';
+import {
+  isLang,
+  localePath,
+  DEFAULT_LOCALE,
+  LANGS,
+  type Alternate,
+} from '../../../lib/i18n';
+
+export const prerender = false;
+
+const { lang, slug } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+
+const page = slug ? await getContentPage(slug, lang) : null;
+if (!page) return new Response('Not found', { status: 404 });
+
+const bodyHtml = renderMarkdown(page.body);
+
+// Both translations are guaranteed (create requires ru+ro), so the same slug is
+// the real per-locale equivalent for hreflang.
+const canonical = localePath(lang, `info/${page.slug}`);
+const alternates: Alternate[] = LANGS.map((l) => ({
+  lang: l,
+  path: localePath(l, `info/${page.slug}`),
+}));
+alternates.push({
+  lang: 'x-default',
+  path: localePath(DEFAULT_LOCALE, `info/${page.slug}`),
+});
+---
+
+<Layout
+  title={page.title}
+  description={page.seo_description ?? ''}
+  lang={lang}
+  canonical={canonical}
+  alternates={alternates}
+>
+  <div class="mx-auto max-w-3xl px-5 py-10">
+    <h1 class="text-3xl font-bold text-ink">{page.title}</h1>
+    <article class="prose-content mt-6" set:html={bodyHtml} />
+  </div>
+</Layout>
+
+<style is:global>
+  /* Minimal typographic styling for manager-authored Markdown bodies. */
+  .prose-content h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-content h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-top: 1.25rem;
+    margin-bottom: 0.4rem;
+  }
+  .prose-content p {
+    color: var(--color-body);
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+  }
+  .prose-content ul {
+    list-style: disc;
+    padding-left: 1.4rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-body);
+  }
+  .prose-content li {
+    margin-bottom: 0.3rem;
+    line-height: 1.6;
+  }
+  .prose-content a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+  .prose-content blockquote {
+    border-left: 3px solid var(--color-fill);
+    padding-left: 1rem;
+    color: var(--color-subtle);
+    font-style: italic;
+    margin-bottom: 1rem;
+  }
+  .prose-content strong {
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+</style>

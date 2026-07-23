@@ -410,33 +410,17 @@ export function accountStrings(lang: Lang): AccountStrings {
   return ACCOUNT[lang];
 }
 
-export interface FooterColumn {
-  title: string;
-  links: string[];
+export interface FooterLabels {
+  shopTitle: string;
+  catalog: string;
+  infoTitle: string;
 }
 
-const FOOTER: Record<Lang, FooterColumn[]> = {
-  ro: [
-    { title: 'Magazin', links: ['Catalog', 'Promoții', 'Noutăți', 'Branduri'] },
-    {
-      title: 'Ajutor',
-      links: ['Livrare și plată', 'Retur', 'Garanție', 'Contacte'],
-    },
-    {
-      title: 'Companie',
-      links: ['Despre noi', 'Cariere', 'Parteneri', 'Blog'],
-    },
-  ],
-  ru: [
-    { title: 'Магазин', links: ['Каталог', 'Акции', 'Новинки', 'Бренды'] },
-    {
-      title: 'Помощь',
-      links: ['Доставка и оплата', 'Возврат', 'Гарантия', 'Контакты'],
-    },
-    { title: 'Компания', links: ['О нас', 'Вакансии', 'Партнёрам', 'Блог'] },
-  ],
+const FOOTER_LABELS: Record<Lang, FooterLabels> = {
+  ro: { shopTitle: 'Magazin', catalog: 'Catalog', infoTitle: 'Informații' },
+  ru: { shopTitle: 'Магазин', catalog: 'Каталог', infoTitle: 'Информация' },
 };
 
-export function footerColumns(lang: Lang): FooterColumn[] {
-  return FOOTER[lang];
+export function footerLabels(lang: Lang): FooterLabels {
+  return FOOTER_LABELS[lang];
 }
