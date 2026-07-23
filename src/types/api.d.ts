@@ -870,6 +870,26 @@ export interface paths {
     patch: operations['update_product_api_v1_admin_products__product_id__patch'];
     trace?: never;
   };
+  '/api/v1/admin/products/{product_id}/restock-waiters': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Restock Waiters
+     * @description Return the number of active restock waiters for a product (demand, §9).
+     */
+    get: operations['get_restock_waiters_api_v1_admin_products__product_id__restock_waiters_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/products/{product_id}/translations': {
     parameters: {
       query?: never;
@@ -1528,6 +1548,86 @@ export interface paths {
      */
     post: operations['track_pageview_api_v1_track_pageview_post'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/restock/subscriptions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Subscriptions
+     * @description Return the current user's active "waiting for" items in ``lang`` (§5).
+     *
+     *     Args:
+     *         lang: Language to resolve product name/slug in (default ``ro``).
+     *         user: The authenticated user (401 for guests).
+     *         service: Injected restock service.
+     *
+     *     Returns:
+     *         list[RestockSubscriptionItem]: ``(product_id, slug, name)`` entries.
+     */
+    get: operations['list_subscriptions_api_v1_restock_subscriptions_get'];
+    put?: never;
+    /**
+     * Subscribe
+     * @description Subscribe the current user to a product's restock notification (§5).
+     *
+     *     Args:
+     *         payload: Product id + storefront language at subscribe time.
+     *         user: The authenticated user (401 for guests).
+     *         service: Injected restock service.
+     *
+     *     Returns:
+     *         RestockSubscribedOut: ``{subscribed: true}``.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the product is missing; 400 if it is in stock.
+     */
+    post: operations['subscribe_api_v1_restock_subscriptions_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/restock/subscriptions/{product_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Subscription
+     * @description Return whether the current user is subscribed to a product (§5).
+     *
+     *     Args:
+     *         product_id: Product to check.
+     *         user: The authenticated user (401 for guests → button shows "guest").
+     *         service: Injected restock service.
+     *
+     *     Returns:
+     *         RestockSubscribedOut: ``{subscribed: bool}``.
+     */
+    get: operations['get_subscription_api_v1_restock_subscriptions__product_id__get'];
+    put?: never;
+    post?: never;
+    /**
+     * Unsubscribe
+     * @description Remove the current user's subscription for a product (idempotent, §5).
+     *
+     *     Args:
+     *         product_id: Product to unsubscribe from.
+     *         user: The authenticated user (401 for guests).
+     *         service: Injected restock service.
+     */
+    delete: operations['unsubscribe_api_v1_restock_subscriptions__product_id__delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -2789,6 +2889,44 @@ export interface components {
       password: string;
       /** Phone */
       phone?: string | null;
+    };
+    /**
+     * RestockSubscribeIn
+     * @description Request body to subscribe to a product's restock notification.
+     */
+    RestockSubscribeIn: {
+      /** Product Id */
+      product_id: number;
+      /** Lang */
+      lang: string;
+    };
+    /**
+     * RestockSubscribedOut
+     * @description Button-state response: whether the caller is subscribed to the product.
+     */
+    RestockSubscribedOut: {
+      /** Subscribed */
+      subscribed: boolean;
+    };
+    /**
+     * RestockSubscriptionItem
+     * @description One active "waiting for" entry in the account list (§5, GET list).
+     */
+    RestockSubscriptionItem: {
+      /** Product Id */
+      product_id: number;
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string;
+    };
+    /**
+     * RestockWaitersOut
+     * @description Admin demand signal: number of active waiters for a product (§9).
+     */
+    RestockWaitersOut: {
+      /** Count */
+      count: number;
     };
     /**
      * RevenuePointOut
@@ -4376,6 +4514,37 @@ export interface operations {
       };
     };
   };
+  get_restock_waiters_api_v1_admin_products__product_id__restock_waiters_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RestockWaitersOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   set_product_translation_api_v1_admin_products__product_id__translations_put: {
     parameters: {
       query?: never;
@@ -5468,6 +5637,130 @@ export interface operations {
         content: {
           'application/json': components['schemas']['TrackAck'];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_subscriptions_api_v1_restock_subscriptions_get: {
+    parameters: {
+      query?: {
+        lang?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RestockSubscriptionItem'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  subscribe_api_v1_restock_subscriptions_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RestockSubscribeIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RestockSubscribedOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_subscription_api_v1_restock_subscriptions__product_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RestockSubscribedOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  unsubscribe_api_v1_restock_subscriptions__product_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation Error */
       422: {
