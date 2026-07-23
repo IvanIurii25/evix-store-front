@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './fonts.css';
 
 /* Design tokens — «по мотивам ecom» (default Ecom theme, rebuilt on Tailwind). */
 @theme {

@@ -52,6 +52,14 @@ const {
   ogImage: ogImageUrl,
 } = resolveSeoMeta(seo, { lang, title, description, ogImage });
 
+// Preload the two most-used weights (400 body, 700 hero — the home LCP element)
+// for the page's primary script, so styled text paints without waiting on a font
+// round-trip. Other weights/subsets still load on demand via @font-face.
+const fontSubset = lang === 'ru' ? 'cyrillic' : 'latin';
+const preloadFonts = [400, 700].map(
+  (w) => `/fonts/onest-${w}-${fontSubset}.woff2`,
+);
+
 const site = Astro.site ?? new URL('http://localhost:4321');
 const canonicalURL = new URL(canonical ?? Astro.url.pathname, site).href;
 // Pre-launch: keep the store out of search indexes. Runtime flag so launch is
@@ -71,12 +79,11 @@ const alternateLinks = alternates.map((a) => ({
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;900&display=swap"
-      rel="stylesheet"
-    />
+    {
+      preloadFonts.map((href) => (
+        <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />
+      ))
+    }
     <title>{metaTitle}</title>
     <meta name="description" content={metaDescription} />
     <link rel="canonical" href={canonicalURL} />
