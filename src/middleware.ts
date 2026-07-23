@@ -47,10 +47,23 @@ function isTrackablePath(pathname: string): boolean {
   return !last.includes('.');
 }
 
+// The container's own healthcheck fetches /ro every 15s from inside the
+// container, so its client address is loopback; real visitors always arrive
+// via the separate cloudflared container (a non-loopback bridge IP). Skipping
+// loopback keeps the healthcheck from minting a fresh cookieless session (and a
+// phantom "unique") on every probe, without writing any bot rows.
+function isLoopback(address: string | undefined): boolean {
+  return address === '::1' || address === '127.0.0.1' || address === '::ffff:127.0.0.1';
+}
+
 const analytics: MiddlewareHandler = async (context, next) => {
   const { request, cookies, url, clientAddress } = context;
 
-  if (request.method !== 'GET' || !isTrackablePath(url.pathname)) {
+  if (
+    request.method !== 'GET' ||
+    !isTrackablePath(url.pathname) ||
+    isLoopback(clientAddress)
+  ) {
     return next();
   }
 
