@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { loadSeoDefaults, resolveSeoMeta } from '../api/site';
 
 interface Alternate {
   lang: string;
@@ -9,7 +10,10 @@ interface Alternate {
 }
 
 interface Props {
+  // Page-specific title. Inner pages pass their own (a suffix is appended);
+  // the homepage passes none, so the site-wide default title is used as-is.
   title?: string;
+  // Page-specific meta description; falls back to the site-wide default.
   description?: string;
   lang?: string;
   // Canonical path (defaults to the current path). Resolved to an absolute URL
@@ -20,16 +24,33 @@ interface Props {
   alternates?: Alternate[];
   // schema.org structured data blocks, each emitted as a ld+json script.
   jsonLd?: Record<string, unknown>[];
+  // Open Graph image URL; falls back to the site-wide default OG image.
+  ogImage?: string;
+  // Open Graph type — 'website' for listings, 'product' for product pages.
+  ogType?: string;
 }
 
 const {
-  title = 'evix-store',
-  description = 'evix-store storefront',
+  title,
+  description,
   lang = 'ro',
   canonical,
   alternates = [],
   jsonLd = [],
+  ogImage,
+  ogType = 'website',
 } = Astro.props;
+
+// Site-wide SEO defaults (cached, back-office-managed), composed with the page's
+// own overrides into the final meta (see resolveSeoMeta). Everything degrades to
+// a bare fallback if the defaults are unset/unreachable, so meta is always
+// well-formed.
+const seo = await loadSeoDefaults();
+const {
+  title: metaTitle,
+  description: metaDescription,
+  ogImage: ogImageUrl,
+} = resolveSeoMeta(seo, { lang, title, description, ogImage });
 
 const site = Astro.site ?? new URL('http://localhost:4321');
 const canonicalURL = new URL(canonical ?? Astro.url.pathname, site).href;
@@ -56,9 +77,19 @@ const alternateLinks = alternates.map((a) => ({
       href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;900&display=swap"
       rel="stylesheet"
     />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <title>{metaTitle}</title>
+    <meta name="description" content={metaDescription} />
     <link rel="canonical" href={canonicalURL} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="evix" />
+    <meta property="og:title" content={metaTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta name="twitter:card" content={ogImageUrl ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={metaTitle} />
+    <meta name="twitter:description" content={metaDescription} />
+    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+    {ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
     {
       alternateLinks.map((a) => (
         <link rel="alternate" hreflang={a.hreflang} href={a.href} />

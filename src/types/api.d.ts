@@ -1359,6 +1359,32 @@ export interface paths {
     patch: operations['update_staff_api_v1_admin_staff__user_id__patch'];
     trace?: never;
   };
+  '/api/v1/site/seo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Site Seo
+     * @description Return the site-wide SEO defaults for the storefront (public, read-only).
+     *
+     *     Args:
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         SeoSettings: A fully-formed block (empty strings on a fresh install).
+     */
+    get: operations['get_site_seo_api_v1_site_seo_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/track/pageview': {
     parameters: {
       query?: never;
@@ -4897,6 +4923,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_site_seo_api_v1_site_seo_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SeoSettings'];
         };
       };
     };
