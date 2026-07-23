@@ -49,7 +49,7 @@ const deliveryAddress = computed<DeliveryAddressIn | null>(() => {
 
 async function refreshQuote() {
   quoteError.value = '';
-  q.value = await quote(deliveryType.value, deliveryAddress.value);
+  q.value = await quote(deliveryType.value, deliveryAddress.value, props.lang);
   if (!q.value && deliveryType.value === 'courier') {
     quoteError.value = t.errAddress;
   }
@@ -89,12 +89,15 @@ async function submit() {
   }
   loading.value = true;
   try {
-    const order = await checkout({
-      email: email.value,
-      phone: phone.value,
-      delivery_type: deliveryType.value,
-      delivery_address: deliveryAddress.value,
-    });
+    const order = await checkout(
+      {
+        email: email.value,
+        phone: phone.value,
+        delivery_type: deliveryType.value,
+        delivery_address: deliveryAddress.value,
+      },
+      props.lang,
+    );
     location.href = localePath(
       props.lang,
       `checkout/success?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(email.value)}`,

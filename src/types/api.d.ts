@@ -291,6 +291,8 @@ export interface paths {
      *         request: Incoming request (source of the guest cookie).
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
+     *         lang: Requested display language for line names (default ``ro``;
+     *             unsupported values fall back to the default).
      *
      *     Returns:
      *         CartOut: The live-priced cart (empty when the caller has no cart).
@@ -325,6 +327,7 @@ export interface paths {
      *         response: Outgoing response (to set the guest cookie).
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
+     *         lang: Requested display language for line names (default ``ro``).
      *
      *     Returns:
      *         CartOut: The re-rendered cart.
@@ -358,6 +361,7 @@ export interface paths {
      *         request: Incoming request (guest cookie).
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
+     *         lang: Requested display language for line names (default ``ro``).
      *
      *     Returns:
      *         CartOut: The re-rendered cart.
@@ -378,6 +382,7 @@ export interface paths {
      *         request: Incoming request (guest cookie).
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
+     *         lang: Requested display language for line names (default ``ro``).
      *
      *     Returns:
      *         CartOut: The re-rendered cart.
@@ -409,6 +414,7 @@ export interface paths {
      *         response: Outgoing response (to clear the guest cookie).
      *         user: The authenticated user (required).
      *         session: Injected async DB session.
+     *         lang: Requested display language for line names (default ``ro``).
      *
      *     Returns:
      *         CartOut: The re-rendered user cart.
@@ -438,6 +444,7 @@ export interface paths {
      *         request: Incoming request (guest cookie).
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
+     *         lang: Requested line-name language (default ``ro``; mirrors checkout).
      *
      *     Returns:
      *         QuoteOut: The subtotal / discount / delivery / total breakdown.
@@ -470,6 +477,8 @@ export interface paths {
      *         request: Incoming request (guest cookie).
      *         user: The authenticated user, or ``None`` for a guest order.
      *         session: Injected async DB session.
+     *         lang: Language captured into each line's ``name_snapshot`` (default
+     *             ``ro``; unsupported values fall back to the default).
      *
      *     Returns:
      *         OrderOut | JSONResponse: The created order, or a 409 ``out_of_stock``
@@ -3381,7 +3390,10 @@ export interface operations {
   };
   get_cart_api_v1_cart_get: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Display language (ru|ro). */
+        lang?: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -3397,11 +3409,23 @@ export interface operations {
           'application/json': components['schemas']['CartOut'];
         };
       };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
     };
   };
   add_item_api_v1_cart_items_post: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Display language (ru|ro). */
+        lang?: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -3434,7 +3458,10 @@ export interface operations {
   };
   remove_item_api_v1_cart_items__product_id__delete: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Display language (ru|ro). */
+        lang?: string;
+      };
       header?: never;
       path: {
         product_id: number;
@@ -3465,7 +3492,10 @@ export interface operations {
   };
   update_item_api_v1_cart_items__product_id__patch: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Display language (ru|ro). */
+        lang?: string;
+      };
       header?: never;
       path: {
         product_id: number;
@@ -3500,7 +3530,10 @@ export interface operations {
   };
   merge_cart_api_v1_cart_merge_post: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Display language (ru|ro). */
+        lang?: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -3516,11 +3549,23 @@ export interface operations {
           'application/json': components['schemas']['CartOut'];
         };
       };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
     };
   };
   quote_api_v1_checkout_quote_post: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Display language (ru|ro). */
+        lang?: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -3553,7 +3598,10 @@ export interface operations {
   };
   checkout_api_v1_checkout_post: {
     parameters: {
-      query?: never;
+      query?: {
+        /** @description Snapshot language (ru|ro). */
+        lang?: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;

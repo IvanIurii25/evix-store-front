@@ -14,7 +14,7 @@ const loading = ref(true);
 const busy = ref(false);
 
 async function load() {
-  cart.value = await getCart();
+  cart.value = await getCart(props.lang);
   loading.value = false;
 }
 

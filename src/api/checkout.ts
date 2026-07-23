@@ -8,8 +8,10 @@ export type DeliveryAddressIn = components['schemas']['DeliveryAddressIn'];
 export async function quote(
   deliveryType: string,
   deliveryAddress?: DeliveryAddressIn | null,
+  lang?: string,
 ): Promise<QuoteOut | null> {
   const { data, error } = await api.POST('/api/v1/checkout/quote', {
+    params: { query: { lang } },
     body: {
       delivery_type: deliveryType,
       delivery_address: deliveryAddress ?? null,
@@ -20,13 +22,17 @@ export async function quote(
   return data;
 }
 
-export async function checkout(body: {
-  email: string;
-  phone: string;
-  delivery_type: string;
-  delivery_address?: DeliveryAddressIn | null;
-}): Promise<OrderOut> {
+export async function checkout(
+  body: {
+    email: string;
+    phone: string;
+    delivery_type: string;
+    delivery_address?: DeliveryAddressIn | null;
+  },
+  lang?: string,
+): Promise<OrderOut> {
   const { data, error, response } = await api.POST('/api/v1/checkout', {
+    params: { query: { lang } },
     body,
     credentials: 'include',
   });
