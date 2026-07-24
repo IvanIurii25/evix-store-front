@@ -4,7 +4,7 @@
 // footer-visible content pages (manager-managed via the admin) — so adding or
 // unpublishing an info/legal page is reflected here without a code change.
 import { isLang, langFromPath, localePath, type Lang } from '../lib/i18n';
-import { footerLabels } from '../lib/i18n-strings';
+import { consentStrings, footerLabels } from '../lib/i18n-strings';
 import { loadFooterPages } from '../api/site';
 
 interface Props {
@@ -16,6 +16,7 @@ const lang: Lang = isLang(langProp)
   ? langProp
   : langFromPath(Astro.url.pathname);
 const labels = footerLabels(lang);
+const consent = consentStrings(lang);
 const pages = await loadFooterPages(lang);
 ---
 
@@ -60,8 +61,26 @@ const pages = await loadFooterPages(lang);
         )
       }
     </div>
-    <div class="mt-10 border-t border-white/10 pt-6 text-sm text-gray-500">
-      © 2026 evix — MDL.
+    <div
+      class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-6 text-sm text-gray-500"
+    >
+      <span>© 2026 evix — MDL.</span>
+      <button
+        type="button"
+        data-cookie-settings
+        class="text-gray-400 transition hover:text-primary"
+      >
+        {consent.settings}
+      </button>
     </div>
   </div>
 </footer>
+
+<script>
+  // Reopen the cookie consent banner (right to withdraw/change consent).
+  document
+    .querySelector('[data-cookie-settings]')
+    ?.addEventListener('click', () => {
+      window.dispatchEvent(new Event('evix:open-consent'));
+    });
+</script>
