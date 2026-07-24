@@ -6,11 +6,19 @@ import {
   type QuoteOut,
   type DeliveryAddressIn,
 } from '../api/checkout';
+import type { AddressOut } from '../api/account';
 import { price } from '../lib/format';
 import { localePath, type Lang } from '../lib/i18n';
 import { checkoutStrings } from '../lib/i18n-strings';
 
-const props = defineProps<{ lang: Lang }>();
+const props = withDefaults(
+  defineProps<{
+    lang: Lang;
+    isLoggedIn?: boolean;
+    savedAddresses?: AddressOut[];
+  }>(),
+  { isLoggedIn: false, savedAddresses: () => [] },
+);
 const t = checkoutStrings(props.lang);
 
 const email = ref('');
@@ -28,6 +36,23 @@ const addrCity = ref('');
 const addrStreet = ref('');
 const addrZip = ref('');
 
+// Saved-address picker: shown for logged-in courier orders that have addresses.
+// selectedAddressId === null means "enter another address" (inline fallback).
+const hasSavedAddresses = computed(
+  () => props.isLoggedIn && props.savedAddresses.length > 0,
+);
+const selectedAddressId = ref<number | null>(
+  props.savedAddresses.find((a) => a.is_default)?.id ??
+    props.savedAddresses[0]?.id ??
+    null,
+);
+const showPicker = computed(
+  () => deliveryType.value === 'courier' && hasSavedAddresses.value,
+);
+const usingSavedAddress = computed(
+  () => showPicker.value && selectedAddressId.value !== null,
+);
+
 const courierAddressComplete = computed(
   () =>
     addrName.value.trim().length > 0 &&
@@ -36,7 +61,12 @@ const courierAddressComplete = computed(
 );
 
 const deliveryAddress = computed<DeliveryAddressIn | null>(() => {
-  if (deliveryType.value !== 'courier' || !courierAddressComplete.value) {
+  // A picked saved address is sent by id instead of an inline snapshot.
+  if (
+    deliveryType.value !== 'courier' ||
+    usingSavedAddress.value ||
+    !courierAddressComplete.value
+  ) {
     return null;
   }
   return {
@@ -47,17 +77,32 @@ const deliveryAddress = computed<DeliveryAddressIn | null>(() => {
   };
 });
 
+const deliveryAddressId = computed<number | null>(() =>
+  usingSavedAddress.value ? selectedAddressId.value : null,
+);
+
+// Courier delivery is addressable once a saved address is picked OR the inline
+// form is complete.
+const courierAddressReady = computed(
+  () => usingSavedAddress.value || courierAddressComplete.value,
+);
+
 async function refreshQuote() {
   quoteError.value = '';
-  q.value = await quote(deliveryType.value, deliveryAddress.value, props.lang);
+  q.value = await quote(
+    deliveryType.value,
+    deliveryAddress.value,
+    props.lang,
+    deliveryAddressId.value,
+  );
   if (!q.value && deliveryType.value === 'courier') {
     quoteError.value = t.errAddress;
   }
 }
 
 onMounted(refreshQuote);
-// Re-quote when the method changes or the courier address becomes (in)complete.
-watch([deliveryType, courierAddressComplete], refreshQuote);
+// Re-quote when the method, the picked address, or the inline address changes.
+watch([deliveryType, courierAddressReady, deliveryAddressId], refreshQuote);
 
 function canSubmit() {
   return (
@@ -65,7 +110,7 @@ function canSubmit() {
     email.value.includes('@') &&
     phone.value.trim().length >= 5 &&
     consent.value &&
-    (deliveryType.value === 'pickup' || courierAddressComplete.value)
+    (deliveryType.value === 'pickup' || courierAddressReady.value)
   );
 }
 
@@ -95,6 +140,7 @@ async function submit() {
         phone: phone.value,
         delivery_type: deliveryType.value,
         delivery_address: deliveryAddress.value,
+        delivery_address_id: deliveryAddressId.value,
       },
       props.lang,
     );
@@ -152,7 +198,41 @@ async function submit() {
           </label>
         </div>
 
-        <div v-if="deliveryType === 'courier'" class="mt-3 space-y-3">
+        <div v-if="showPicker" class="mt-3 space-y-2">
+          <p class="text-sm font-medium text-ink">{{ t.savedAddresses }}</p>
+          <label
+            v-for="a in savedAddresses"
+            :key="a.id"
+            class="flex items-start gap-2 rounded-lg bg-fill px-3 py-2"
+          >
+            <input
+              v-model="selectedAddressId"
+              type="radio"
+              :value="a.id"
+              class="mt-1 accent-primary"
+            />
+            <span class="text-sm">
+              <span class="font-medium text-ink">{{ a.full_name }}</span>
+              <span class="block text-subtle">
+                {{ a.city }}, {{ a.street }}{{ a.zip ? ', ' + a.zip : '' }}
+              </span>
+            </span>
+          </label>
+          <label class="flex items-center gap-2 rounded-lg bg-fill px-3 py-2">
+            <input
+              v-model="selectedAddressId"
+              type="radio"
+              :value="null"
+              class="accent-primary"
+            />
+            <span class="text-sm text-body">{{ t.useAnotherAddress }}</span>
+          </label>
+        </div>
+
+        <div
+          v-if="deliveryType === 'courier' && !usingSavedAddress"
+          class="mt-3 space-y-3"
+        >
           <input
             v-model="addrName"
             :placeholder="t.recipientName"

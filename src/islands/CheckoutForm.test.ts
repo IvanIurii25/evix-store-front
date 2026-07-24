@@ -55,7 +55,7 @@ describe('CheckoutForm', () => {
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
-    expect(quote).toHaveBeenCalledWith('pickup', null, 'ru');
+    expect(quote).toHaveBeenCalledWith('pickup', null, 'ru', null);
     expect(wrapper.text()).toContain('998'); // total, formatted
     expect(wrapper.text()).toContain('бесплатно'); // free delivery (cost 0)
     expect(wrapper.text()).toContain('Товары (2)');
@@ -91,13 +91,13 @@ describe('CheckoutForm', () => {
     await courierRadio.setValue();
     await flushPromises();
 
-    expect(quote).toHaveBeenLastCalledWith('courier', null, 'ru');
+    expect(quote).toHaveBeenLastCalledWith('courier', null, 'ru', null);
     expect(wrapper.text()).toContain('Укажите адрес доставки');
 
     const pickupRadio = wrapper.find('input[value="pickup"]');
     await pickupRadio.setValue();
     await flushPromises();
-    expect(quote).toHaveBeenLastCalledWith('pickup', null, 'ru');
+    expect(quote).toHaveBeenLastCalledWith('pickup', null, 'ru', null);
   });
 
   it('builds the courier delivery address once all required fields are filled', async () => {
@@ -134,6 +134,7 @@ describe('CheckoutForm', () => {
         zip: null,
       },
       'ru',
+      null,
     );
   });
 
@@ -214,6 +215,7 @@ describe('CheckoutForm', () => {
         phone: '069123456',
         delivery_type: 'pickup',
         delivery_address: null,
+        delivery_address_id: null,
       },
       'ru',
     );
@@ -276,5 +278,136 @@ describe('CheckoutForm', () => {
 
     expect(checkout).toHaveBeenCalled();
     expect(hrefStore).toContain('number=B-2');
+  });
+
+  const SAVED = [
+    {
+      id: 1,
+      full_name: 'Анна',
+      phone: '069000001',
+      city: 'Бельцы',
+      street: 'ул. Мира 5',
+      zip: null,
+      is_default: false,
+    },
+    {
+      id: 2,
+      full_name: 'Пётр',
+      phone: '069000002',
+      city: 'Кишинёв',
+      street: 'ул. Дачия 10',
+      zip: '2001',
+      is_default: true,
+    },
+  ];
+
+  it('renders the saved-address picker with the default preselected for a logged-in courier order', async () => {
+    quote
+      .mockResolvedValueOnce(QUOTE) // mount (pickup)
+      .mockResolvedValueOnce(QUOTE_COURIER); // courier switch (saved addr picked)
+    const wrapper = mount(CheckoutForm, {
+      props: { lang: 'ru', isLoggedIn: true, savedAddresses: SAVED },
+    });
+    await flushPromises();
+
+    await wrapper.find('input[value="courier"]').setValue();
+    await flushPromises();
+
+    // Picker rendered with both saved addresses.
+    expect(wrapper.text()).toContain('Сохранённые адреса');
+    expect(wrapper.text()).toContain('Анна');
+    expect(wrapper.text()).toContain('Пётр');
+    // Default address (id 2) preselected → quoted by id, no inline address.
+    expect(quote).toHaveBeenLastCalledWith('courier', null, 'ru', 2);
+    // Inline fields are hidden while a saved address is selected.
+    const placeholders = wrapper
+      .findAll('input')
+      .map((i) => i.attributes('placeholder'));
+    expect(placeholders).not.toContain('Имя получателя');
+  });
+
+  it('checks out with delivery_address_id when a saved address is used', async () => {
+    quote
+      .mockResolvedValueOnce(QUOTE)
+      .mockResolvedValueOnce(QUOTE_COURIER);
+    checkout.mockResolvedValue({ number: 'S-9', email: 'buyer@example.com' });
+    const wrapper = mount(CheckoutForm, {
+      props: { lang: 'ru', isLoggedIn: true, savedAddresses: SAVED },
+    });
+    await flushPromises();
+
+    await wrapper.find('input[value="courier"]').setValue();
+    await flushPromises();
+    await fillContacts(wrapper);
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(checkout).toHaveBeenCalledWith(
+      {
+        email: 'buyer@example.com',
+        phone: '069123456',
+        delivery_type: 'courier',
+        delivery_address: null,
+        delivery_address_id: 2,
+      },
+      'ru',
+    );
+  });
+
+  it('falls back to the inline address path when "another address" is chosen', async () => {
+    quote
+      .mockResolvedValueOnce(QUOTE) // mount
+      .mockResolvedValueOnce(QUOTE_COURIER) // courier switch (saved picked)
+      .mockResolvedValueOnce(null) // switched to "another" (empty inline)
+      .mockResolvedValueOnce(QUOTE_COURIER); // inline complete
+    const wrapper = mount(CheckoutForm, {
+      props: { lang: 'ru', isLoggedIn: true, savedAddresses: SAVED },
+    });
+    await flushPromises();
+
+    await wrapper.find('input[value="courier"]').setValue();
+    await flushPromises();
+
+    // Pick the "enter another address" radio (value null).
+    const radios = wrapper.findAll('input[type="radio"]');
+    const another = radios.find((r) => r.attributes('value') === undefined);
+    await another!.setValue();
+    await flushPromises();
+
+    const addrInputs = wrapper.findAll('input').filter((i) => {
+      const ph = i.attributes('placeholder');
+      return ph === 'Имя получателя' || ph === 'Город' || ph === 'Улица, дом, квартира';
+    });
+    expect(addrInputs.length).toBe(3); // inline fields now visible
+    await addrInputs[0].setValue('Гость');
+    await addrInputs[1].setValue('Орхей');
+    await addrInputs[2].setValue('ул. Лесная 2');
+    await flushPromises();
+
+    expect(quote).toHaveBeenLastCalledWith(
+      'courier',
+      { full_name: 'Гость', city: 'Орхей', street: 'ул. Лесная 2', zip: null },
+      'ru',
+      null,
+    );
+  });
+
+  it('shows no picker for a guest and keeps the inline courier flow (regression)', async () => {
+    quote
+      .mockResolvedValueOnce(QUOTE)
+      .mockResolvedValueOnce(null);
+    const wrapper = mount(CheckoutForm, {
+      props: { lang: 'ru', isLoggedIn: false, savedAddresses: SAVED },
+    });
+    await flushPromises();
+
+    await wrapper.find('input[value="courier"]').setValue();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain('Сохранённые адреса');
+    const placeholders = wrapper
+      .findAll('input')
+      .map((i) => i.attributes('placeholder'));
+    expect(placeholders).toContain('Имя получателя');
   });
 });

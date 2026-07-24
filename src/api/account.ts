@@ -12,6 +12,17 @@ export async function listAddresses(): Promise<AddressOut[]> {
   return data ?? [];
 }
 
+// Server-side address fetch: the SSR handler passes the access cookie value as a
+// bearer (mirrors auth.meWithToken).
+export async function listAddressesWithToken(
+  access: string,
+): Promise<AddressOut[]> {
+  const { data } = await api.GET('/api/v1/users/me/addresses', {
+    headers: { Authorization: `Bearer ${access}` },
+  });
+  return data ?? [];
+}
+
 export async function createAddress(
   body: AddressCreate,
 ): Promise<AddressOut | null> {

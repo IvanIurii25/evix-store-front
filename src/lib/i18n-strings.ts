@@ -154,6 +154,8 @@ export interface CheckoutStrings {
   city: string;
   street: string;
   zipOptional: string;
+  savedAddresses: string;
+  useAnotherAddress: string;
   payment: string;
   paymentInfo: string;
   consent: string;
@@ -197,6 +199,8 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     city: 'Oraș',
     street: 'Strada, casa, apartament',
     zipOptional: 'Cod poștal (opțional)',
+    savedAddresses: 'Adrese salvate',
+    useAnotherAddress: 'Introduceți altă adresă',
     payment: 'Plata',
     paymentInfo:
       'Plata la primire (numerar sau card curierului / la punctul de ridicare).',
@@ -238,6 +242,8 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     city: 'Город',
     street: 'Улица, дом, квартира',
     zipOptional: 'Индекс (необязательно)',
+    savedAddresses: 'Сохранённые адреса',
+    useAnotherAddress: 'Ввести другой адрес',
     payment: 'Оплата',
     paymentInfo:
       'Оплата при получении (наличными или картой курьеру / в пункте выдачи).',

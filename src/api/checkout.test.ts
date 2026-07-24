@@ -47,7 +47,7 @@ describe('checkout api', () => {
     expect(r.url).toContain('/api/v1/checkout/quote');
     expect(r.url).toContain('lang=ru');
     expect(await r.text()).toBe(
-      '{"delivery_type":"courier","delivery_address":{"city":"Chisinau"}}',
+      '{"delivery_type":"courier","delivery_address":{"city":"Chisinau"},"delivery_address_id":null}',
     );
   });
 
@@ -56,7 +56,16 @@ describe('checkout api', () => {
     const { quote } = await load();
     await quote('pickup');
     expect(await req().text()).toBe(
-      '{"delivery_type":"pickup","delivery_address":null}',
+      '{"delivery_type":"pickup","delivery_address":null,"delivery_address_id":null}',
+    );
+  });
+
+  it('quote sends delivery_address_id when a saved address is picked', async () => {
+    stubOnce(jsonResponse({ total: '50' }));
+    const { quote } = await load();
+    await quote('courier', null, 'ru', 7);
+    expect(await req().text()).toBe(
+      '{"delivery_type":"courier","delivery_address":null,"delivery_address_id":7}',
     );
   });
 
@@ -77,6 +86,20 @@ describe('checkout api', () => {
     const r = req();
     expect(r.method).toBe('POST');
     expect(r.url).toContain('/api/v1/checkout');
+  });
+
+  it('checkout forwards delivery_address_id in the body', async () => {
+    stubOnce(jsonResponse({ number: 'ORD-2' }, 201));
+    const { checkout } = await load();
+    await checkout({
+      email: 'a@b.c',
+      phone: '123',
+      delivery_type: 'courier',
+      delivery_address_id: 3,
+    });
+    expect(await req().text()).toBe(
+      '{"email":"a@b.c","phone":"123","delivery_type":"courier","delivery_address_id":3}',
+    );
   });
 
   it.each([

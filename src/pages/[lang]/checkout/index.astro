@@ -1,6 +1,7 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
 import CheckoutForm from '../../../islands/CheckoutForm.vue';
+import { listAddressesWithToken } from '../../../api/account';
 import { isLang } from '../../../lib/i18n';
 import { checkoutStrings } from '../../../lib/i18n-strings';
 
@@ -10,13 +11,25 @@ export const prerender = false;
 const { lang } = Astro.params;
 if (!isLang(lang)) return new Response('Not found', { status: 404 });
 const t = checkoutStrings(lang);
+
+// Logged-in users get a saved-address picker for courier delivery. The httpOnly
+// access cookie is readable server-side (mirrors the /account SSR pattern); a
+// guest simply has no cookie and checks out with the inline form as before.
+const access = Astro.cookies.get('access')?.value;
+const isLoggedIn = Boolean(access);
+const savedAddresses = access ? await listAddressesWithToken(access) : [];
 ---
 
 <Layout title={t.pageTitle} lang={lang}>
   <div class="mx-auto max-w-[1360px] px-5 py-8">
     <h1 class="text-2xl font-bold text-ink">{t.pageTitle}</h1>
     <div class="mt-6">
-      <CheckoutForm client:load lang={lang} />
+      <CheckoutForm
+        client:load
+        lang={lang}
+        isLoggedIn={isLoggedIn}
+        savedAddresses={savedAddresses}
+      />
     </div>
   </div>
 </Layout>

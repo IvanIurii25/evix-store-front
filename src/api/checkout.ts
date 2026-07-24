@@ -9,12 +9,14 @@ export async function quote(
   deliveryType: string,
   deliveryAddress?: DeliveryAddressIn | null,
   lang?: string,
+  deliveryAddressId?: number | null,
 ): Promise<QuoteOut | null> {
   const { data, error } = await api.POST('/api/v1/checkout/quote', {
     params: { query: { lang } },
     body: {
       delivery_type: deliveryType,
       delivery_address: deliveryAddress ?? null,
+      delivery_address_id: deliveryAddressId ?? null,
     },
     credentials: 'include',
   });
@@ -28,6 +30,7 @@ export async function checkout(
     phone: string;
     delivery_type: string;
     delivery_address?: DeliveryAddressIn | null;
+    delivery_address_id?: number | null;
   },
   lang?: string,
 ): Promise<OrderOut> {
