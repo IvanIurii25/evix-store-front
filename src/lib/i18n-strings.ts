@@ -424,3 +424,34 @@ const FOOTER_LABELS: Record<Lang, FooterLabels> = {
 export function footerLabels(lang: Lang): FooterLabels {
   return FOOTER_LABELS[lang];
 }
+
+export interface ConsentStrings {
+  message: string;
+  acceptAll: string;
+  onlyNecessary: string;
+  moreLink: string;
+  settings: string;
+}
+
+const CONSENT_STRINGS: Record<Lang, ConsentStrings> = {
+  ro: {
+    message:
+      'Folosim cookie-uri necesare și, cu acordul dvs., cookie-uri proprii de analiză pentru a înțelege traficul. Nu folosim urmăritori terți.',
+    acceptAll: 'Accept toate',
+    onlyNecessary: 'Doar necesare',
+    moreLink: 'Politica de confidențialitate',
+    settings: 'Setări cookie',
+  },
+  ru: {
+    message:
+      'Мы используем необходимые cookie и, с вашего согласия, собственные аналитические cookie для оценки трафика. Сторонних трекеров нет.',
+    acceptAll: 'Принять все',
+    onlyNecessary: 'Только необходимые',
+    moreLink: 'Политика конфиденциальности',
+    settings: 'Настройки cookie',
+  },
+};
+
+export function consentStrings(lang: Lang): ConsentStrings {
+  return CONSENT_STRINGS[lang];
+}

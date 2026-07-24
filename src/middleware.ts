@@ -5,6 +5,7 @@ import { sequence } from 'astro:middleware';
 import type { MiddlewareHandler } from 'astro';
 
 import { API_BASE } from './config/env';
+import { CONSENT_COOKIE, analyticsGranted } from './lib/consent';
 
 // i18n routing runs in `manual` mode (astro.config) so we can exempt the admin
 // panel. Astro's built-in i18n middleware, under prefixDefaultLocale, treats a
@@ -68,6 +69,13 @@ const analytics: MiddlewareHandler = async (context, next) => {
     !isTrackablePath(url.pathname) ||
     isLoopback(clientAddress)
   ) {
+    return next();
+  }
+
+  // LP195/2024 (= GDPR): the analytics `sid` cookie and the pageview are set /
+  // fired only after the visitor grants analytics consent via the banner. No
+  // consent → no cookie, no tracking.
+  if (!analyticsGranted(cookies.get(CONSENT_COOKIE)?.value)) {
     return next();
   }
 

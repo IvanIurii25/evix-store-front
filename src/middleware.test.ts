@@ -139,6 +139,7 @@ describe('onRequest — analytics', () => {
     const next = vi.fn(async () => okResponse());
     const { context, setCalls } = makeCtx({
       path: '/ru/search',
+      cookies: { evix_consent: '1:all' },
       headers: { 'User-Agent': 'UA', Referer: 'https://g.co' },
     });
     await onRequest(context as never, next as never);
@@ -164,7 +165,7 @@ describe('onRequest — analytics', () => {
     const next = vi.fn(async () => okResponse());
     const { context, setCalls } = makeCtx({
       path: '/ro',
-      cookies: { sid: 'existing-sid', access: 'tok' },
+      cookies: { sid: 'existing-sid', access: 'tok', evix_consent: '1:all' },
     });
     await onRequest(context as never, next as never);
 
@@ -179,7 +180,11 @@ describe('onRequest — analytics', () => {
 
   it('forwards an empty XFF when clientAddress is undefined', async () => {
     const next = vi.fn(async () => okResponse());
-    const { context } = makeCtx({ path: '/ro', clientAddress: undefined });
+    const { context } = makeCtx({
+      path: '/ro',
+      clientAddress: undefined,
+      cookies: { evix_consent: '1:all' },
+    });
     await onRequest(context as never, next as never);
     const [, init] = fetchMock.mock.calls[0];
     const headers = (init as RequestInit).headers as Record<string, string>;
@@ -188,11 +193,29 @@ describe('onRequest — analytics', () => {
   });
 
   it('swallows fetch rejections (analytics never breaks the page)', async () => {
-    fetchMock.mockReturnValue(Promise.reject(new Error('down')));
+    fetchMock.mockImplementation(() => Promise.reject(new Error('down')));
     const next = vi.fn(async () => okResponse());
-    const { context } = makeCtx({ path: '/ro' });
+    const { context } = makeCtx({
+      path: '/ro',
+      cookies: { evix_consent: '1:all' },
+    });
     await expect(
       onRequest(context as never, next as never),
     ).resolves.toBeInstanceOf(Response);
+  });
+
+  it('does not set a sid or fire a pageview without analytics consent', async () => {
+    for (const cookies of [
+      {}, // no decision yet
+      { evix_consent: '1:necessary' }, // rejected analytics
+      { evix_consent: '0:all' }, // stale policy version → re-prompt
+    ]) {
+      fetchMock.mockClear();
+      const next = vi.fn(async () => okResponse());
+      const { context, setCalls } = makeCtx({ path: '/ro', cookies });
+      await onRequest(context as never, next as never);
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(setCalls.find((c) => c.name === 'sid')).toBeUndefined();
+    }
   });
 });
