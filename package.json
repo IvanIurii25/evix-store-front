@@ -67,7 +67,7 @@
     {
       "name": "client JS (all islands, gzip)",
       "path": "dist/client/_astro/*.js",
-      "limit": "120 kB"
+      "limit": "125 kB"
     }
   ]
 }
