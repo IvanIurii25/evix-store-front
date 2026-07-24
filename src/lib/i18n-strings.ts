@@ -353,6 +353,10 @@ export interface AccountStrings {
   statusCanceled: string;
   paid: string;
   awaitingPayment: string;
+  deleteAccount: string;
+  deleteWarning: string;
+  deleteConfirm: string;
+  deleteCancel: string;
 }
 
 const ACCOUNT: Record<Lang, AccountStrings> = {
@@ -382,6 +386,11 @@ const ACCOUNT: Record<Lang, AccountStrings> = {
     statusCanceled: 'Anulată',
     paid: 'achitat',
     awaitingPayment: 'în așteptarea plății',
+    deleteAccount: 'Șterge contul',
+    deleteWarning:
+      'Contul și datele personale vor fi șterse ireversibil. Comenzile se păstrează conform obligațiilor fiscale.',
+    deleteConfirm: 'Confirmă ștergerea',
+    deleteCancel: 'Anulează',
   },
   ru: {
     pageTitle: 'Кабинет',
@@ -409,6 +418,11 @@ const ACCOUNT: Record<Lang, AccountStrings> = {
     statusCanceled: 'Отменён',
     paid: 'оплачен',
     awaitingPayment: 'ожидает оплаты',
+    deleteAccount: 'Удалить аккаунт',
+    deleteWarning:
+      'Аккаунт и персональные данные будут удалены безвозвратно. Заказы сохраняются согласно налоговым обязательствам.',
+    deleteConfirm: 'Подтвердить удаление',
+    deleteCancel: 'Отмена',
   },
 };
 

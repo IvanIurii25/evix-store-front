@@ -1,9 +1,24 @@
 import { api } from './client';
+import { API_BASE } from '../config/env';
 import type { components } from '../types/api';
 
 export type AddressOut = components['schemas']['AddressOut'];
 export type AddressCreate = components['schemas']['AddressCreate'];
 export type OrderOut = components['schemas']['OrderOut'];
+
+// Right to erasure (LP195/2024 Art.17). Not in the generated client types yet,
+// so a plain fetch is used; the httpOnly access cookie authorizes the request.
+export async function deleteAccount(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/users/me`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 export async function listAddresses(): Promise<AddressOut[]> {
   const { data } = await api.GET('/api/v1/users/me/addresses', {

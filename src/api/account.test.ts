@@ -88,6 +88,23 @@ describe('account api', () => {
     expect(await r.text()).toBe('{"is_default":true}');
   });
 
+  it('deleteAccount DELETEs /users/me with credentials', async () => {
+    stubOnce(jsonResponse(null, 204));
+    const { deleteAccount } = await load();
+    await expect(deleteAccount()).resolves.toBe(true);
+    // Plain fetch(url, init) — read the call args directly (not a Request).
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe('DELETE');
+    expect(init.credentials).toBe('include');
+    expect(String(url)).toBe(`${BASE}/api/v1/users/me`);
+  });
+
+  it('deleteAccount returns false on failure', async () => {
+    stubOnce(envelope(500));
+    const { deleteAccount } = await load();
+    await expect(deleteAccount()).resolves.toBe(false);
+  });
+
   it('listOrders returns the orders', async () => {
     stubOnce(jsonResponse([{ number: 'ORD-1' }]));
     const { listOrders } = await load();
