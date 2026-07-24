@@ -10,7 +10,9 @@ const attrs = [
 
 describe('ProductTabs', () => {
   it('renders nothing when there is neither description nor attributes', () => {
-    const w = mount(ProductTabs, { props: { description: null, attributes: [] } });
+    const w = mount(ProductTabs, {
+      props: { description: null, attributes: [] },
+    });
     expect(w.find('div.mt-8').exists()).toBe(false);
   });
 
@@ -27,7 +29,9 @@ describe('ProductTabs', () => {
   });
 
   it('defaults to the attributes tab when there is no description', () => {
-    const w = mount(ProductTabs, { props: { description: '', attributes: attrs } });
+    const w = mount(ProductTabs, {
+      props: { description: '', attributes: attrs },
+    });
     const tabs = w.findAll('[role="tab"]');
     expect(tabs).toHaveLength(1);
     expect(tabs[0].text()).toBe('Характеристики');
@@ -64,7 +68,9 @@ describe('ProductTabs', () => {
   });
 
   it('renders attribute rows, joining values and tolerating null values', () => {
-    const w = mount(ProductTabs, { props: { description: null, attributes: attrs } });
+    const w = mount(ProductTabs, {
+      props: { description: null, attributes: attrs },
+    });
     const rows = w.findAll('dl > div');
     expect(rows).toHaveLength(2);
     expect(rows[0].find('dt').text()).toBe('Разрешение');

@@ -71,7 +71,10 @@ const thClickable = 'cursor-pointer select-none hover:text-primary';
 </script>
 
 <template>
-  <div v-if="loading" class="rounded-2xl border-2 border-fill bg-white p-6 text-subtle">
+  <div
+    v-if="loading"
+    class="rounded-2xl border-2 border-fill bg-white p-6 text-subtle"
+  >
     Загрузка…
   </div>
   <div
@@ -94,12 +97,16 @@ const thClickable = 'cursor-pointer select-none hover:text-primary';
       </div>
       <div class="rounded-2xl border-2 border-fill bg-white p-5">
         <p class="text-sm text-subtle">Потенциал ≈</p>
-        <p class="mt-1 text-2xl font-bold text-price">{{ money(kpi.potential) }}</p>
+        <p class="mt-1 text-2xl font-bold text-price">
+          {{ money(kpi.potential) }}
+        </p>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-fill bg-white p-4">
+    <div
+      class="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-fill bg-white p-4"
+    >
       <div class="flex overflow-hidden rounded-lg border-2 border-fill text-sm">
         <button
           v-for="opt in [
@@ -110,7 +117,11 @@ const thClickable = 'cursor-pointer select-none hover:text-primary';
           :key="opt.k"
           type="button"
           class="px-3 py-1.5 font-medium"
-          :class="stock === opt.k ? 'bg-primary text-white' : 'text-body hover:bg-fill'"
+          :class="
+            stock === opt.k
+              ? 'bg-primary text-white'
+              : 'text-body hover:bg-fill'
+          "
           @click="stock = opt.k as 'oos' | 'all' | 'in'"
         >
           {{ opt.l }}
@@ -148,13 +159,25 @@ const thClickable = 'cursor-pointer select-none hover:text-primary';
             <th class="px-4 py-3 font-medium">Товар</th>
             <th class="px-4 py-3 font-medium">Категория</th>
             <th class="px-4 py-3 font-medium">Наличие</th>
-            <th class="px-4 py-3 text-right font-medium" :class="thClickable" @click="sortKey = 'waiters'">
+            <th
+              class="px-4 py-3 text-right font-medium"
+              :class="thClickable"
+              @click="sortKey = 'waiters'"
+            >
               Ждут{{ sortKey === 'waiters' ? ' ↓' : '' }}
             </th>
-            <th class="px-4 py-3 text-right font-medium" :class="thClickable" @click="sortKey = 'waiters_7d'">
+            <th
+              class="px-4 py-3 text-right font-medium"
+              :class="thClickable"
+              @click="sortKey = 'waiters_7d'"
+            >
               +7д{{ sortKey === 'waiters_7d' ? ' ↓' : '' }}
             </th>
-            <th class="px-4 py-3 text-right font-medium" :class="thClickable" @click="sortKey = 'potential'">
+            <th
+              class="px-4 py-3 text-right font-medium"
+              :class="thClickable"
+              @click="sortKey = 'potential'"
+            >
               Потенциал{{ sortKey === 'potential' ? ' ↓' : '' }}
             </th>
           </tr>

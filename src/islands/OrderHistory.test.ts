@@ -23,7 +23,9 @@ beforeEach(() => mockList.mockReset());
 describe('OrderHistory', () => {
   it('shows a loading state before the request resolves', async () => {
     let resolve!: (v: OrderOut[]) => void;
-    mockList.mockReturnValue(new Promise<OrderOut[]>((r) => (resolve = r)) as never);
+    mockList.mockReturnValue(
+      new Promise<OrderOut[]>((r) => (resolve = r)) as never,
+    );
     const w = mount(OrderHistory, { props: { lang: 'ru' } });
     // loading text (accountStrings.loading) rendered, no list yet.
     expect(w.find('.text-subtle').exists()).toBe(true);
@@ -42,7 +44,12 @@ describe('OrderHistory', () => {
 
   it('renders a row per order with number, mapped status, formatted date and total', async () => {
     mockList.mockResolvedValue([
-      order({ number: 'A-100', status: 'confirmed', total: '1990', payment_status: 'paid' }),
+      order({
+        number: 'A-100',
+        status: 'confirmed',
+        total: '1990',
+        payment_status: 'paid',
+      }),
       order({ number: 'A-101', status: 'done', total: '500' }),
     ]);
     const w = mount(OrderHistory, { props: { lang: 'ru' } });

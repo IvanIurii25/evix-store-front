@@ -1,12 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach,
-} from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import OrdersTable from './OrdersTable.vue';
 import { listOrders, type OrderOut, type OrderPage } from '../../api/admin';
@@ -199,7 +192,12 @@ describe('OrdersTable', () => {
     const setter = vi.fn();
     Object.defineProperty(window, 'location', {
       configurable: true,
-      value: { ...original, set href(v: string) { setter(v); } },
+      value: {
+        ...original,
+        set href(v: string) {
+          setter(v);
+        },
+      },
     });
     const w = mount(OrdersTable);
     await flushPromises();

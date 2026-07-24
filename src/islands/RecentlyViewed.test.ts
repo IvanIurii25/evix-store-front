@@ -78,7 +78,9 @@ describe('RecentlyViewed', () => {
     localStorage.setItem(KEY, JSON.stringify([current, other]));
     const w = await make();
     const stored = JSON.parse(localStorage.getItem(KEY)!);
-    expect(stored.filter((c: { slug: string }) => c.slug === 'current')).toHaveLength(1);
+    expect(
+      stored.filter((c: { slug: string }) => c.slug === 'current'),
+    ).toHaveLength(1);
     expect(w.findAll('a')).toHaveLength(1); // only "other" shown
   });
 
@@ -96,9 +98,11 @@ describe('RecentlyViewed', () => {
 
   it('is non-fatal when localStorage writes throw (quota / private mode)', async () => {
     localStorage.setItem(KEY, JSON.stringify([other]));
-    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('quota');
-    });
+    const spy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('quota');
+      });
     const w = await make();
     expect(w.text()).toContain('Other');
     spy.mockRestore();

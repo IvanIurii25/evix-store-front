@@ -9,15 +9,15 @@ import type { APIContext } from 'astro';
 const getSitemap = vi.fn();
 const loadFooterPages = vi.fn();
 
-vi.mock('../api/catalog', () => ({
+vi.mock('../../api/catalog', () => ({
   getSitemap: () => getSitemap(),
 }));
-vi.mock('../api/site', () => ({
+vi.mock('../../api/site', () => ({
   loadFooterPages: (lang: string) => loadFooterPages(lang),
 }));
 
 async function loadRoute() {
-  return import('./sitemap-[lang].xml.ts');
+  return import('../sitemap-[lang].xml.ts');
 }
 
 function context(lang: string | undefined): APIContext {
@@ -88,7 +88,9 @@ describe('GET /sitemap-[lang].xml', () => {
 
     // Home for the requested locale + its alternates + x-default.
     expect(xml).toContain('<loc>https://shop.evix.md/ru</loc>');
-    expect(xml).toContain('hreflang="x-default" href="https://shop.evix.md/ro"');
+    expect(xml).toContain(
+      'hreflang="x-default" href="https://shop.evix.md/ro"',
+    );
 
     // Category present in ru, with lastmod truncated to a date.
     expect(xml).toContain('<loc>https://shop.evix.md/ru/c/avto-ru</loc>');
@@ -152,10 +154,14 @@ describe('GET /sitemap-[lang].xml', () => {
     const xml = await res.text();
     // The ru-only category is emitted, with a ru alternate...
     expect(xml).toContain('<loc>https://shop.evix.md/ru/c/ru-only</loc>');
-    expect(xml).toContain('hreflang="ru" href="https://shop.evix.md/ru/c/ru-only"');
+    expect(xml).toContain(
+      'hreflang="ru" href="https://shop.evix.md/ru/c/ru-only"',
+    );
     // ...but no x-default (no ro slug) and no foreign-locale alternate.
     expect(xml).not.toContain('/c/de-junk');
-    expect(xml).not.toContain('hreflang="x-default" href="https://shop.evix.md/ro/c/ru-only"');
+    expect(xml).not.toContain(
+      'hreflang="x-default" href="https://shop.evix.md/ro/c/ru-only"',
+    );
   });
 
   it('falls back to the request origin when site is undefined', async () => {

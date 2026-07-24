@@ -15,7 +15,9 @@ const base: Card = {
 } as unknown as Card;
 
 function make(overrides: Partial<Card> = {}) {
-  return mount(ProductCard, { props: { product: { ...base, ...overrides }, lang: 'ru' } });
+  return mount(ProductCard, {
+    props: { product: { ...base, ...overrides }, lang: 'ru' },
+  });
 }
 
 describe('ProductCard', () => {
@@ -60,7 +62,9 @@ describe('ProductCard', () => {
   });
 
   it('hides old_price when absent', () => {
-    expect(make({ old_price: null }).find('.line-through').exists()).toBe(false);
+    expect(make({ old_price: null }).find('.line-through').exists()).toBe(
+      false,
+    );
   });
 
   it('shows in-stock label when in_stock is true', () => {

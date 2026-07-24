@@ -87,7 +87,11 @@ function locationHref() {
 function saveButton(w: ReturnType<typeof mount>) {
   return w
     .findAll('button')
-    .find((b) => /Сохранить|Создать товар|Сохраняем/.test(b.text()) && b.text() !== 'Удалить товар')!;
+    .find(
+      (b) =>
+        /Сохранить|Создать товар|Сохраняем/.test(b.text()) &&
+        b.text() !== 'Удалить товар',
+    )!;
 }
 
 let confirmValue = true;
@@ -286,7 +290,7 @@ describe('ProductEditor — create mode', () => {
     expect(body.qty).toBe(9);
     expect(body.is_active).toBe(true);
     expect(body.old_price).toBe('80');
-    expect(body.translations[0]).toEqual(
+    expect(body.translations?.[0]).toEqual(
       expect.objectContaining({
         name: 'Имя',
         slug: 'imya',
@@ -323,9 +327,7 @@ describe('ProductEditor — create mode', () => {
 
 describe('ProductEditor — edit mode', () => {
   it('loads the product, fills fields, sorts media, and shows waiters hint', async () => {
-    mGet.mockResolvedValue(
-      product({ media: [media(12, 5), media(11, 1)] }),
-    );
+    mGet.mockResolvedValue(product({ media: [media(12, 5), media(11, 1)] }));
     mWaiters.mockResolvedValue(3);
     const w = mount(ProductEditor, { props: { productId: 7 } });
     await flushPromises();
@@ -343,7 +345,13 @@ describe('ProductEditor — edit mode', () => {
     // Category #2 has no ru translation -> categoryLabel falls back to "#2".
     mListCats.mockResolvedValue([
       cat(1),
-      { id: 2, parent_id: null, position: 0, is_active: true, translations: [] } as never,
+      {
+        id: 2,
+        parent_id: null,
+        position: 0,
+        is_active: true,
+        translations: [],
+      } as never,
     ]);
     // Product carries only a ro translation -> ru fillFromProduct falls back to blank.
     mGet.mockResolvedValue(
@@ -379,7 +387,10 @@ describe('ProductEditor — edit mode', () => {
     await flushPromises();
     // both ru and ro translations have names -> both persisted
     expect(mSetTr).toHaveBeenCalledTimes(2);
-    expect(mSetTr).toHaveBeenCalledWith(7, expect.objectContaining({ lang: 'ro', name: 'Produs' }));
+    expect(mSetTr).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ lang: 'ro', name: 'Produs' }),
+    );
   });
 
   it('shows a not-found panel when the product load throws', async () => {
@@ -409,10 +420,16 @@ describe('ProductEditor — edit mode', () => {
     mGet.mockClear();
     await saveButton(w).trigger('click');
     await flushPromises();
-    expect(mUpdate).toHaveBeenCalledWith(7, expect.objectContaining({ code: 'SKU-1' }));
+    expect(mUpdate).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ code: 'SKU-1' }),
+    );
     // ru has a name -> translation saved; ro empty -> skipped
     expect(mSetTr).toHaveBeenCalledTimes(1);
-    expect(mSetTr).toHaveBeenCalledWith(7, expect.objectContaining({ lang: 'ru' }));
+    expect(mSetTr).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ lang: 'ru' }),
+    );
     expect(mGet).toHaveBeenCalledWith(7); // reload
     expect(w.text()).toContain('Товар сохранён');
   });

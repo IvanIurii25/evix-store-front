@@ -133,7 +133,10 @@ async function remove(p: ContentPageAdminOut) {
 </script>
 
 <template>
-  <div v-if="loading" class="rounded-2xl border-2 border-fill bg-white p-6 text-subtle">
+  <div
+    v-if="loading"
+    class="rounded-2xl border-2 border-fill bg-white p-6 text-subtle"
+  >
     Загрузка…
   </div>
   <div
@@ -144,7 +147,10 @@ async function remove(p: ContentPageAdminOut) {
   </div>
 
   <!-- List -->
-  <div v-else-if="mode === 'list'" class="rounded-2xl border-2 border-fill bg-white p-6">
+  <div
+    v-else-if="mode === 'list'"
+    class="rounded-2xl border-2 border-fill bg-white p-6"
+  >
     <div class="mb-4 flex items-center justify-between">
       <p class="text-sm text-subtle">
         Инфо/юридические страницы магазина. Тело — Markdown.
@@ -159,7 +165,9 @@ async function remove(p: ContentPageAdminOut) {
     </div>
     <table class="w-full text-sm">
       <thead>
-        <tr class="border-b-2 border-fill text-left text-xs uppercase text-subtle">
+        <tr
+          class="border-b-2 border-fill text-left text-xs uppercase text-subtle"
+        >
           <th class="py-2">Slug</th>
           <th>Заголовок (RU)</th>
           <th class="text-center">Опубл.</th>
@@ -193,7 +201,9 @@ async function remove(p: ContentPageAdminOut) {
           </td>
         </tr>
         <tr v-if="pages.length === 0">
-          <td colspan="6" class="py-6 text-center text-subtle">Страниц пока нет</td>
+          <td colspan="6" class="py-6 text-center text-subtle">
+            Страниц пока нет
+          </td>
         </tr>
       </tbody>
     </table>
@@ -234,7 +244,11 @@ async function remove(p: ContentPageAdminOut) {
     <div class="flex gap-2 text-sm">
       <button
         type="button"
-        :class="activeLang === 'ru' ? 'bg-primary text-white' : 'border-2 border-fill text-body'"
+        :class="
+          activeLang === 'ru'
+            ? 'bg-primary text-white'
+            : 'border-2 border-fill text-body'
+        "
         class="rounded-lg px-3 py-1.5 font-medium"
         @click="activeLang = 'ru'"
       >
@@ -242,7 +256,11 @@ async function remove(p: ContentPageAdminOut) {
       </button>
       <button
         type="button"
-        :class="activeLang === 'ro' ? 'bg-primary text-white' : 'border-2 border-fill text-body'"
+        :class="
+          activeLang === 'ro'
+            ? 'bg-primary text-white'
+            : 'border-2 border-fill text-body'
+        "
         class="rounded-lg px-3 py-1.5 font-medium"
         @click="activeLang = 'ro'"
       >
@@ -258,7 +276,9 @@ async function remove(p: ContentPageAdminOut) {
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-body">Заголовок ({{ activeLang.toUpperCase() }})</label>
+      <label class="block text-sm font-medium text-body"
+        >Заголовок ({{ activeLang.toUpperCase() }})</label
+      >
       <input
         v-model="form[activeLang].title"
         type="text"
@@ -282,7 +302,9 @@ async function remove(p: ContentPageAdminOut) {
     </div>
 
     <div>
-      <label class="block text-sm font-medium text-body">SEO-описание ({{ activeLang.toUpperCase() }})</label>
+      <label class="block text-sm font-medium text-body"
+        >SEO-описание ({{ activeLang.toUpperCase() }})</label
+      >
       <textarea
         v-model="form[activeLang].seo_description"
         rows="2"

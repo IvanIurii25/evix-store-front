@@ -19,8 +19,16 @@ type State = 'loading' | 'guest' | 'idle' | 'subscribed' | 'busy';
 const state = ref<State>('loading');
 
 const t = {
-  ru: { notify: 'Уведомить о поступлении', done: 'Вы подписаны ✓', off: 'Отписаться' },
-  ro: { notify: 'Anunță-mă când apare', done: 'Ești abonat ✓', off: 'Dezabonează-te' },
+  ru: {
+    notify: 'Уведомить о поступлении',
+    done: 'Вы подписаны ✓',
+    off: 'Отписаться',
+  },
+  ro: {
+    notify: 'Anunță-mă când apare',
+    done: 'Ești abonat ✓',
+    off: 'Dezabonează-te',
+  },
 }[props.lang];
 
 // Send a guest to login, carrying the product + intent so we auto-subscribe back.
@@ -50,7 +58,8 @@ function onClick() {
 
 onMounted(async () => {
   const status = await getRestockStatus(props.productId);
-  const wantsNotify = new URLSearchParams(location.search).get('notify') === '1';
+  const wantsNotify =
+    new URLSearchParams(location.search).get('notify') === '1';
   if (wantsNotify) {
     // Clean the intent flag from the URL regardless of outcome.
     const url = new URL(location.href);

@@ -385,10 +385,7 @@ async function putOnSale() {
                     class="w-28 rounded-xl border-2 border-fill px-3 py-2 outline-none focus:border-primary"
                   />
                 </template>
-                <span
-                  v-else-if="p.old_price"
-                  class="text-subtle line-through"
-                >
+                <span v-else-if="p.old_price" class="text-subtle line-through">
                   {{ money(p.old_price) }}
                 </span>
                 <span v-else class="text-subtle">—</span>

@@ -7,21 +7,25 @@ import type { MiddlewareHandler } from 'astro';
 // astro:i18n exports a `middleware(opts)` factory returning a handler. We stub it
 // with a spy handler so we can assert the storefront path was delegated to it.
 const i18nHandler = vi.fn((_ctx: unknown, next: () => unknown) => next());
-const i18nFactory = vi.fn(() => i18nHandler);
-vi.mock('astro:i18n', () => ({ middleware: (o: unknown) => i18nFactory(o) }));
+const i18nFactory = vi.fn((opts?: unknown) => {
+  void opts;
+  return i18nHandler;
+});
+vi.mock('astro:i18n', () => ({
+  middleware: (o: unknown) => i18nFactory(o),
+}));
 
 // astro:middleware's `sequence` composes handlers left→right; reimplement it so
 // onRequest actually runs both i18nRouting and analytics in order.
 vi.mock('astro:middleware', () => ({
-  sequence:
-    (...handlers: MiddlewareHandler[]): MiddlewareHandler =>
-    (context, next) => {
+  sequence: (...handlers: MiddlewareHandler[]): MiddlewareHandler =>
+    ((context, next) => {
       const run = (i: number): unknown =>
         i >= handlers.length
           ? next()
           : handlers[i](context, () => run(i + 1) as never);
       return run(0);
-    },
+    }) as MiddlewareHandler,
 }));
 
 vi.mock('./config/env', () => ({ API_BASE: 'http://api.test' }));
@@ -40,12 +44,7 @@ interface CtxOpts {
 }
 
 function makeCtx(opts: CtxOpts = {}) {
-  const {
-    path = '/ro',
-    method = 'GET',
-    cookies = {},
-    headers = {},
-  } = opts;
+  const { path = '/ro', method = 'GET', cookies = {}, headers = {} } = opts;
   // Distinguish "not provided" (default IP) from an explicit `undefined`.
   const clientAddress =
     'clientAddress' in opts ? opts.clientAddress : '10.0.0.5';
@@ -122,7 +121,12 @@ describe('onRequest — analytics', () => {
   });
 
   it('skips API, asset, favicon and file-like paths', async () => {
-    for (const p of ['/api/v1/x', '/_astro/a.js', '/favicon.svg', '/ro/logo.png']) {
+    for (const p of [
+      '/api/v1/x',
+      '/_astro/a.js',
+      '/favicon.svg',
+      '/ro/logo.png',
+    ]) {
       fetchMock.mockClear();
       const next = vi.fn(async () => okResponse());
       const { context } = makeCtx({ path: p });

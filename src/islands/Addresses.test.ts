@@ -24,7 +24,13 @@ const ADDR = {
   zip: '2000',
   is_default: false,
 };
-const DEFAULT_ADDR = { ...ADDR, id: 2, full_name: 'Мария', is_default: true, zip: null };
+const DEFAULT_ADDR = {
+  ...ADDR,
+  id: 2,
+  full_name: 'Мария',
+  is_default: true,
+  zip: null,
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -134,7 +140,9 @@ describe('Addresses', () => {
     const wrapper = mount(Addresses, { props: { lang: 'ru' } });
     await flushPromises();
 
-    const removeBtn = wrapper.findAll('button').find((b) => b.text() === 'Удалить')!;
+    const removeBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!;
     await removeBtn.trigger('click');
     await flushPromises();
 
@@ -150,7 +158,9 @@ describe('Addresses', () => {
     const wrapper = mount(Addresses, { props: { lang: 'ru' } });
     await flushPromises();
 
-    const btn = wrapper.findAll('button').find((b) => b.text() === 'Сделать основным')!;
+    const btn = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Сделать основным')!;
     await btn.trigger('click');
     await flushPromises();
 

@@ -11,7 +11,9 @@ describe('optimizeDescriptionHtml', () => {
 
   it('wraps our media images in a lazy WebP <picture>', () => {
     const src = 'https://media.evix.md/evix-media/media/abc123.png';
-    const out = optimizeDescriptionHtml(`<p><img src="${src}" width="900" /></p>`);
+    const out = optimizeDescriptionHtml(
+      `<p><img src="${src}" width="900" /></p>`,
+    );
     expect(out).toContain('<picture>');
     expect(out).toContain('type="image/webp"');
     expect(out).toContain('media/abc123_800.webp 800w');

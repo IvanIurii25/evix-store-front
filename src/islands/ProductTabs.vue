@@ -16,7 +16,9 @@ const props = defineProps<{
 const hasDescription = computed(() => Boolean(props.description));
 // Sanitized + image-optimized HTML for v-html (source renders as escaped text
 // otherwise, and its media images are served as lazy WebP).
-const descriptionHtml = computed(() => optimizeDescriptionHtml(props.description));
+const descriptionHtml = computed(() =>
+  optimizeDescriptionHtml(props.description),
+);
 const hasAttributes = computed(() => (props.attributes?.length ?? 0) > 0);
 
 type TabKey = 'description' | 'attributes';

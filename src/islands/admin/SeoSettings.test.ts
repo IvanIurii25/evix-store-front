@@ -1,12 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils';
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach,
-} from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import SeoSettings from './SeoSettings.vue';
 import { getSeo, putSeo, type SeoSettings as Seo } from '../../api/admin';
@@ -53,7 +46,9 @@ describe('SeoSettings', () => {
     expect((inputs[0].element as HTMLInputElement).value).toBe('Заголовок');
     expect((inputs[1].element as HTMLInputElement).value).toBe('Titlu');
     const textareas = w.findAll('textarea');
-    expect((textareas[0].element as HTMLTextAreaElement).value).toBe('Описание');
+    expect((textareas[0].element as HTMLTextAreaElement).value).toBe(
+      'Описание',
+    );
   });
 
   it('binds every field two-way and submits the full edited payload', async () => {

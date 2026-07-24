@@ -144,8 +144,8 @@ describe('Dashboard', () => {
     mockSeries.mockResolvedValue(
       series({
         data: [
-          { day: '2026-01-01', revenue: '0' },
-          { day: '2026-01-02', revenue: '0' },
+          { day: '2026-01-01', revenue: '0', orders_count: 0 },
+          { day: '2026-01-02', revenue: '0', orders_count: 0 },
         ],
       }),
     );
@@ -168,6 +168,8 @@ describe('Dashboard', () => {
     mockSeries.mockResolvedValue(series());
     const w = mount(Dashboard);
     await flushPromises();
-    expect(w.find('.text-danger').text()).toContain('Не удалось загрузить дашборд');
+    expect(w.find('.text-danger').text()).toContain(
+      'Не удалось загрузить дашборд',
+    );
   });
 });

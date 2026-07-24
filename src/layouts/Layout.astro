@@ -81,7 +81,13 @@ const alternateLinks = alternates.map((a) => ({
     <meta name="generator" content={Astro.generator} />
     {
       preloadFonts.map((href) => (
-        <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />
+        <link
+          rel="preload"
+          href={href}
+          as="font"
+          type="font/woff2"
+          crossorigin
+        />
       ))
     }
     <title>{metaTitle}</title>
@@ -92,7 +98,10 @@ const alternateLinks = alternates.map((a) => ({
     <meta property="og:title" content={metaTitle} />
     <meta property="og:description" content={metaDescription} />
     <meta property="og:url" content={canonicalURL} />
-    <meta name="twitter:card" content={ogImageUrl ? 'summary_large_image' : 'summary'} />
+    <meta
+      name="twitter:card"
+      content={ogImageUrl ? 'summary_large_image' : 'summary'}
+    />
     <meta name="twitter:title" content={metaTitle} />
     <meta name="twitter:description" content={metaDescription} />
     {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}

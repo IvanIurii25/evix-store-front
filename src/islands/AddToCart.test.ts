@@ -15,7 +15,13 @@ beforeEach(() => {
 });
 
 function ctaButton(w: ReturnType<typeof mount>) {
-  return w.findAll('button').find((b) => b.attributes('disabled') !== undefined || /корзину|Добавлено|Нет в наличии|…/.test(b.text()))!;
+  return w
+    .findAll('button')
+    .find(
+      (b) =>
+        b.attributes('disabled') !== undefined ||
+        /корзину|Добавлено|Нет в наличии|…/.test(b.text()),
+    )!;
 }
 
 describe('AddToCart', () => {

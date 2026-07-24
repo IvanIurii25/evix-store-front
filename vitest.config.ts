@@ -12,9 +12,9 @@ export default getViteConfig({
     include: ['src/**/*.{test,spec}.ts', 'tests/unit/**/*.{test,spec}.ts'],
     coverage: {
       provider: 'v8',
-      // Count every runtime source file, not only those a test imports, so
-      // untested files register as 0% rather than vanishing from the report.
-      all: true,
+      // With `coverage.include` set, every matching file is instrumented (the
+      // removed `coverage.all` toggle is implied in Vitest 4), so untested files
+      // still register as 0% rather than vanishing from the report.
       // Scope = runtime logic + Vue islands. `.astro` pages/layouts are SSR
       // markup covered behaviourally by Playwright e2e, not by unit coverage.
       include: [

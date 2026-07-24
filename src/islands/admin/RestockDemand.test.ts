@@ -123,8 +123,20 @@ describe('RestockDemand', () => {
 
   it('sorts by potential (default), waiters and waiters_7d via header clicks', async () => {
     mockGet.mockResolvedValue([
-      item({ product_id: 1, name: 'Low', waiters: 2, waiters_7d: 1, price: '10' }),
-      item({ product_id: 2, name: 'High', waiters: 3, waiters_7d: 9, price: '1000' }),
+      item({
+        product_id: 1,
+        name: 'Low',
+        waiters: 2,
+        waiters_7d: 1,
+        price: '10',
+      }),
+      item({
+        product_id: 2,
+        name: 'High',
+        waiters: 3,
+        waiters_7d: 9,
+        price: '1000',
+      }),
     ]);
     const w = mount(RestockDemand);
     await flushPromises();

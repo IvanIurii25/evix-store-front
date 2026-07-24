@@ -8,8 +8,9 @@ vi.mock('../api/catalog', () => ({
 
 import CatalogControls from './CatalogControls.vue';
 import type { Lang } from '../lib/i18n';
+import type { ProductCard, FacetsResponse } from '../api/catalog';
 
-function makeProduct(id: number) {
+function makeProduct(id: number): ProductCard {
   return {
     product_id: id,
     slug: `p-${id}`,
@@ -22,12 +23,13 @@ function makeProduct(id: number) {
   };
 }
 
-const FACETS = {
+const FACETS: FacetsResponse = {
   price_min: null,
   price_max: null,
   attributes: [
     {
       attribute_id: 10,
+      code: 'color',
       name: 'Цвет',
       values: [
         { value_id: 100, value: 'Красный', count: 3 },
@@ -39,15 +41,32 @@ const FACETS = {
 
 const replaceState = vi.fn();
 
-function baseProps(overrides: Record<string, unknown> = {}) {
-  return {
+interface CatalogProps {
+  categorySlug: string;
+  lang: Lang;
+  initialProducts: ProductCard[];
+  initialCursor: string | null;
+  facets: FacetsResponse;
+}
+
+// `mount`'s props slot is the component props intersected with @vue/test-utils'
+// VNodeProps/HTMLAttributes (the known Vue + TS friction). Derive that exact
+// slot type from `mount` so we validate the fixture against the real prop types
+// via `CatalogProps`, then widen the return once — no scattered call-site casts.
+type MountProps = NonNullable<
+  NonNullable<Parameters<typeof mount<typeof CatalogControls>>[1]>['props']
+>;
+
+function baseProps(overrides: Partial<CatalogProps> = {}): MountProps {
+  const props: CatalogProps = {
     categorySlug: 'phones',
-    lang: 'ru' as Lang,
+    lang: 'ru',
     initialProducts: [makeProduct(1), makeProduct(2)],
-    initialCursor: null as string | null,
+    initialCursor: null,
     facets: FACETS,
     ...overrides,
   };
+  return props as unknown as MountProps;
 }
 
 function stubLocation(search = '', pathname = '/ru/c/phones') {
@@ -90,14 +109,19 @@ describe('CatalogControls', () => {
   });
 
   it('applies price filter via the button: calls listProducts and writes the URL', async () => {
-    listProducts.mockResolvedValue({ data: [makeProduct(3)], next_cursor: null });
+    listProducts.mockResolvedValue({
+      data: [makeProduct(3)],
+      next_cursor: null,
+    });
     const wrapper = mount(CatalogControls, { props: baseProps() });
     await flushPromises();
 
     const numInputs = wrapper.findAll('input[type="number"]');
     await numInputs[0].setValue('50'); // priceMin
     await numInputs[1].setValue('500'); // priceMax
-    const applyBtn = wrapper.findAll('button').find((b) => b.text() === 'Применить')!;
+    const applyBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Применить')!;
     await applyBtn.trigger('click');
     await flushPromises();
 
@@ -118,7 +142,10 @@ describe('CatalogControls', () => {
   });
 
   it('toggles a facet value on and off, reloading each time', async () => {
-    listProducts.mockResolvedValue({ data: [makeProduct(9)], next_cursor: null });
+    listProducts.mockResolvedValue({
+      data: [makeProduct(9)],
+      next_cursor: null,
+    });
     const wrapper = mount(CatalogControls, { props: baseProps() });
     await flushPromises();
 
@@ -143,7 +170,10 @@ describe('CatalogControls', () => {
   });
 
   it('changing sort reloads and encodes non-default sort in the URL', async () => {
-    listProducts.mockResolvedValue({ data: [makeProduct(4)], next_cursor: null });
+    listProducts.mockResolvedValue({
+      data: [makeProduct(4)],
+      next_cursor: null,
+    });
     const wrapper = mount(CatalogControls, { props: baseProps() });
     await flushPromises();
 
@@ -166,7 +196,9 @@ describe('CatalogControls', () => {
     await flushPromises();
 
     // Apply with empty filters → writeUrl produces empty qs → pathname.
-    const applyBtn = wrapper.findAll('button').find((b) => b.text() === 'Применить')!;
+    const applyBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Применить')!;
     await applyBtn.trigger('click');
     await flushPromises();
 
@@ -174,13 +206,18 @@ describe('CatalogControls', () => {
   });
 
   it('shows the "load more" button when a cursor exists and appends the next page', async () => {
-    listProducts.mockResolvedValue({ data: [makeProduct(5)], next_cursor: null });
+    listProducts.mockResolvedValue({
+      data: [makeProduct(5)],
+      next_cursor: null,
+    });
     const wrapper = mount(CatalogControls, {
       props: baseProps({ initialCursor: 'cur-1' }),
     });
     await flushPromises();
 
-    const more = wrapper.findAll('button').find((b) => b.text() === 'Показать ещё')!;
+    const more = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Показать ещё')!;
     expect(more).toBeTruthy();
     await more.trigger('click');
     await flushPromises();
@@ -195,20 +232,29 @@ describe('CatalogControls', () => {
     // Appended: original 2 + 1 more = 3.
     expect(wrapper.text()).toContain('3 товаров');
     // Cursor exhausted → button gone.
-    expect(wrapper.findAll('button').find((b) => b.text() === 'Показать ещё')).toBeUndefined();
+    expect(
+      wrapper.findAll('button').find((b) => b.text() === 'Показать ещё'),
+    ).toBeUndefined();
   });
 
   it('loadMore is a no-op when there is no cursor', async () => {
     const wrapper = mount(CatalogControls, { props: baseProps() });
     await flushPromises();
     // No load-more button rendered without a cursor.
-    expect(wrapper.findAll('button').find((b) => b.text()?.includes('Показать'))).toBeUndefined();
+    expect(
+      wrapper.findAll('button').find((b) => b.text()?.includes('Показать')),
+    ).toBeUndefined();
     expect(listProducts).not.toHaveBeenCalled();
   });
 
   it('restores filter state from a shared URL on mount and reloads', async () => {
-    stubLocation('?sort=price_desc&price_min=10&price_max=90&value_ids=100&value_ids=101');
-    listProducts.mockResolvedValue({ data: [makeProduct(6)], next_cursor: 'nc' });
+    stubLocation(
+      '?sort=price_desc&price_min=10&price_max=90&value_ids=100&value_ids=101',
+    );
+    listProducts.mockResolvedValue({
+      data: [makeProduct(6)],
+      next_cursor: 'nc',
+    });
     const wrapper = mount(CatalogControls, { props: baseProps() });
     await flushPromises();
 
@@ -221,7 +267,9 @@ describe('CatalogControls', () => {
     });
     expect(wrapper.text()).toContain('Товар 6');
     // next_cursor present → load-more visible.
-    expect(wrapper.findAll('button').find((b) => b.text() === 'Показать ещё')).toBeTruthy();
+    expect(
+      wrapper.findAll('button').find((b) => b.text() === 'Показать ещё'),
+    ).toBeTruthy();
   });
 
   it('ignores an invalid sort value in the URL', async () => {

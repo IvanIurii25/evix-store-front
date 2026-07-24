@@ -32,7 +32,11 @@ beforeEach(() => {
   });
 });
 
-async function fill(wrapper: ReturnType<typeof mount>, email: string, password: string) {
+async function fill(
+  wrapper: ReturnType<typeof mount>,
+  email: string,
+  password: string,
+) {
   const inputs = wrapper.findAll('input');
   await inputs[0].setValue(email); // email/phone
   await wrapper.find('input[type="password"]').setValue(password);
@@ -48,13 +52,19 @@ describe('AuthForm', () => {
 
   it('switches to register mode, revealing the phone field, and back to login', async () => {
     const wrapper = mount(AuthForm, { props: { lang: 'ru' } });
-    const registerTab = wrapper.findAll('button').find((b) => b.text() === 'Регистрация')!;
+    const registerTab = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Регистрация')!;
     await registerTab.trigger('click');
     expect(wrapper.findAll('input')).toHaveLength(3);
-    expect(wrapper.find('button[type="submit"]').text()).toBe('Зарегистрироваться');
+    expect(wrapper.find('button[type="submit"]').text()).toBe(
+      'Зарегистрироваться',
+    );
 
     // Click the login tab handler (`mode = 'login'`) to switch back.
-    const loginTab = wrapper.findAll('button').find((b) => b.text() === 'Вход')!;
+    const loginTab = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Вход')!;
     await loginTab.trigger('click');
     expect(wrapper.findAll('input')).toHaveLength(2);
     expect(wrapper.find('button[type="submit"]').text()).toBe('Войти');
@@ -79,7 +89,10 @@ describe('AuthForm', () => {
     await wrapper.find('form').trigger('submit');
     await flushPromises();
 
-    expect(login).toHaveBeenCalledWith({ email: 'user@example.com' }, 'secret1');
+    expect(login).toHaveBeenCalledWith(
+      { email: 'user@example.com' },
+      'secret1',
+    );
     expect(mergeCart).toHaveBeenCalled();
     expect(hrefStore).toBe('/ru/account');
   });
@@ -98,7 +111,9 @@ describe('AuthForm', () => {
   it('honors a safe next redirect', async () => {
     login.mockResolvedValue(undefined);
     mergeCart.mockResolvedValue(undefined);
-    const wrapper = mount(AuthForm, { props: { lang: 'ru', next: '/ru/checkout' } });
+    const wrapper = mount(AuthForm, {
+      props: { lang: 'ru', next: '/ru/checkout' },
+    });
     await fill(wrapper, 'user@example.com', 'secret1');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
@@ -124,7 +139,10 @@ describe('AuthForm', () => {
     login.mockResolvedValue(undefined);
     mergeCart.mockRejectedValue(new Error('merge boom'));
     const wrapper = mount(AuthForm, { props: { lang: 'ru' } });
-    await wrapper.findAll('button').find((b) => b.text() === 'Регистрация')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Регистрация')!
+      .trigger('click');
 
     const inputs = wrapper.findAll('input');
     await inputs[0].setValue('new@example.com'); // email
@@ -133,7 +151,11 @@ describe('AuthForm', () => {
     await wrapper.find('form').trigger('submit');
     await flushPromises();
 
-    expect(register).toHaveBeenCalledWith('new@example.com', 'secret1', '069000000');
+    expect(register).toHaveBeenCalledWith(
+      'new@example.com',
+      'secret1',
+      '069000000',
+    );
     expect(login).toHaveBeenCalledWith({ email: 'new@example.com' }, 'secret1');
     // merge failure is swallowed → still redirects.
     expect(hrefStore).toBe('/ru/account');
@@ -141,7 +163,10 @@ describe('AuthForm', () => {
 
   it('blocks registration with an invalid email (no @) after password passes', async () => {
     const wrapper = mount(AuthForm, { props: { lang: 'ru' } });
-    await wrapper.findAll('button').find((b) => b.text() === 'Регистрация')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Регистрация')!
+      .trigger('click');
     const inputs = wrapper.findAll('input');
     await inputs[0].setValue('not-an-email');
     await wrapper.find('input[type="password"]').setValue('secret1');
@@ -179,13 +204,20 @@ describe('AuthForm', () => {
     login.mockResolvedValue(undefined);
     mergeCart.mockResolvedValue(undefined);
     const wrapper = mount(AuthForm, { props: { lang: 'ru' } });
-    await wrapper.findAll('button').find((b) => b.text() === 'Регистрация')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Регистрация')!
+      .trigger('click');
     const inputs = wrapper.findAll('input');
     await inputs[0].setValue('new@example.com');
     await wrapper.find('input[type="password"]').setValue('secret1');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
 
-    expect(register).toHaveBeenCalledWith('new@example.com', 'secret1', undefined);
+    expect(register).toHaveBeenCalledWith(
+      'new@example.com',
+      'secret1',
+      undefined,
+    );
   });
 });

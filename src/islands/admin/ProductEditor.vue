@@ -343,8 +343,8 @@ const inputCls =
               :class="['mt-1', inputCls]"
             />
             <p v-if="waiters > 0" class="mt-1 text-xs font-medium text-primary">
-              ⏳ {{ waiters }} ожидают поступления — сохранение с qty&nbsp;&gt;&nbsp;0
-              разошлёт уведомления
+              ⏳ {{ waiters }} ожидают поступления — сохранение с
+              qty&nbsp;&gt;&nbsp;0 разошлёт уведомления
             </p>
           </div>
 

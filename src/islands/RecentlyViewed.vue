@@ -32,10 +32,10 @@ onMounted(() => {
     /* corrupt/unavailable storage — keep the empty list */
   }
   // Record the current product: prepend, dedupe by slug, cap the history.
-  list = [props.current, ...list.filter((c) => c.slug !== props.current.slug)].slice(
-    0,
-    MAX,
-  );
+  list = [
+    props.current,
+    ...list.filter((c) => c.slug !== props.current.slug),
+  ].slice(0, MAX);
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
   } catch {
@@ -70,7 +70,9 @@ onMounted(() => {
           </picture>
           <span v-else class="text-xs text-subtle">нет фото</span>
         </div>
-        <h3 class="mt-2 line-clamp-2 text-xs font-medium text-ink">{{ c.name }}</h3>
+        <h3 class="mt-2 line-clamp-2 text-xs font-medium text-ink">
+          {{ c.name }}
+        </h3>
         <span class="mt-1 text-sm font-semibold text-price">{{
           fmtPrice(c.price)
         }}</span>

@@ -42,7 +42,12 @@ describe('search api', () => {
     );
     const { search } = await load();
     const res = await search('lamp', 'ru', 2);
-    expect(res).toEqual({ data: [{ id: 1 }], total: 1, page: 2, page_size: 20 });
+    expect(res).toEqual({
+      data: [{ id: 1 }],
+      total: 1,
+      page: 2,
+      page_size: 20,
+    });
     const u = url();
     expect(u).toContain('/api/v1/search');
     expect(u).toContain('q=lamp');

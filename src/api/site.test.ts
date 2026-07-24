@@ -22,7 +22,10 @@ const EMPTY: SeoDefaults = {
 
 describe('resolveSeoMeta', () => {
   it('appends the suffix to an inner-page title', () => {
-    const meta = resolveSeoMeta(FULL, { lang: 'ru', title: 'Видеорегистратор 4K' });
+    const meta = resolveSeoMeta(FULL, {
+      lang: 'ru',
+      title: 'Видеорегистратор 4K',
+    });
     expect(meta.title).toBe('Видеорегистратор 4K — evix');
   });
 

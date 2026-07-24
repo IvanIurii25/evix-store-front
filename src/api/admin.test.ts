@@ -81,7 +81,9 @@ describe('admin api', () => {
     it('listProducts falls back to the default message when envelope is bare', async () => {
       stubOnce(jsonResponse({}, 500));
       const { listProducts } = await load();
-      await expect(listProducts()).rejects.toThrow('Не удалось загрузить товары');
+      await expect(listProducts()).rejects.toThrow(
+        'Не удалось загрузить товары',
+      );
     });
 
     it('getProduct hits the path route and returns the product', async () => {
@@ -129,7 +131,9 @@ describe('admin api', () => {
     it('updateProduct throws on error', async () => {
       stubOnce(envelope('save failed'));
       const { updateProduct } = await load();
-      await expect(updateProduct(3, {} as never)).rejects.toThrow('save failed');
+      await expect(updateProduct(3, {} as never)).rejects.toThrow(
+        'save failed',
+      );
     });
 
     it('deleteProduct DELETEs and resolves void on success', async () => {
@@ -161,9 +165,9 @@ describe('admin api', () => {
     it('setProductTranslation throws on error', async () => {
       stubOnce(envelope('bad translation'));
       const { setProductTranslation } = await load();
-      await expect(
-        setProductTranslation(4, {} as never),
-      ).rejects.toThrow('bad translation');
+      await expect(setProductTranslation(4, {} as never)).rejects.toThrow(
+        'bad translation',
+      );
     });
 
     it('uploadProductMedia posts multipart form data', async () => {
@@ -182,7 +186,9 @@ describe('admin api', () => {
       stubOnce(envelope('upload failed'));
       const { uploadProductMedia } = await load();
       const file = new File(['x'], 'p.jpg');
-      await expect(uploadProductMedia(2, file)).rejects.toThrow('upload failed');
+      await expect(uploadProductMedia(2, file)).rejects.toThrow(
+        'upload failed',
+      );
     });
 
     it('deleteProductMedia DELETEs the nested media route', async () => {
@@ -217,7 +223,9 @@ describe('admin api', () => {
     it('reorderProductMedia throws on error', async () => {
       stubOnce(envelope('reorder failed'));
       const { reorderProductMedia } = await load();
-      await expect(reorderProductMedia(2, [1])).rejects.toThrow('reorder failed');
+      await expect(reorderProductMedia(2, [1])).rejects.toThrow(
+        'reorder failed',
+      );
     });
   });
 
@@ -309,10 +317,20 @@ describe('admin api', () => {
   describe('orders', () => {
     it('listOrders returns the page object with query params', async () => {
       stubOnce(
-        jsonResponse({ data: [{ number: 'A1' }], total: 1, page: 1, page_size: 20 }),
+        jsonResponse({
+          data: [{ number: 'A1' }],
+          total: 1,
+          page: 1,
+          page_size: 20,
+        }),
       );
       const { listOrders } = await load();
-      const res = await listOrders({ status: 'paid', q: 'x', page: 1, page_size: 20 });
+      const res = await listOrders({
+        status: 'paid',
+        q: 'x',
+        page: 1,
+        page_size: 20,
+      });
       expect(res.total).toBe(1);
       const req = lastRequest();
       expect(req.url).toContain('status=paid');
@@ -392,7 +410,10 @@ describe('admin api', () => {
     it('dashboardSummary sends the date range and returns data', async () => {
       stubOnce(jsonResponse({ revenue: '100' }));
       const { dashboardSummary } = await load();
-      const res = await dashboardSummary({ date_from: '2026-01-01', date_to: '2026-02-01' });
+      const res = await dashboardSummary({
+        date_from: '2026-01-01',
+        date_to: '2026-02-01',
+      });
       expect(res).toEqual({ revenue: '100' });
       const req = lastRequest();
       expect(req.url).toContain('date_from=2026-01-01');
@@ -409,7 +430,9 @@ describe('admin api', () => {
       stubOnce(jsonResponse({ points: [] }));
       const { revenueSeries } = await load();
       await expect(revenueSeries()).resolves.toEqual({ points: [] });
-      expect(lastRequest().url).toContain('/api/v1/admin/dashboard/revenue-series');
+      expect(lastRequest().url).toContain(
+        '/api/v1/admin/dashboard/revenue-series',
+      );
     });
 
     it('revenueSeries throws on error', async () => {
@@ -435,7 +458,9 @@ describe('admin api', () => {
       stubOnce(jsonResponse({ points: [] }));
       const { trafficSeries } = await load();
       await expect(trafficSeries()).resolves.toEqual({ points: [] });
-      expect(lastRequest().url).toContain('/api/v1/admin/analytics/traffic-series');
+      expect(lastRequest().url).toContain(
+        '/api/v1/admin/analytics/traffic-series',
+      );
     });
 
     it('trafficSeries throws on error', async () => {
@@ -559,13 +584,17 @@ describe('admin api', () => {
     it('createContentPage throws on error', async () => {
       stubOnce(envelope('page create'));
       const { createContentPage } = await load();
-      await expect(createContentPage({} as never)).rejects.toThrow('page create');
+      await expect(createContentPage({} as never)).rejects.toThrow(
+        'page create',
+      );
     });
 
     it('updateContentPage PUTs by id', async () => {
       stubOnce(jsonResponse({ id: 4 }));
       const { updateContentPage } = await load();
-      await expect(updateContentPage(4, {} as never)).resolves.toEqual({ id: 4 });
+      await expect(updateContentPage(4, {} as never)).resolves.toEqual({
+        id: 4,
+      });
       const req = lastRequest();
       expect(req.method).toBe('PUT');
       expect(req.url).toBe(`${BASE}/api/v1/admin/content-pages/4`);
@@ -574,7 +603,9 @@ describe('admin api', () => {
     it('updateContentPage throws on error', async () => {
       stubOnce(envelope('page save'));
       const { updateContentPage } = await load();
-      await expect(updateContentPage(4, {} as never)).rejects.toThrow('page save');
+      await expect(updateContentPage(4, {} as never)).rejects.toThrow(
+        'page save',
+      );
     });
 
     it('deleteContentPage DELETEs by id', async () => {

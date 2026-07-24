@@ -14,7 +14,9 @@ describe('ProductGallery', () => {
     const w = mount(ProductGallery, { props: { images: imgs, alt: 'Alt' } });
     expect(w.find('.aspect-square img').attributes('src')).toBe(imgs[0].url);
     expect(w.find('.aspect-square img').attributes('alt')).toBe('Alt');
-    expect(w.find('.aspect-square source').attributes('srcset')).toContain('.webp');
+    expect(w.find('.aspect-square source').attributes('srcset')).toContain(
+      '.webp',
+    );
   });
 
   it('renders a thumbnail button per image when there is more than one', () => {
@@ -32,7 +34,9 @@ describe('ProductGallery', () => {
   });
 
   it('hides the thumbnail strip for a single image', () => {
-    const w = mount(ProductGallery, { props: { images: [imgs[0]], alt: 'Alt' } });
+    const w = mount(ProductGallery, {
+      props: { images: [imgs[0]], alt: 'Alt' },
+    });
     expect(w.findAll('button')).toHaveLength(0);
   });
 

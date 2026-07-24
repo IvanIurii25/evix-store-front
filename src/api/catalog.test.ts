@@ -136,7 +136,9 @@ describe('catalog api', () => {
   it('listAllProducts throws on error', async () => {
     stubOnce(envelope());
     const { listAllProducts } = await load();
-    await expect(listAllProducts('ru')).rejects.toThrow('listAllProducts failed');
+    await expect(listAllProducts('ru')).rejects.toThrow(
+      'listAllProducts failed',
+    );
   });
 
   it('getFacets returns facets on success', async () => {

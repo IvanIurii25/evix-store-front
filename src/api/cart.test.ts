@@ -39,7 +39,9 @@ describe('cart api', () => {
   });
 
   it('getCart returns the cart and sends lang + credentials', async () => {
-    stubOnce(jsonResponse({ items: [{ id: 1 }], subtotal: '10', item_count: 1 }));
+    stubOnce(
+      jsonResponse({ items: [{ id: 1 }], subtotal: '10', item_count: 1 }),
+    );
     const { getCart } = await load();
     const res = await getCart('ru');
     expect(res).toEqual({ items: [{ id: 1 }], subtotal: '10', item_count: 1 });

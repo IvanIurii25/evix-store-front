@@ -63,7 +63,9 @@ describe('Cart', () => {
     expect(wrapper.text()).toContain('Видеорегистратор');
     expect(wrapper.text()).toContain('2'); // qty
     // Checkout CTA link uses the locale path.
-    const cta = wrapper.findAll('a').find((a) => a.attributes('href') === '/ro/checkout');
+    const cta = wrapper
+      .findAll('a')
+      .find((a) => a.attributes('href') === '/ro/checkout');
     expect(cta).toBeTruthy();
   });
 
@@ -84,7 +86,9 @@ describe('Cart', () => {
 
   it('removes the item when decrementing below 1', async () => {
     const single = {
-      items: [{ product_id: 7, name: 'X', price: '10', qty: 1, line_total: '10' }],
+      items: [
+        { product_id: 7, name: 'X', price: '10', qty: 1, line_total: '10' },
+      ],
       subtotal: '10',
       item_count: 1,
     };

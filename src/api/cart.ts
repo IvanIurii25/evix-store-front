@@ -29,7 +29,11 @@ export async function addToCart(productId: number, qty: number, lang?: string) {
   return data;
 }
 
-export async function updateItem(productId: number, qty: number, lang?: string) {
+export async function updateItem(
+  productId: number,
+  qty: number,
+  lang?: string,
+) {
   await api.PATCH('/api/v1/cart/items/{product_id}', {
     params: { path: { product_id: productId }, query: { lang } },
     body: { qty },

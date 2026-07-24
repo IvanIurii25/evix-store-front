@@ -37,7 +37,7 @@ describe('api client', () => {
 
     expect(error).toBeUndefined();
     expect(data).toEqual({ ok: true });
-    const req = fetchMock.mock.calls[0][0] as Request;
+    const req = (fetchMock.mock.calls[0] as unknown[])[0] as Request;
     expect(req.url).toBe(`${BASE}/api/v1/site/seo`);
     expect(req.method).toBe('GET');
   });
@@ -56,15 +56,16 @@ describe('api client', () => {
   });
 
   it('yields no data for an empty (204) body', async () => {
-    const fetchMock = vi.fn(
-      async () => new Response(null, { status: 204 }),
-    );
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
     vi.stubGlobal('fetch', fetchMock);
     const { api } = await loadClient();
 
-    const { data, error } = await api.POST('/api/v1/auth/logout' as never, {
-      credentials: 'include',
-    } as never);
+    const { data, error } = await api.POST(
+      '/api/v1/auth/logout' as never,
+      {
+        credentials: 'include',
+      } as never,
+    );
 
     expect(error).toBeUndefined();
     expect(data).toBeUndefined();

@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import type { APIContext } from 'astro';
 
-import { GET } from './robots.txt.ts';
+import { GET } from '../robots.txt.ts';
 
 function context(site: URL | undefined): APIContext {
   return {

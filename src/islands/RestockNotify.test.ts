@@ -119,7 +119,9 @@ describe('RestockNotify', () => {
     // guest state -> click sends to login
     await w.find('button').trigger('click');
     expect(window.location.href).toContain('/ru/auth?next=');
-    expect(decodeURIComponent(window.location.href)).toContain('/ru/p/slug?notify=1');
+    expect(decodeURIComponent(window.location.href)).toContain(
+      '/ru/p/slug?notify=1',
+    );
   });
 
   it('auto-subscribes and cleans the intent flag after login redirect', async () => {

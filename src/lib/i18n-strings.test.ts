@@ -15,7 +15,7 @@ import { LANGS, type Lang } from './i18n';
 // to distinct, non-empty maps with the full key set — hitting every selector
 // for ru + ro without asserting every literal string.
 
-function assertNonEmptyStrings(obj: Record<string, unknown>): void {
+function assertNonEmptyStrings<T extends object>(obj: T): void {
   const values = Object.values(obj);
   expect(values.length).toBeGreaterThan(0);
   for (const v of values) {

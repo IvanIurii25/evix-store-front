@@ -48,7 +48,9 @@ describe('LogoutButton', () => {
 
   it('disables the button and shows a spinner while logging out', async () => {
     let resolve!: () => void;
-    mockLogout.mockReturnValue(new Promise<void>((r) => (resolve = r)) as never);
+    mockLogout.mockReturnValue(
+      new Promise<void>((r) => (resolve = r)) as never,
+    );
     const w = mount(LogoutButton, { props: { lang: 'ro' } });
     await w.find('button').trigger('click');
     expect(w.find('button').attributes('disabled')).toBeDefined();
@@ -66,7 +68,10 @@ describe('LogoutButton', () => {
     process.on('unhandledRejection', onRej);
     mockLogout.mockRejectedValue(new Error('network'));
     const w = mount(LogoutButton, { props: { lang: 'ro' } });
-    await w.find('button').trigger('click').catch(() => {});
+    await w
+      .find('button')
+      .trigger('click')
+      .catch(() => {});
     await flushPromises();
     await new Promise((r) => setTimeout(r, 0)); // let the microtask reject
     process.off('unhandledRejection', onRej);

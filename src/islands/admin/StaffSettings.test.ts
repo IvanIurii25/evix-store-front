@@ -213,7 +213,9 @@ describe('StaffSettings', () => {
     // load() called twice: onMounted + after create.
     expect(mockList).toHaveBeenCalledTimes(2);
     // Fields cleared.
-    expect((w.find('input[type="email"]').element as HTMLInputElement).value).toBe('');
+    expect(
+      (w.find('input[type="email"]').element as HTMLInputElement).value,
+    ).toBe('');
   });
 
   it('sends a trimmed phone when provided', async () => {

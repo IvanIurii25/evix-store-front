@@ -42,7 +42,10 @@ export type ContentPageDetail = components['schemas']['ContentPageDetail'];
 
 // Published footer pages change rarely — cache per-lang like the SEO defaults so
 // the footer (rendered on every SSR page) hits the API at most once per window.
-const footerCache = new Map<string, { value: ContentPageListItem[]; expiresAt: number }>();
+const footerCache = new Map<
+  string,
+  { value: ContentPageListItem[]; expiresAt: number }
+>();
 
 // Published, footer-visible pages for the given language (for the site footer).
 // Returns [] on any failure so the footer degrades to its static links.
@@ -92,10 +95,14 @@ export interface ResolvedMeta {
 // page's own overrides. A page title gets the configured suffix ("Товар — evix");
 // the homepage (no title) uses the site title as-is. Bare fallbacks keep meta
 // well-formed when the defaults are unset.
-export function resolveSeoMeta(seo: SeoDefaults, input: MetaInput): ResolvedMeta {
+export function resolveSeoMeta(
+  seo: SeoDefaults,
+  input: MetaInput,
+): ResolvedMeta {
   const langKey = input.lang === 'ru' ? 'ru' : 'ro';
   const siteTitle = seo[`title_${langKey}`] || 'evix-store';
-  const siteDescription = seo[`description_${langKey}`] || 'evix-store storefront';
+  const siteDescription =
+    seo[`description_${langKey}`] || 'evix-store storefront';
   return {
     title: input.title ? `${input.title}${seo.title_suffix}` : siteTitle,
     description: input.description || siteDescription,

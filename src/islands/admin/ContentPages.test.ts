@@ -23,7 +23,12 @@ function page(over: Record<string, unknown> = {}) {
     show_in_footer: true,
     position: 3,
     translations: [
-      { lang: 'ru', title: 'Доставка', body: '# Тело', seo_description: 'seo-ru' },
+      {
+        lang: 'ru',
+        title: 'Доставка',
+        body: '# Тело',
+        seo_description: 'seo-ru',
+      },
       { lang: 'ro', title: 'Livrare', body: 'Corp', seo_description: null },
     ],
     created_at: '2026-01-01T00:00:00Z',
@@ -95,7 +100,10 @@ describe('ContentPages', () => {
     const body = createContentPage.mock.calls[0][0];
     expect(body.slug).toBe('returns');
     expect(body.translations).toHaveLength(2);
-    expect(body.translations[0]).toMatchObject({ lang: 'ru', title: 'Возвраты' });
+    expect(body.translations[0]).toMatchObject({
+      lang: 'ru',
+      title: 'Возвраты',
+    });
     // seo_description empty -> null
     expect(body.translations[0].seo_description).toBeNull();
     expect(updateContentPage).not.toHaveBeenCalled();

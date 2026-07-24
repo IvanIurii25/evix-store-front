@@ -104,15 +104,18 @@ describe('organizationJsonLd', () => {
 });
 
 describe('websiteJsonLd', () => {
-  it.each(LANGS)('builds a SearchAction with un-encoded placeholder for %s', (lang: Lang) => {
-    const ld = websiteJsonLd(ORIGIN, lang);
-    expect(ld['@type']).toBe('WebSite');
-    expect(ld.inLanguage).toBe(lang);
-    const action = ld.potentialAction as Record<string, unknown>;
-    const target = action.target as Record<string, unknown>;
-    expect(target.urlTemplate).toBe(
-      `${ORIGIN}/${lang}/search?q={search_term_string}`,
-    );
-    expect(action['query-input']).toBe('required name=search_term_string');
-  });
+  it.each(LANGS)(
+    'builds a SearchAction with un-encoded placeholder for %s',
+    (lang: Lang) => {
+      const ld = websiteJsonLd(ORIGIN, lang);
+      expect(ld['@type']).toBe('WebSite');
+      expect(ld.inLanguage).toBe(lang);
+      const action = ld.potentialAction as Record<string, unknown>;
+      const target = action.target as Record<string, unknown>;
+      expect(target.urlTemplate).toBe(
+        `${ORIGIN}/${lang}/search?q={search_term_string}`,
+      );
+      expect(action['query-input']).toBe('required name=search_term_string');
+    },
+  );
 });

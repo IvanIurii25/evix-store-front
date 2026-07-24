@@ -67,7 +67,11 @@ describe('SearchBox', () => {
 
   it('debounces then queries and renders up to 6 results', async () => {
     mockSearch.mockResolvedValue(
-      response(Array.from({ length: 8 }, (_, i) => hit({ product_id: i, slug: `s${i}` }))),
+      response(
+        Array.from({ length: 8 }, (_, i) =>
+          hit({ product_id: i, slug: `s${i}` }),
+        ),
+      ),
     );
     const w = mount(SearchBox, { props });
     await w.find('input').setValue('reg');
@@ -192,7 +196,9 @@ describe('SearchBox', () => {
 
     // clicking inside the form keeps it open
     await w.find('input').trigger('focus');
-    (w.element as HTMLElement).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    (w.element as HTMLElement).dispatchEvent(
+      new MouseEvent('click', { bubbles: true }),
+    );
     w.unmount();
     expect(removeSpy).toHaveBeenCalled();
   });

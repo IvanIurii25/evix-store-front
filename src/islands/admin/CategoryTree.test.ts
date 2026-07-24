@@ -32,7 +32,13 @@ function cat(over: Record<string, unknown> = {}) {
     position: 0,
     is_active: true,
     translations: [
-      { lang: 'ru', name: 'Корень', slug: 'root', seo_title: 'st', seo_description: 'sd' },
+      {
+        lang: 'ru',
+        name: 'Корень',
+        slug: 'root',
+        seo_title: 'st',
+        seo_description: 'sd',
+      },
       { lang: 'ro', name: 'Radacina', slug: 'radacina' },
     ],
     ...over,
@@ -42,7 +48,11 @@ function cat(over: Record<string, unknown> = {}) {
 // A parent (id 1) + child (id 2) + a second root (id 3) to exercise tree depth/order.
 function forest() {
   return [
-    cat({ id: 3, position: 5, translations: [{ lang: 'ru', name: 'Второй', slug: 'vtoroj' }] }),
+    cat({
+      id: 3,
+      position: 5,
+      translations: [{ lang: 'ru', name: 'Второй', slug: 'vtoroj' }],
+    }),
     cat({ id: 1, position: 1 }),
     cat({
       id: 2,
@@ -346,7 +356,8 @@ describe('CategoryTree — edit panel', () => {
     mList.mockResolvedValue([cat()]);
     const w = mount(CategoryTree);
     await flushPromises();
-    const nameBtn = () => w.findAll('ul button').find((b) => b.text() === 'Корень');
+    const nameBtn = () =>
+      w.findAll('ul button').find((b) => b.text() === 'Корень');
     await nameBtn()!.trigger('click');
     await nextTick();
     // ru name prefilled
@@ -449,7 +460,10 @@ describe('CategoryTree — edit panel', () => {
       .find((b) => b.text() === 'Сохранить румынский');
     await saveBtn!.trigger('click');
     await flushPromises();
-    expect(mSetTr).toHaveBeenCalledWith(1, expect.objectContaining({ lang: 'ro' }));
+    expect(mSetTr).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ lang: 'ro' }),
+    );
     expect(w.text()).toContain('Румынский перевод сохранён');
   });
 
@@ -478,7 +492,10 @@ describe('CategoryTree — edit panel', () => {
 
   it('uses the first translation name when ru is absent', async () => {
     mList.mockResolvedValue([
-      cat({ id: 4, translations: [{ lang: 'ro', name: 'DoarRo', slug: 'doar-ro' }] }),
+      cat({
+        id: 4,
+        translations: [{ lang: 'ro', name: 'DoarRo', slug: 'doar-ro' }],
+      }),
     ]);
     const w = mount(CategoryTree);
     await flushPromises();

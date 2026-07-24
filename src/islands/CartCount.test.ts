@@ -56,12 +56,20 @@ describe('CartCount', () => {
   });
 
   it('refreshes when a cart:changed event fires', async () => {
-    mockGetCart.mockResolvedValueOnce({ items: [], subtotal: '0', item_count: 1 });
+    mockGetCart.mockResolvedValueOnce({
+      items: [],
+      subtotal: '0',
+      item_count: 1,
+    });
     const w = make();
     await flushPromises();
     expect(w.find('span').text()).toBe('1');
 
-    mockGetCart.mockResolvedValueOnce({ items: [], subtotal: '0', item_count: 5 });
+    mockGetCart.mockResolvedValueOnce({
+      items: [],
+      subtotal: '0',
+      item_count: 5,
+    });
     window.dispatchEvent(new Event(CART_CHANGED));
     await flushPromises();
     expect(w.find('span').text()).toBe('5');

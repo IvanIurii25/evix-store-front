@@ -19,7 +19,11 @@ const QUOTE = {
   item_count: 2,
 };
 
-const QUOTE_COURIER = { ...QUOTE, delivery_cost: '50', delivery_type: 'courier' };
+const QUOTE_COURIER = {
+  ...QUOTE,
+  delivery_cost: '50',
+  delivery_type: 'courier',
+};
 
 let hrefStore = '';
 beforeEach(() => {
@@ -110,7 +114,11 @@ describe('CheckoutForm', () => {
     // Courier address inputs are the ones after email(0)/phone(1).
     const addrInputs = wrapper.findAll('input').filter((i) => {
       const ph = i.attributes('placeholder');
-      return ph === 'Имя получателя' || ph === 'Город' || ph === 'Улица, дом, квартира';
+      return (
+        ph === 'Имя получателя' ||
+        ph === 'Город' ||
+        ph === 'Улица, дом, квартира'
+      );
     });
     await addrInputs[0].setValue('Иван'); // name
     await addrInputs[1].setValue('Кишинёв'); // city
@@ -119,7 +127,12 @@ describe('CheckoutForm', () => {
 
     expect(quote).toHaveBeenLastCalledWith(
       'courier',
-      { full_name: 'Иван', city: 'Кишинёв', street: 'ул. Пушкина 1', zip: null },
+      {
+        full_name: 'Иван',
+        city: 'Кишинёв',
+        street: 'ул. Пушкина 1',
+        zip: null,
+      },
       'ru',
     );
   });

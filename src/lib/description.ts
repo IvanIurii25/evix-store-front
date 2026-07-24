@@ -25,14 +25,17 @@ const MEDIA_IMG =
 
 function toPicture(tag: string, src: string): string {
   let img = tag;
-  if (!/\bloading\s*=/i.test(img)) img = img.replace(/<img\b/i, '<img loading="lazy"');
+  if (!/\bloading\s*=/i.test(img))
+    img = img.replace(/<img\b/i, '<img loading="lazy"');
   if (!/\bdecoding\s*=/i.test(img))
     img = img.replace(/<img\b/i, '<img decoding="async"');
   const srcset = webpSrcset(src);
   return `<picture><source type="image/webp" srcset="${srcset}" sizes="(min-width: 768px) 768px, 100vw">${img}</picture>`;
 }
 
-export function optimizeDescriptionHtml(html: string | null | undefined): string {
+export function optimizeDescriptionHtml(
+  html: string | null | undefined,
+): string {
   if (!html) return '';
   return sanitize(html).replace(MEDIA_IMG, (tag, src) => toPicture(tag, src));
 }

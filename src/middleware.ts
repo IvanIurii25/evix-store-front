@@ -53,7 +53,11 @@ function isTrackablePath(pathname: string): boolean {
 // loopback keeps the healthcheck from minting a fresh cookieless session (and a
 // phantom "unique") on every probe, without writing any bot rows.
 function isLoopback(address: string | undefined): boolean {
-  return address === '::1' || address === '127.0.0.1' || address === '::ffff:127.0.0.1';
+  return (
+    address === '::1' ||
+    address === '127.0.0.1' ||
+    address === '::ffff:127.0.0.1'
+  );
 }
 
 const analytics: MiddlewareHandler = async (context, next) => {

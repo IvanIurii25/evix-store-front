@@ -107,21 +107,33 @@ describe('OrderDetail', () => {
     expect(btns.find((b) => b.text() === 'Отменён')).toBeTruthy();
 
     transitionOrder.mockResolvedValueOnce(order({ status: 'confirmed' }));
-    await wrapper.findAll('button').find((b) => b.text() === 'Подтверждён')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Подтверждён')!
+      .trigger('click');
     await flushPromises();
 
-    expect(transitionOrder).toHaveBeenCalledWith('ORD-1', { to_status: 'confirmed' });
+    expect(transitionOrder).toHaveBeenCalledWith('ORD-1', {
+      to_status: 'confirmed',
+    });
     expect(wrapper.text()).toContain('Статус изменён: Подтверждён');
     // new payment transition button appears (pending -> paid) still present
-    expect(wrapper.findAll('button').find((b) => b.text() === 'Оплачен')).toBeTruthy();
+    expect(
+      wrapper.findAll('button').find((b) => b.text() === 'Оплачен'),
+    ).toBeTruthy();
   });
 
   it('applies a payment transition (pending -> paid)', async () => {
     const wrapper = await mounted(order());
     transitionOrder.mockResolvedValueOnce(order({ payment_status: 'paid' }));
-    await wrapper.findAll('button').find((b) => b.text() === 'Оплачен')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Оплачен')!
+      .trigger('click');
     await flushPromises();
-    expect(transitionOrder).toHaveBeenCalledWith('ORD-1', { to_payment_status: 'paid' });
+    expect(transitionOrder).toHaveBeenCalledWith('ORD-1', {
+      to_payment_status: 'paid',
+    });
     expect(wrapper.text()).toContain('Оплата изменена: Оплачен');
   });
 
@@ -129,12 +141,18 @@ describe('OrderDetail', () => {
     const wrapper = await mounted(order());
 
     transitionOrder.mockRejectedValueOnce(new Error('illegal'));
-    await wrapper.findAll('button').find((b) => b.text() === 'Подтверждён')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Подтверждён')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('illegal');
 
     transitionOrder.mockRejectedValueOnce('boom');
-    await wrapper.findAll('button').find((b) => b.text() === 'Подтверждён')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Подтверждён')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('Не удалось выполнить переход');
   });
@@ -142,7 +160,10 @@ describe('OrderDetail', () => {
   it('auto-dismisses the toast after the timeout', async () => {
     const wrapper = await mounted(order());
     transitionOrder.mockResolvedValueOnce(order({ status: 'confirmed' }));
-    await wrapper.findAll('button').find((b) => b.text() === 'Подтверждён')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Подтверждён')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('Статус изменён');
 
@@ -158,7 +179,8 @@ describe('OrderDetail', () => {
     expect(wrapper.text()).toContain('Выполнен');
     expect(wrapper.text()).toContain('Возврат');
     // both status and payment panels show the terminal note
-    const notes = wrapper.text().match(/Финальный статус — переходов нет\./g) ?? [];
+    const notes =
+      wrapper.text().match(/Финальный статус — переходов нет\./g) ?? [];
     expect(notes.length).toBe(2);
   });
 
@@ -176,7 +198,9 @@ describe('OrderDetail', () => {
     const wrapper = await mounted(order());
     let resolve!: (v: unknown) => void;
     transitionOrder.mockReturnValueOnce(new Promise((r) => (resolve = r)));
-    const btn = wrapper.findAll('button').find((b) => b.text() === 'Подтверждён')!;
+    const btn = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Подтверждён')!;
     await btn.trigger('click');
     await btn.trigger('click'); // second click short-circuits on busy
     resolve(order({ status: 'confirmed' }));

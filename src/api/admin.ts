@@ -401,10 +401,13 @@ export async function listContentPages(): Promise<ContentPageAdminOut[]> {
 export async function getContentPageAdmin(
   id: number,
 ): Promise<ContentPageAdminOut> {
-  const { data, error } = await api.GET('/api/v1/admin/content-pages/{page_id}', {
-    params: { path: { page_id: id } },
-    ...CREDS,
-  });
+  const { data, error } = await api.GET(
+    '/api/v1/admin/content-pages/{page_id}',
+    {
+      params: { path: { page_id: id } },
+      ...CREDS,
+    },
+  );
   if (error) fail(error, 'Не удалось загрузить страницу');
   return data;
 }
@@ -424,11 +427,14 @@ export async function updateContentPage(
   id: number,
   body: ContentPageUpdate,
 ): Promise<ContentPageAdminOut> {
-  const { data, error } = await api.PUT('/api/v1/admin/content-pages/{page_id}', {
-    params: { path: { page_id: id } },
-    body,
-    ...CREDS,
-  });
+  const { data, error } = await api.PUT(
+    '/api/v1/admin/content-pages/{page_id}',
+    {
+      params: { path: { page_id: id } },
+      body,
+      ...CREDS,
+    },
+  );
   if (error) fail(error, 'Не удалось сохранить страницу');
   return data;
 }

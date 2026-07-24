@@ -88,12 +88,18 @@ describe('Promotions', () => {
   // --- inline edit -----------------------------------------------------------
   it('edits a sale: validates zero prices, then price>=old, then saves', async () => {
     const wrapper = await mounted([item()]);
-    await wrapper.findAll('button').find((b) => b.text() === 'Изменить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Изменить')!
+      .trigger('click');
 
     const numberInputs = wrapper.findAll('input[type="number"]');
     // clear price to trigger the >0 guard
     await numberInputs[1].setValue('0');
-    await wrapper.findAll('button').find((b) => b.text() === 'Сохранить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Сохранить')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('Цены должны быть больше нуля');
     expect(updateProduct).not.toHaveBeenCalled();
@@ -101,44 +107,72 @@ describe('Promotions', () => {
     // price >= old_price
     await numberInputs[0].setValue('60'); // old
     await numberInputs[1].setValue('90'); // price
-    await wrapper.findAll('button').find((b) => b.text() === 'Сохранить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Сохранить')!
+      .trigger('click');
     await flushPromises();
-    expect(wrapper.text()).toContain('Цена акции должна быть меньше старой цены');
+    expect(wrapper.text()).toContain(
+      'Цена акции должна быть меньше старой цены',
+    );
     expect(updateProduct).not.toHaveBeenCalled();
 
     // valid save
-    listProducts.mockResolvedValueOnce([item({ price: '70', old_price: '120' })]);
+    listProducts.mockResolvedValueOnce([
+      item({ price: '70', old_price: '120' }),
+    ]);
     updateProduct.mockResolvedValueOnce({});
     await numberInputs[0].setValue('120');
     await numberInputs[1].setValue('70');
-    await wrapper.findAll('button').find((b) => b.text() === 'Сохранить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Сохранить')!
+      .trigger('click');
     await flushPromises();
-    expect(updateProduct).toHaveBeenCalledWith(1, { price: 70, old_price: 120 });
+    expect(updateProduct).toHaveBeenCalledWith(1, {
+      price: 70,
+      old_price: 120,
+    });
   });
 
   it('surfaces a save error and its non-Error fallback', async () => {
     const wrapper = await mounted([item()]);
-    await wrapper.findAll('button').find((b) => b.text() === 'Изменить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Изменить')!
+      .trigger('click');
     const numberInputs = wrapper.findAll('input[type="number"]');
     await numberInputs[0].setValue('120');
     await numberInputs[1].setValue('70');
 
     updateProduct.mockRejectedValueOnce(new Error('save-fail'));
-    await wrapper.findAll('button').find((b) => b.text() === 'Сохранить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Сохранить')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('save-fail');
 
     updateProduct.mockRejectedValueOnce('x');
-    await wrapper.findAll('button').find((b) => b.text() === 'Сохранить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Сохранить')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('Не удалось сохранить');
   });
 
   it('cancels an inline edit', async () => {
     const wrapper = await mounted([item()]);
-    await wrapper.findAll('button').find((b) => b.text() === 'Изменить')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Изменить')!
+      .trigger('click');
     expect(wrapper.findAll('input[type="number"]').length).toBeGreaterThan(0);
-    await wrapper.findAll('button').find((b) => b.text() === 'Отмена')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Отмена')!
+      .trigger('click');
     expect(wrapper.findAll('input[type="number"]')).toHaveLength(0);
   });
 
@@ -148,7 +182,10 @@ describe('Promotions', () => {
     const wrapper = await mounted([item()]);
     listProducts.mockResolvedValueOnce([]);
     updateProduct.mockResolvedValueOnce({});
-    await wrapper.findAll('button').find((b) => b.text() === 'Снять акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Снять акцию')!
+      .trigger('click');
     await flushPromises();
     expect(updateProduct).toHaveBeenCalledWith(1, { old_price: null });
   });
@@ -156,7 +193,10 @@ describe('Promotions', () => {
   it('does nothing when the remove confirm is declined', async () => {
     window.confirm = vi.fn(() => false);
     const wrapper = await mounted([item({ name: '', code: 'C9' })]);
-    await wrapper.findAll('button').find((b) => b.text() === 'Снять акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Снять акцию')!
+      .trigger('click');
     await flushPromises();
     expect(updateProduct).not.toHaveBeenCalled();
   });
@@ -168,14 +208,20 @@ describe('Promotions', () => {
     const wrapper = await mounted([item()]);
 
     updateProduct.mockRejectedValueOnce(new Error('rm-fail'));
-    await wrapper.findAll('button').find((b) => b.text() === 'Снять акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Снять акцию')!
+      .trigger('click');
     await flushPromises();
     expect(updateProduct).toHaveBeenCalledTimes(1);
     // list still shows the row (refresh only runs on success)
     expect(wrapper.text()).toContain('Widget');
 
     updateProduct.mockRejectedValueOnce('x');
-    await wrapper.findAll('button').find((b) => b.text() === 'Снять акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Снять акцию')!
+      .trigger('click');
     await flushPromises();
     expect(updateProduct).toHaveBeenCalledTimes(2);
   });
@@ -195,7 +241,9 @@ describe('Promotions', () => {
 
   it('debounces a search then lists candidates', async () => {
     const wrapper = await mounted([]);
-    listProducts.mockResolvedValueOnce([item({ id: 5, code: 'S5', name: 'Found' })]);
+    listProducts.mockResolvedValueOnce([
+      item({ id: 5, code: 'S5', name: 'Found' }),
+    ]);
     const box = wrapper.find('input[type="search"]');
     await box.setValue('found');
     await box.trigger('input');
@@ -246,30 +294,46 @@ describe('Promotions', () => {
     vi.advanceTimersByTime(300);
     await flushPromises();
 
-    await wrapper.findAll('button').find((b) => b.text() === 'В акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'В акцию')!
+      .trigger('click');
     // candidate form appears, name blank -> placeholder
     expect(wrapper.text()).toContain('— без названия —');
 
     const priceInput = wrapper.find('input[type="number"]');
     // invalid: <= 0
     await priceInput.setValue('0');
-    await wrapper.findAll('button').find((b) => b.text() === 'Запустить акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Запустить акцию')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('Введите цену акции больше нуля');
     expect(updateProduct).not.toHaveBeenCalled();
 
     // invalid: >= current
     await priceInput.setValue('250');
-    await wrapper.findAll('button').find((b) => b.text() === 'Запустить акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Запустить акцию')!
+      .trigger('click');
     await flushPromises();
-    expect(wrapper.text()).toContain('Цена акции должна быть меньше текущей цены');
+    expect(wrapper.text()).toContain(
+      'Цена акции должна быть меньше текущей цены',
+    );
 
     // valid -> preview badge then save
     await priceInput.setValue('150');
     expect(wrapper.text()).toContain('-25%'); // previewDiscount 200->150
-    listProducts.mockResolvedValueOnce([item({ id: 9, price: '150', old_price: '200' })]);
+    listProducts.mockResolvedValueOnce([
+      item({ id: 9, price: '150', old_price: '200' }),
+    ]);
     updateProduct.mockResolvedValueOnce({});
-    await wrapper.findAll('button').find((b) => b.text() === 'Запустить акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Запустить акцию')!
+      .trigger('click');
     await flushPromises();
     expect(updateProduct).toHaveBeenCalledWith(9, {
       old_price: '200',
@@ -285,16 +349,25 @@ describe('Promotions', () => {
     await box.trigger('input');
     vi.advanceTimersByTime(300);
     await flushPromises();
-    await wrapper.findAll('button').find((b) => b.text() === 'В акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'В акцию')!
+      .trigger('click');
     await wrapper.find('input[type="number"]').setValue('150');
 
     updateProduct.mockRejectedValueOnce(new Error('add-boom'));
-    await wrapper.findAll('button').find((b) => b.text() === 'Запустить акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Запустить акцию')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('add-boom');
 
     updateProduct.mockRejectedValueOnce('z');
-    await wrapper.findAll('button').find((b) => b.text() === 'Запустить акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Запустить акцию')!
+      .trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('Не удалось добавить');
   });
@@ -307,9 +380,15 @@ describe('Promotions', () => {
     await box.trigger('input');
     vi.advanceTimersByTime(300);
     await flushPromises();
-    await wrapper.findAll('button').find((b) => b.text() === 'В акцию')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'В акцию')!
+      .trigger('click');
     expect(wrapper.find('input[type="number"]').exists()).toBe(true);
-    await wrapper.findAll('button').find((b) => b.text() === 'Отмена')!.trigger('click');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Отмена')!
+      .trigger('click');
     expect(wrapper.find('input[type="number"]').exists()).toBe(false);
   });
 });

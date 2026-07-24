@@ -117,7 +117,9 @@ describe('Analytics', () => {
   it('draws a flat line across the chart for a single-day series', async () => {
     mockSummary.mockResolvedValue(summary());
     mockSeries.mockResolvedValue(
-      series({ data: [{ day: '2026-01-01', pageviews: 100, unique_visitors: 60 }] }),
+      series({
+        data: [{ day: '2026-01-01', pageviews: 100, unique_visitors: 60 }],
+      }),
     );
     const w = mount(Analytics);
     await flushPromises();
