@@ -1,5 +1,7 @@
 # evix-store-front
 
+[![CI](https://github.com/IvanIurii25/evix-store-front/actions/workflows/ci.yml/badge.svg)](https://github.com/IvanIurii25/evix-store-front/actions/workflows/ci.yml)
+
 Storefront for **evix-store** (backend: `store-evix`). **Astro + Vue 3 islands +
 Tailwind v4**, Node SSR adapter. Stage **F0 — skeleton** (no design yet).
 
