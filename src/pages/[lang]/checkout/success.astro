@@ -13,7 +13,9 @@ const t = checkoutStrings(lang);
 
 const url = new URL(Astro.request.url);
 const number = url.searchParams.get('number') ?? '';
-const email = url.searchParams.get('email') ?? '';
+// The contact email comes from a short-lived cookie set by the checkout form,
+// not the URL, so it is never left in browser history / logs (LP195/2024).
+const email = Astro.cookies.get('order_email')?.value ?? '';
 const order = number && email ? await getOrder(number, email) : null;
 const loggedIn = Boolean(Astro.cookies.get('access')?.value);
 ---

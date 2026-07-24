@@ -120,9 +120,14 @@ describe('checkout api', () => {
     const { getOrder } = await load();
     const res = await getOrder('ORD-1', 'a@b.c');
     expect(res).toEqual({ number: 'ORD-1' });
-    const r = req();
-    expect(r.url).toContain('/api/v1/orders/ORD-1');
-    expect(r.url).toContain('email=a%40b.c');
+    // getOrder uses a plain fetch(url, init) (not the openapi client), so read
+    // the call args directly rather than via req().
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe('POST');
+    expect(String(url)).toContain('/api/v1/orders/ORD-1/lookup');
+    // Email is in the body, never the URL (no PII in URLs).
+    expect(String(url)).not.toContain('email');
+    expect(init.body).toBe('{"email":"a@b.c"}');
   });
 
   it('getOrder returns null on error', async () => {

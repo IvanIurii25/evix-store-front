@@ -219,9 +219,10 @@ describe('CheckoutForm', () => {
       },
       'ru',
     );
-    expect(hrefStore).toBe(
-      '/ru/checkout/success?number=A-100&email=buyer%40example.com',
-    );
+    // No PII in the URL: the email is passed via a short-lived cookie, not the
+    // success URL (LP195/2024).
+    expect(hrefStore).toBe('/ru/checkout/success?number=A-100');
+    expect(document.cookie).toContain('order_email=buyer%40example.com');
   });
 
   it('surfaces the checkout Error message on failure', async () => {
@@ -327,9 +328,7 @@ describe('CheckoutForm', () => {
   });
 
   it('checks out with delivery_address_id when a saved address is used', async () => {
-    quote
-      .mockResolvedValueOnce(QUOTE)
-      .mockResolvedValueOnce(QUOTE_COURIER);
+    quote.mockResolvedValueOnce(QUOTE).mockResolvedValueOnce(QUOTE_COURIER);
     checkout.mockResolvedValue({ number: 'S-9', email: 'buyer@example.com' });
     const wrapper = mount(CheckoutForm, {
       props: { lang: 'ru', isLoggedIn: true, savedAddresses: SAVED },
@@ -376,7 +375,11 @@ describe('CheckoutForm', () => {
 
     const addrInputs = wrapper.findAll('input').filter((i) => {
       const ph = i.attributes('placeholder');
-      return ph === 'Имя получателя' || ph === 'Город' || ph === 'Улица, дом, квартира';
+      return (
+        ph === 'Имя получателя' ||
+        ph === 'Город' ||
+        ph === 'Улица, дом, квартира'
+      );
     });
     expect(addrInputs.length).toBe(3); // inline fields now visible
     await addrInputs[0].setValue('Гость');
@@ -393,9 +396,7 @@ describe('CheckoutForm', () => {
   });
 
   it('shows no picker for a guest and keeps the inline courier flow (regression)', async () => {
-    quote
-      .mockResolvedValueOnce(QUOTE)
-      .mockResolvedValueOnce(null);
+    quote.mockResolvedValueOnce(QUOTE).mockResolvedValueOnce(null);
     const wrapper = mount(CheckoutForm, {
       props: { lang: 'ru', isLoggedIn: false, savedAddresses: SAVED },
     });

@@ -1,4 +1,5 @@
 import { api } from './client';
+import { API_BASE } from '../config/env';
 import type { components } from '../types/api';
 
 export type QuoteOut = components['schemas']['QuoteOut'];
@@ -53,13 +54,26 @@ export async function checkout(
   return data;
 }
 
+// Guest order lookup posts the email in the request body (never the URL) so it
+// is not captured in access logs or browser history (LP195/2024 — no PII in
+// URLs). Not in the generated client types, so a plain fetch is used.
 export async function getOrder(
   number: string,
   email: string,
 ): Promise<OrderOut | null> {
-  const { data, error } = await api.GET('/api/v1/orders/{number}', {
-    params: { path: { number }, query: { email } },
-  });
-  if (error || !data) return null;
-  return data;
+  if (!number || !email) return null;
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/v1/orders/${encodeURIComponent(number)}/lookup`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      },
+    );
+    if (!res.ok) return null;
+    return (await res.json()) as OrderOut;
+  } catch {
+    return null;
+  }
 }

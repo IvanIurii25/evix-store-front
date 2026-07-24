@@ -144,9 +144,13 @@ async function submit() {
       },
       props.lang,
     );
+    // Pass the contact email to the success page via a short-lived cookie, not
+    // the URL, so it isn't left in browser history / logs (LP195/2024 — no PII
+    // in URLs). The success page reads it server-side to fetch the order.
+    document.cookie = `order_email=${encodeURIComponent(email.value)}; Max-Age=600; Path=/; SameSite=Lax`;
     location.href = localePath(
       props.lang,
-      `checkout/success?number=${encodeURIComponent(order.number)}&email=${encodeURIComponent(email.value)}`,
+      `checkout/success?number=${encodeURIComponent(order.number)}`,
     );
   } catch (e) {
     error.value = e instanceof Error ? e.message : t.errGeneric;
