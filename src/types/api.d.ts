@@ -1079,7 +1079,11 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    get?: never;
+    /**
+     * List Attributes
+     * @description Return every attribute with its translations and values (picker source).
+     */
+    get: operations['list_attributes_api_v1_admin_attributes_get'];
     put?: never;
     /**
      * Create Attribute
@@ -4902,6 +4906,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_attributes_api_v1_admin_attributes_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AttributeOut'][];
         };
       };
     };

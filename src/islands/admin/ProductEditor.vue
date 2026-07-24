@@ -7,11 +7,15 @@ import {
   deleteProductMedia,
   getProduct,
   getRestockWaiters,
+  listAttributes,
   listCategories,
   reorderProductMedia,
+  setProductAttributes,
   setProductTranslation,
   updateProduct,
   uploadProductMedia,
+  type AttributeOut,
+  type AttributeValueOut,
   type CategoryOut,
   type ProductOut,
 } from '../../api/admin';
@@ -71,6 +75,29 @@ const media = ref<ProductOut['media']>([]);
 const uploading = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
+// ---- attributes (edit mode) ------------------------------------------------
+const attributes = ref<AttributeOut[]>([]);
+const selectedValueIds = ref<Set<number>>(new Set());
+
+// Ru display name for an attribute, falling back to its code.
+function attributeLabel(attr: AttributeOut): string {
+  const ru = attr.translations?.find((t) => t.lang === 'ru');
+  return ru?.name || attr.code;
+}
+
+// Ru display text for an attribute value, falling back to its id.
+function valueLabel(value: AttributeValueOut): string {
+  const ru = value.translations?.find((t) => t.lang === 'ru');
+  return ru?.value || `#${value.id}`;
+}
+
+function toggleValue(valueId: number) {
+  const next = new Set(selectedValueIds.value);
+  if (next.has(valueId)) next.delete(valueId);
+  else next.add(valueId);
+  selectedValueIds.value = next;
+}
+
 // ---- slug validation -------------------------------------------------------
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 function slugValid(slug: string): boolean {
@@ -96,6 +123,7 @@ function fillFromProduct(p: ProductOut) {
   form.qty = p.qty;
   form.is_active = p.is_active;
   media.value = [...p.media].sort((a, b) => a.position - b.position);
+  selectedValueIds.value = new Set(p.value_ids ?? []);
   for (const lang of ['ru', 'ro'] as Lang[]) {
     const t = p.translations.find((tr) => tr.lang === lang);
     translations[lang] = t
@@ -127,6 +155,12 @@ onMounted(async () => {
         waiters.value = await getRestockWaiters(props.productId as number);
       } catch {
         notFound.value = true;
+      }
+      // Attribute listing is non-fatal: the editor must load even without it.
+      try {
+        attributes.value = await listAttributes();
+      } catch {
+        attributes.value = [];
       }
     }
   } catch (e) {
@@ -190,6 +224,7 @@ async function save() {
           await setProductTranslation(id, translationPayload(lang));
         }
       }
+      await setProductAttributes(id, [...selectedValueIds.value]);
       await reloadProduct();
       success.value = 'Товар сохранён';
     } else {
@@ -547,6 +582,38 @@ const inputCls =
           @change="onUpload"
         />
         <p v-if="uploading" class="mt-2 text-sm text-subtle">Загрузка…</p>
+      </section>
+
+      <!-- Attributes (edit only) -->
+      <section
+        v-if="isEdit"
+        class="rounded-2xl border-2 border-fill bg-white p-6"
+      >
+        <h2 class="text-base font-semibold text-ink">Атрибуты</h2>
+
+        <div v-if="attributes.length" class="mt-4 space-y-4">
+          <div v-for="attr in attributes" :key="attr.id">
+            <p class="text-sm font-medium text-body">
+              {{ attributeLabel(attr) }}
+            </p>
+            <div class="mt-2 flex flex-wrap gap-4">
+              <label
+                v-for="value in attr.values ?? []"
+                :key="value.id"
+                class="flex items-center gap-2 text-sm text-body"
+              >
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-2 border-fill accent-primary"
+                  :checked="selectedValueIds.has(value.id)"
+                  @change="toggleValue(value.id)"
+                />
+                {{ valueLabel(value) }}
+              </label>
+            </div>
+          </div>
+        </div>
+        <p v-else class="mt-4 text-sm text-subtle">Атрибутов пока нет.</p>
       </section>
 
       <!-- Actions -->

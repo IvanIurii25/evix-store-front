@@ -9,8 +9,10 @@ import {
   deleteProductMedia,
   getProduct,
   getRestockWaiters,
+  listAttributes,
   listCategories,
   reorderProductMedia,
+  setProductAttributes,
   setProductTranslation,
   updateProduct,
   uploadProductMedia,
@@ -22,8 +24,10 @@ vi.mock('../../api/admin', () => ({
   deleteProductMedia: vi.fn(),
   getProduct: vi.fn(),
   getRestockWaiters: vi.fn(),
+  listAttributes: vi.fn(),
   listCategories: vi.fn(),
   reorderProductMedia: vi.fn(),
+  setProductAttributes: vi.fn(),
   setProductTranslation: vi.fn(),
   updateProduct: vi.fn(),
   uploadProductMedia: vi.fn(),
@@ -34,8 +38,10 @@ const mDelete = vi.mocked(deleteProduct);
 const mDeleteMedia = vi.mocked(deleteProductMedia);
 const mGet = vi.mocked(getProduct);
 const mWaiters = vi.mocked(getRestockWaiters);
+const mListAttrs = vi.mocked(listAttributes);
 const mListCats = vi.mocked(listCategories);
 const mReorder = vi.mocked(reorderProductMedia);
+const mSetAttrs = vi.mocked(setProductAttributes);
 const mSetTr = vi.mocked(setProductTranslation);
 const mUpdate = vi.mocked(updateProduct);
 const mUpload = vi.mocked(uploadProductMedia);
@@ -52,6 +58,19 @@ function cat(id: number, name = `Cat ${id}`) {
 
 function media(id: number, position: number) {
   return { id, url: `/m/${id}.jpg`, position } as never;
+}
+
+function attr(id: number, code: string, values: [number, string][]) {
+  return {
+    id,
+    code,
+    translations: [{ lang: 'ru', name: `Attr ${id}` }],
+    values: values.map(([vid, text]) => ({
+      id: vid,
+      attribute_id: id,
+      translations: [{ lang: 'ru', value: text }],
+    })),
+  } as never;
 }
 
 function product(over: Record<string, unknown> = {}) {
@@ -107,6 +126,7 @@ beforeEach(() => {
   });
   window.confirm = vi.fn(() => confirmValue);
   mListCats.mockResolvedValue([cat(1), cat(2)]);
+  mListAttrs.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -630,5 +650,71 @@ describe('ProductEditor — edit mode', () => {
     await delProductBtn!.trigger('click');
     await flushPromises();
     expect(w.text()).toContain('has orders');
+  });
+
+  it('renders the attributes section with values and preselects value_ids', async () => {
+    mGet.mockResolvedValue(product({ value_ids: [101] }));
+    mWaiters.mockResolvedValue(0);
+    mListAttrs.mockResolvedValue([
+      attr(1, 'color', [
+        [101, 'Красный'],
+        [102, 'Синий'],
+      ]),
+    ]);
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+    expect(w.text()).toContain('Атрибуты');
+    expect(w.text()).toContain('Красный');
+    expect(w.text()).toContain('Синий');
+    const boxes = w.findAll(
+      'section:last-of-type input[type="checkbox"]',
+    ) as ReturnType<typeof w.findAll>;
+    // value 101 preselected, 102 not
+    expect((boxes[0].element as HTMLInputElement).checked).toBe(true);
+    expect((boxes[1].element as HTMLInputElement).checked).toBe(false);
+  });
+
+  it('shows an empty state when there are no attributes', async () => {
+    mGet.mockResolvedValue(product());
+    mWaiters.mockResolvedValue(0);
+    mListAttrs.mockResolvedValue([]);
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+    expect(w.text()).toContain('Атрибутов пока нет');
+  });
+
+  it('still loads the editor when attribute listing fails', async () => {
+    mGet.mockResolvedValue(product());
+    mWaiters.mockResolvedValue(0);
+    mListAttrs.mockRejectedValue(new Error('attrs down'));
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+    // editor renders (not the not-found panel), attributes empty state shown
+    expect(w.text()).not.toContain('Товар не найден');
+    expect(w.text()).toContain('Атрибутов пока нет');
+  });
+
+  it('toggles a value checkbox and saves selected value_ids', async () => {
+    mGet.mockResolvedValue(product({ value_ids: [101] }));
+    mWaiters.mockResolvedValue(0);
+    mUpdate.mockResolvedValue(product());
+    mSetTr.mockResolvedValue(undefined);
+    mSetAttrs.mockResolvedValue(product());
+    mListAttrs.mockResolvedValue([
+      attr(1, 'color', [
+        [101, 'Красный'],
+        [102, 'Синий'],
+      ]),
+    ]);
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+    const boxes = w.findAll('section:last-of-type input[type="checkbox"]');
+    // toggle 101 off, 102 on
+    await boxes[0].trigger('change');
+    await boxes[1].trigger('change');
+    await saveButton(w).trigger('click');
+    await flushPromises();
+    expect(mSetAttrs).toHaveBeenCalledTimes(1);
+    expect(mSetAttrs).toHaveBeenCalledWith(7, [102]);
   });
 });

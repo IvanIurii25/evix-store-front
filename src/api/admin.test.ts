@@ -229,6 +229,47 @@ describe('admin api', () => {
     });
   });
 
+  // ---------------------------------------------------------------- attributes
+  describe('attributes', () => {
+    it('listAttributes GETs the attributes route and returns data', async () => {
+      stubOnce(jsonResponse([{ id: 1, code: 'color' }]));
+      const { listAttributes } = await load();
+      await expect(listAttributes()).resolves.toEqual([
+        { id: 1, code: 'color' },
+      ]);
+      expect(lastRequest().url).toBe(`${BASE}/api/v1/admin/attributes`);
+    });
+
+    it('listAttributes defaults to [] when body is null', async () => {
+      stubOnce(jsonResponse(null, 200));
+      const { listAttributes } = await load();
+      await expect(listAttributes()).resolves.toEqual([]);
+    });
+
+    it('listAttributes throws on error', async () => {
+      stubOnce(envelope('attrs down'));
+      const { listAttributes } = await load();
+      await expect(listAttributes()).rejects.toThrow('attrs down');
+    });
+
+    it('setProductAttributes PUTs the value_ids body to the nested route', async () => {
+      stubOnce(jsonResponse({ id: 7, value_ids: [1, 2] }));
+      const { setProductAttributes } = await load();
+      const res = await setProductAttributes(7, [1, 2]);
+      expect(res).toEqual({ id: 7, value_ids: [1, 2] });
+      const req = lastRequest();
+      expect(req.method).toBe('PUT');
+      expect(req.url).toBe(`${BASE}/api/v1/admin/products/7/attributes`);
+      expect(await req.text()).toBe('{"value_ids":[1,2]}');
+    });
+
+    it('setProductAttributes throws on error', async () => {
+      stubOnce(envelope('bad attrs'));
+      const { setProductAttributes } = await load();
+      await expect(setProductAttributes(7, [1])).rejects.toThrow('bad attrs');
+    });
+  });
+
   // ---------------------------------------------------------------- categories
   describe('categories', () => {
     it('listCategories returns data or [] and error-throws', async () => {

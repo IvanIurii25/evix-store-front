@@ -19,6 +19,8 @@ export type CategoryOut = Schemas['CategoryOut'];
 export type CategoryCreate = Schemas['CategoryCreate'];
 export type CategoryUpdate = Schemas['CategoryUpdate'];
 export type CategoryTranslationIn = Schemas['CategoryTranslationIn'];
+export type AttributeOut = Schemas['AttributeOut'];
+export type AttributeValueOut = Schemas['AttributeValueOut'];
 export type OrderOut = Schemas['OrderOut'];
 export type CustomerListItem = Schemas['CustomerListItem'];
 export type CustomerDetail = Schemas['CustomerDetail'];
@@ -156,6 +158,31 @@ export async function reorderProductMedia(
   );
   if (error) fail(error, 'Не удалось изменить порядок');
   return data?.data ?? [];
+}
+
+// --------------------------------------------------------------------------- //
+// Attributes
+// --------------------------------------------------------------------------- //
+export async function listAttributes(): Promise<AttributeOut[]> {
+  const { data, error } = await api.GET('/api/v1/admin/attributes', CREDS);
+  if (error) fail(error, 'Не удалось загрузить атрибуты');
+  return data ?? [];
+}
+
+export async function setProductAttributes(
+  id: number,
+  value_ids: number[],
+): Promise<ProductOut> {
+  const { data, error } = await api.PUT(
+    '/api/v1/admin/products/{product_id}/attributes',
+    {
+      params: { path: { product_id: id } },
+      body: { value_ids },
+      ...CREDS,
+    },
+  );
+  if (error) fail(error, 'Не удалось сохранить атрибуты');
+  return data;
 }
 
 // --------------------------------------------------------------------------- //
