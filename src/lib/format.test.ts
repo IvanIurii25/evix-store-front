@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { discountPercent, price, productCount } from './format';
+import { discountPercent, personCount, price, productCount } from './format';
 
 describe('price', () => {
   it('formats a numeric MDL amount with no fraction digits', () => {
@@ -77,5 +77,32 @@ describe('productCount', () => {
     expect(productCount(14, 'ru')).toBe('14 товаров');
     expect(productCount(111, 'ru')).toBe('111 товаров');
     expect(productCount(112, 'ru')).toBe('112 товаров');
+  });
+});
+
+describe('personCount', () => {
+  it('uses the RO plural rule (1 → persoană, else persoane)', () => {
+    expect(personCount(1, 'ro')).toBe('1 persoană');
+    expect(personCount(3, 'ro')).toBe('3 persoane');
+    expect(personCount(5, 'ro')).toBe('5 persoane');
+    expect(personCount(21, 'ro')).toBe('21 persoane');
+  });
+
+  it('uses the RU Slavic plural rule (человек / человека / человек)', () => {
+    expect(personCount(1, 'ru')).toBe('1 человек');
+    expect(personCount(2, 'ru')).toBe('2 человека');
+    expect(personCount(3, 'ru')).toBe('3 человека');
+    expect(personCount(4, 'ru')).toBe('4 человека');
+    expect(personCount(5, 'ru')).toBe('5 человек');
+    expect(personCount(21, 'ru')).toBe('21 человек');
+    expect(personCount(22, 'ru')).toBe('22 человека');
+    expect(personCount(25, 'ru')).toBe('25 человек');
+  });
+
+  it('applies the RU 11–14 exception (always человек)', () => {
+    expect(personCount(11, 'ru')).toBe('11 человек');
+    expect(personCount(12, 'ru')).toBe('12 человек');
+    expect(personCount(13, 'ru')).toBe('13 человек');
+    expect(personCount(14, 'ru')).toBe('14 человек');
   });
 });

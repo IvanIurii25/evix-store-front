@@ -12,7 +12,7 @@ import SupportLink from '../../../components/SupportLink.astro';
 import { footerLabels, ui, pdpStrings } from '../../../lib/i18n-strings';
 import { productPayload } from '../../../lib/support';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
-import { price, discountPercent } from '../../../lib/format';
+import { price, discountPercent, personCount } from '../../../lib/format';
 import {
   isLang,
   localePath,
@@ -39,6 +39,13 @@ const media = product.media ?? [];
 
 // Discount badge (-N%): shown only when old_price is set and > current price.
 const salePercent = discountPercent(product.old_price, product.price);
+
+// Honest social-proof (feature A3): the backend returns the REAL number of
+// distinct live carts holding this product. Show it only above a threshold so
+// low-traffic pages stay silent — never a fabricated number.
+const IN_CART_THRESHOLD = 3;
+const inCartCount = product.in_cart_count ?? 0;
+const showInCart = inCartCount >= IN_CART_THRESHOLD;
 
 // Per-locale slugs come from the backend (slugs[]) → real hreflang equivalents.
 const canonical = localePath(lang, `p/${product.slug}`);
@@ -118,6 +125,14 @@ const jsonLd = [
         >
           {product.in_stock ? t.inStock : t.outOfStock}
         </div>
+
+        {
+          showInCart && (
+            <div class="mt-2 text-sm font-medium text-badge-sale">
+              {tp.inCartPrefix} {personCount(inCartCount, lang)}
+            </div>
+          )
+        }
 
         <div class="mt-6">
           {

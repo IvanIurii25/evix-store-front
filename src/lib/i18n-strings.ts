@@ -548,6 +548,9 @@ export interface PdpStrings {
   tabDescription: string;
   tabAttributes: string;
   relatedTitle: string;
+  // Honest social-proof badge prefix; followed by personCount(n, lang).
+  // RO → "🛒 În coșul a {N persoane}", RU → "🛒 В корзине у {N человек}".
+  inCartPrefix: string;
 }
 
 const PDP: Record<Lang, PdpStrings> = {
@@ -558,6 +561,7 @@ const PDP: Record<Lang, PdpStrings> = {
     tabDescription: 'Descriere',
     tabAttributes: 'Specificații',
     relatedTitle: 'Produse similare',
+    inCartPrefix: '🛒 În coșul a',
   },
   ru: {
     code: 'Код:',
@@ -566,6 +570,7 @@ const PDP: Record<Lang, PdpStrings> = {
     tabDescription: 'Описание',
     tabAttributes: 'Характеристики',
     relatedTitle: 'Похожие товары',
+    inCartPrefix: '🛒 В корзине у',
   },
 };
 

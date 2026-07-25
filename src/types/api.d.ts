@@ -3516,6 +3516,11 @@ export interface components {
       old_price?: string | null;
       /** In Stock */
       in_stock: boolean;
+      /**
+       * In Cart Count
+       * @default 0
+       */
+      in_cart_count: number;
       /** Category Id */
       category_id: number;
       /** Breadcrumbs */
