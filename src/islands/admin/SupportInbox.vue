@@ -260,12 +260,20 @@ const listEmpty = computed(
   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
     <!-- Left: conversation list -->
     <div class="flex flex-col gap-3 md:col-span-1">
-      <a
-        href="/admin/support/templates"
-        class="self-start text-sm text-subtle hover:text-primary"
-      >
-        Шаблоны ответов →
-      </a>
+      <div class="flex flex-wrap gap-3">
+        <a
+          href="/admin/support/templates"
+          class="text-sm text-subtle hover:text-primary"
+        >
+          Шаблоны ответов →
+        </a>
+        <a
+          href="/admin/support/metrics"
+          class="text-sm text-subtle hover:text-primary"
+        >
+          Метрики →
+        </a>
+      </div>
       <select
         v-model="statusFilter"
         class="rounded-xl border-2 border-fill px-3 py-2 outline-none focus:border-primary"

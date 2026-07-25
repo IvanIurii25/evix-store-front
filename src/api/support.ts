@@ -21,6 +21,7 @@ export type ThreadOut = Schemas['ThreadOut'];
 export type CannedOut = Schemas['CannedOut'];
 export type CannedIn = Schemas['CannedIn'];
 export type LinkedOrderOut = Schemas['LinkedOrderOut'];
+export type SupportMetricsOut = Schemas['SupportMetricsOut'];
 
 // One live event pushed over SSE: which conversation changed and how.
 export interface SupportEvent {
@@ -164,6 +165,16 @@ export async function updateCanned(
   );
   if (error) fail(error, 'Не удалось сохранить шаблон');
   return data as CannedOut;
+}
+
+// Support metrics summary for the admin/director dashboard.
+export async function getSupportMetrics(days = 30): Promise<SupportMetricsOut> {
+  const { data, error } = await api.GET('/api/v1/admin/support/metrics', {
+    params: { query: { days } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить метрики');
+  return data as SupportMetricsOut;
 }
 
 // Full URL of the staff-only attachment proxy (a customer's photo/document).

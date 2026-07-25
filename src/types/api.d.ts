@@ -1664,6 +1664,39 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/support/metrics': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Metrics
+     * @description Return the support-metrics overview for the admin/director.
+     *
+     *     A read-only aggregation over the existing support tables: conversation
+     *     totals and current status split, how many conversations still await an
+     *     operator reply, the average first-response time, and the per-day new-
+     *     conversation series — all scoped to the trailing ``days`` window where
+     *     period-relative.
+     *
+     *     Args:
+     *         days: Trailing window size in days (1-365, default 30).
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         SupportMetricsOut: The assembled metrics overview.
+     */
+    get: operations['metrics_api_v1_admin_support_metrics_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/support/conversations/stream': {
     parameters: {
       query?: never;
@@ -4122,6 +4155,43 @@ export interface components {
        * @description Target conversation status (open | pending | closed).
        */
       status: string;
+    };
+    /**
+     * SupportMetricsOut
+     * @description Support-metrics overview for the admin/director (§ support metrics).
+     */
+    SupportMetricsOut: {
+      /** Total */
+      total: number;
+      /** New In Period */
+      new_in_period: number;
+      /** Open */
+      open: number;
+      /** Pending */
+      pending: number;
+      /** Closed */
+      closed: number;
+      /** Unanswered */
+      unanswered: number;
+      /** Avg First Response Seconds */
+      avg_first_response_seconds: number | null;
+      /** Series */
+      series: components['schemas']['SupportMetricsPoint'][];
+      /** Days */
+      days: number;
+    };
+    /**
+     * SupportMetricsPoint
+     * @description One day bucket of new conversations for the metrics series.
+     */
+    SupportMetricsPoint: {
+      /**
+       * Day
+       * Format: date
+       */
+      day: string;
+      /** Count */
+      count: number;
     };
     /**
      * ThreadOut
@@ -6928,6 +6998,38 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ConversationList'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  metrics_api_v1_admin_support_metrics_get: {
+    parameters: {
+      query?: {
+        /** @description Trailing window size in days for the metrics overview. */
+        days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SupportMetricsOut'];
         };
       };
       /** @description Validation Error */

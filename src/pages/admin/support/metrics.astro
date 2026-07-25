@@ -1,0 +1,23 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import SupportMetrics from '../../../islands/admin/SupportMetrics.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+
+export const prerender = false;
+
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout
+  title="Метрики поддержки"
+  email={guard.user.email}
+  active="support"
+>
+  <div class="mb-4">
+    <a href="/admin/support" class="text-sm text-subtle hover:text-primary">
+      ← К диалогам
+    </a>
+  </div>
+  <SupportMetrics client:load />
+</AdminLayout>

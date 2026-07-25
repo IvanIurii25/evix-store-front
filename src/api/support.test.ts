@@ -219,6 +219,34 @@ describe('support api', () => {
     );
   });
 
+  it('getSupportMetrics GETs with the days window', async () => {
+    stubOnce(
+      jsonResponse({
+        total: 5,
+        new_in_period: 2,
+        open: 1,
+        pending: 0,
+        closed: 4,
+        unanswered: 1,
+        avg_first_response_seconds: 120,
+        series: [],
+        days: 7,
+      }),
+    );
+    const { getSupportMetrics } = await load();
+    const res = await getSupportMetrics(7);
+    expect(res.total).toBe(5);
+    expect(lastRequest().url).toBe(
+      `${BASE}/api/v1/admin/support/metrics?days=7`,
+    );
+  });
+
+  it('getSupportMetrics throws on error', async () => {
+    stubOnce(envelope('нет', 500));
+    const { getSupportMetrics } = await load();
+    await expect(getSupportMetrics()).rejects.toThrow('нет');
+  });
+
   it('linkOrder POSTs the order number', async () => {
     stubOnce(
       jsonResponse(
