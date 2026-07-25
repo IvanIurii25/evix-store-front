@@ -9,9 +9,12 @@ import {
   deleteConversation,
   subscribeSupport,
   listCanned,
+  linkOrder,
+  unlinkOrder,
   type ConversationOut,
   type MessageOut,
   type CannedOut,
+  type LinkedOrderOut,
 } from '../../api/support';
 
 // --------------------------------------------------------------------------- //
@@ -65,6 +68,11 @@ const replyError = ref('');
 // Erasure confirm toggle (reset whenever a conversation is opened)
 const confirmingDelete = ref(false);
 
+// Linked order (operator context)
+const linkedOrder = ref<LinkedOrderOut | null>(null);
+const orderInput = ref('');
+const linking = ref(false);
+
 // Canned responses (reply templates) — loaded once, filtered by the open
 // conversation's language for the picker.
 const canned = ref<CannedOut[]>([]);
@@ -110,6 +118,8 @@ async function openConversation(id: number) {
     const res = await getThread(id);
     threadConv.value = res.conversation;
     messages.value = res.data;
+    linkedOrder.value = res.linked_order ?? null;
+    orderInput.value = '';
     // Opening clears unread on the server (mark_read) — reflect it locally.
     const row = conversations.value.find((c) => c.id === id);
     if (row) row.unread_count = 0;
@@ -165,6 +175,31 @@ async function removeConversation() {
     confirmingDelete.value = false;
   } catch (e) {
     threadError.value = e instanceof Error ? e.message : 'Не удалось удалить';
+  }
+}
+
+async function linkToOrder() {
+  const num = orderInput.value.trim();
+  if (!num || selectedId.value === null || linking.value) return;
+  linking.value = true;
+  threadError.value = '';
+  try {
+    linkedOrder.value = await linkOrder(selectedId.value, num);
+    orderInput.value = '';
+  } catch (e) {
+    threadError.value = e instanceof Error ? e.message : 'Заказ не найден';
+  } finally {
+    linking.value = false;
+  }
+}
+
+async function unlinkFromOrder() {
+  if (selectedId.value === null) return;
+  try {
+    await unlinkOrder(selectedId.value);
+    linkedOrder.value = null;
+  } catch (e) {
+    threadError.value = e instanceof Error ? e.message : 'Не удалось отвязать';
   }
 }
 
@@ -358,6 +393,46 @@ const listEmpty = computed(
               </button>
             </template>
           </div>
+        </div>
+
+        <!-- Linked-order context bar -->
+        <div
+          class="flex items-center gap-2 border-b-2 border-fill bg-fill/40 px-4 py-2 text-sm"
+        >
+          <template v-if="linkedOrder">
+            <span class="text-subtle">Заказ</span>
+            <a
+              :href="`/admin/orders/${linkedOrder.number}`"
+              class="font-mono font-medium text-primary hover:underline"
+            >
+              {{ linkedOrder.number }}
+            </a>
+            <span class="text-subtle"
+              >· {{ linkedOrder.status }} ·
+              {{ Number(linkedOrder.total).toLocaleString('ru-RU') }} L</span
+            >
+            <button
+              class="ml-auto text-xs text-subtle hover:text-danger"
+              @click="unlinkFromOrder"
+            >
+              Отвязать
+            </button>
+          </template>
+          <template v-else>
+            <input
+              v-model="orderInput"
+              placeholder="Номер заказа…"
+              class="w-48 rounded-lg border-2 border-fill px-2 py-1 text-sm outline-none focus:border-primary"
+              @keydown.enter.prevent="linkToOrder"
+            />
+            <button
+              class="rounded-lg bg-fill px-2 py-1 text-xs font-medium text-subtle hover:text-ink disabled:opacity-50"
+              :disabled="linking || !orderInput.trim()"
+              @click="linkToOrder"
+            >
+              Привязать заказ
+            </button>
+          </template>
         </div>
 
         <!-- Messages -->

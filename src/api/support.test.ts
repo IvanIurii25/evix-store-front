@@ -211,6 +211,42 @@ describe('support api', () => {
     expect(req.method).toBe('DELETE');
     expect(req.url).toBe(`${BASE}/api/v1/admin/support/canned/5`);
   });
+
+  it('linkOrder POSTs the order number', async () => {
+    stubOnce(
+      jsonResponse(
+        {
+          number: 'A-1',
+          status: 'new',
+          payment_status: 'pending',
+          total: '10',
+        },
+        200,
+      ),
+    );
+    const { linkOrder } = await load();
+    const res = await linkOrder(3, 'A-1');
+    expect(res.number).toBe('A-1');
+    const req = lastRequest();
+    expect(req.method).toBe('POST');
+    expect(req.url).toBe(`${BASE}/api/v1/admin/support/conversations/3/link`);
+    expect(await req.text()).toBe('{"order_number":"A-1"}');
+  });
+
+  it('linkOrder throws when the order is not found', async () => {
+    stubOnce(envelope('Заказ не найден', 404));
+    const { linkOrder } = await load();
+    await expect(linkOrder(3, 'nope')).rejects.toThrow('Заказ не найден');
+  });
+
+  it('unlinkOrder DELETEs the link', async () => {
+    stubOnce(jsonResponse(null, 204));
+    const { unlinkOrder } = await load();
+    await expect(unlinkOrder(3)).resolves.toBeUndefined();
+    const req = lastRequest();
+    expect(req.method).toBe('DELETE');
+    expect(req.url).toBe(`${BASE}/api/v1/admin/support/conversations/3/link`);
+  });
 });
 
 interface FakeSource {

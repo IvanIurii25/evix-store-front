@@ -10,6 +10,8 @@ import {
   deleteConversation,
   subscribeSupport,
   listCanned,
+  linkOrder,
+  unlinkOrder,
   type ConversationOut,
   type MessageOut,
   type SupportEvent,
@@ -23,7 +25,12 @@ vi.mock('../../api/support', () => ({
   deleteConversation: vi.fn(),
   subscribeSupport: vi.fn(),
   listCanned: vi.fn(),
+  linkOrder: vi.fn(),
+  unlinkOrder: vi.fn(),
 }));
+
+const mockLink = vi.mocked(linkOrder);
+const mockUnlink = vi.mocked(unlinkOrder);
 
 const mockList = vi.mocked(listConversations);
 const mockThread = vi.mocked(getThread);
@@ -373,5 +380,62 @@ describe('SupportInbox', () => {
     expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe(
       'Доставка 1–2 дня',
     );
+  });
+
+  it('shows a linked order and unlinks it', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue({
+      ...threadOf(conv(), [msg()]),
+      linked_order: {
+        number: 'A-100',
+        status: 'new',
+        payment_status: 'pending',
+        total: '1990',
+        created_at: '2026-01-15T10:00:00Z',
+      },
+    } as never);
+    mockUnlink.mockResolvedValue();
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    expect(w.text()).toContain('A-100');
+    const link = w.find('a[href="/admin/orders/A-100"]');
+    expect(link.exists()).toBe(true);
+
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Отвязать')!
+      .trigger('click');
+    await flushPromises();
+    expect(mockUnlink).toHaveBeenCalledWith(1);
+    expect(w.text()).not.toContain('A-100');
+  });
+
+  it('links an order by number', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(threadOf(conv(), [msg()]));
+    mockLink.mockResolvedValue({
+      number: 'B-7',
+      status: 'confirmed',
+      payment_status: 'paid',
+      total: '500',
+      created_at: '2026-01-15T10:00:00Z',
+    } as never);
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    await w.find('input[placeholder="Номер заказа…"]').setValue('B-7');
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Привязать заказ')!
+      .trigger('click');
+    await flushPromises();
+
+    expect(mockLink).toHaveBeenCalledWith(1, 'B-7');
+    expect(w.text()).toContain('B-7');
   });
 });

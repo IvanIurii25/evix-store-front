@@ -1726,6 +1726,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/support/conversations/{conversation_id}/link': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Link Order
+     * @description Link a conversation to an order by its number (operator context).
+     *
+     *     Args:
+     *         conversation_id: The conversation to link.
+     *         payload: The order number to resolve and link.
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (required by the service ctor).
+     *
+     *     Returns:
+     *         LinkedOrderOut: The linked order's summary.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the order or the conversation does not exist.
+     */
+    post: operations['link_order_api_v1_admin_support_conversations__conversation_id__link_post'];
+    /**
+     * Unlink Order
+     * @description Clear a conversation's order link.
+     *
+     *     Args:
+     *         conversation_id: The conversation to unlink.
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (required by the service ctor).
+     *
+     *     Raises:
+     *         HTTPException: 404 if the conversation does not exist.
+     */
+    delete: operations['unlink_order_api_v1_admin_support_conversations__conversation_id__link_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/support/canned': {
     parameters: {
       query?: never;
@@ -3004,6 +3048,36 @@ export interface components {
       detail?: components['schemas']['ValidationError'][];
     };
     /**
+     * LinkOrderIn
+     * @description Body for ``POST /admin/support/conversations/{id}/link``.
+     */
+    LinkOrderIn: {
+      /**
+       * Order Number
+       * @description Human-readable order number to link the conversation to.
+       */
+      order_number: string;
+    };
+    /**
+     * LinkedOrderOut
+     * @description Summary of the order a conversation is linked to (operator context).
+     */
+    LinkedOrderOut: {
+      /** Number */
+      number: string;
+      /** Status */
+      status: string;
+      /** Payment Status */
+      payment_status: string;
+      /** Total */
+      total: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /**
      * LoginRequest
      * @description Payload for ``POST /auth/login`` — login by email OR phone.
      *
@@ -3764,6 +3838,7 @@ export interface components {
       page: number;
       /** Page Size */
       page_size: number;
+      linked_order?: components['schemas']['LinkedOrderOut'] | null;
     };
     /**
      * TokenPair
@@ -6510,6 +6585,70 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ConversationOut'];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  link_order_api_v1_admin_support_conversations__conversation_id__link_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversation_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LinkOrderIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['LinkedOrderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  unlink_order_api_v1_admin_support_conversations__conversation_id__link_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversation_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation Error */
       422: {

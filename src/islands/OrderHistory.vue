@@ -3,10 +3,17 @@ import { ref, onMounted } from 'vue';
 import { listOrders, type OrderOut } from '../api/account';
 import { price } from '../lib/format';
 import { type Lang } from '../lib/i18n';
-import { accountStrings } from '../lib/i18n-strings';
+import { accountStrings, footerLabels } from '../lib/i18n-strings';
+import { supportDeepLink } from '../lib/support';
 
 const props = defineProps<{ lang: Lang }>();
 const t = accountStrings(props.lang);
+const supportLabel = footerLabels(props.lang).support;
+
+// Deep-link to the support bot with this order as context (`o<number>`).
+function orderSupportUrl(number: string): string | null {
+  return supportDeepLink(`o${number}`);
+}
 
 const orders = ref<OrderOut[]>([]);
 const loading = ref(true);
@@ -46,6 +53,15 @@ onMounted(async () => {
           <div class="text-subtle">
             {{ fmtDate(o.created_at) }} · {{ STATUS[o.status] ?? o.status }}
           </div>
+          <a
+            v-if="orderSupportUrl(o.number)"
+            :href="orderSupportUrl(o.number)!"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="mt-1 inline-block text-[11px] text-subtle underline hover:text-primary"
+          >
+            {{ supportLabel }}
+          </a>
         </div>
         <div class="text-right">
           <div class="font-semibold text-price">{{ price(o.total) }}</div>

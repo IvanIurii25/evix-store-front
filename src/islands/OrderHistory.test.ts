@@ -5,6 +5,10 @@ import OrderHistory from './OrderHistory.vue';
 import { listOrders, type OrderOut } from '../api/account';
 
 vi.mock('../api/account', () => ({ listOrders: vi.fn() }));
+vi.mock('../lib/support', () => ({
+  supportDeepLink: (payload?: string) =>
+    `https://t.me/evix_bot?start=${payload}`,
+}));
 
 const mockList = vi.mocked(listOrders);
 
@@ -88,5 +92,13 @@ describe('OrderHistory', () => {
     const paidLabel = rows[0].findAll('.text-xs')[0].text();
     const dueLabel = rows[1].findAll('.text-xs')[0].text();
     expect(paidLabel).not.toBe(dueLabel);
+  });
+
+  it('renders a support deep-link per order (o<number> payload)', async () => {
+    mockList.mockResolvedValue([order({ number: 'A-100' })]);
+    const w = mount(OrderHistory, { props: { lang: 'ru' } });
+    await flushPromises();
+    const link = w.find('a[href="https://t.me/evix_bot?start=oA-100"]');
+    expect(link.exists()).toBe(true);
   });
 });

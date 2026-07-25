@@ -20,6 +20,7 @@ export type ConversationList = Schemas['ConversationList'];
 export type ThreadOut = Schemas['ThreadOut'];
 export type CannedOut = Schemas['CannedOut'];
 export type CannedIn = Schemas['CannedIn'];
+export type LinkedOrderOut = Schemas['LinkedOrderOut'];
 
 // One live event pushed over SSE: which conversation changed and how.
 export interface SupportEvent {
@@ -171,4 +172,31 @@ export async function deleteCanned(cannedId: number): Promise<void> {
     { params: { path: { canned_id: cannedId } }, ...CREDS },
   );
   if (error) fail(error, 'Не удалось удалить шаблон');
+}
+
+// --------------------------------------------------------------------------- //
+// Order link — attach/detach an order to a conversation for operator context
+// --------------------------------------------------------------------------- //
+export async function linkOrder(
+  conversationId: number,
+  orderNumber: string,
+): Promise<LinkedOrderOut> {
+  const { data, error } = await api.POST(
+    '/api/v1/admin/support/conversations/{conversation_id}/link',
+    {
+      params: { path: { conversation_id: conversationId } },
+      body: { order_number: orderNumber },
+      ...CREDS,
+    },
+  );
+  if (error) fail(error, 'Заказ не найден');
+  return data as LinkedOrderOut;
+}
+
+export async function unlinkOrder(conversationId: number): Promise<void> {
+  const { error } = await api.DELETE(
+    '/api/v1/admin/support/conversations/{conversation_id}/link',
+    { params: { path: { conversation_id: conversationId } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось отвязать заказ');
 }
