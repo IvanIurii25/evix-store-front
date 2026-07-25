@@ -5,11 +5,17 @@ import ProductGallery from '../../../islands/ProductGallery.vue';
 import AddToCart from '../../../islands/AddToCart.vue';
 import QuickBuy from '../../../islands/QuickBuy.vue';
 import RestockNotify from '../../../islands/RestockNotify.vue';
+import ProductReviews from '../../../islands/ProductReviews.vue';
 import ShareButtons from '../../../islands/ShareButtons.vue';
 import ProductRail from '../../../components/ProductRail.astro';
 import RecentlyViewed from '../../../islands/RecentlyViewed.vue';
 import SupportLink from '../../../components/SupportLink.astro';
-import { footerLabels, ui, pdpStrings } from '../../../lib/i18n-strings';
+import {
+  footerLabels,
+  ui,
+  pdpStrings,
+  reviewStrings,
+} from '../../../lib/i18n-strings';
 import { productPayload } from '../../../lib/support';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
 import { optimizeDescriptionHtml } from '../../../lib/description';
@@ -17,6 +23,7 @@ import {
   price,
   discountPercent,
   personCount,
+  reviewCount,
   installmentMonthly,
   INSTALLMENT_TERM,
   INSTALLMENT_THRESHOLD,
@@ -40,6 +47,14 @@ if (!product) return new Response('Product not found', { status: 404 });
 
 const t = ui(lang);
 const tp = pdpStrings(lang);
+const tr = reviewStrings(lang);
+
+// Rating summary near the title (SSR, no extra request): only when there is at
+// least one approved review. `ratingAvg` feeds both the star row and JSON-LD.
+const ratingCount = product.rating_count ?? 0;
+const ratingAvg = product.rating_avg ?? null;
+const showRating = ratingCount > 0 && ratingAvg != null;
+const ratingStars = ratingAvg != null ? Math.round(ratingAvg) : 0;
 
 const related = await getRelatedProducts(product.slug, lang, 8);
 
@@ -124,6 +139,25 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
       <div class="lg:sticky lg:top-6 lg:w-[380px] lg:shrink-0">
         <h1 class="text-2xl font-bold text-ink">{product.name}</h1>
         <div class="mt-1 text-sm text-subtle">{tp.code} {product.code}</div>
+
+        {
+          showRating && (
+            <a
+              href="#reviews"
+              class="mt-2 inline-flex items-center gap-2 text-sm text-subtle transition hover:text-primary"
+            >
+              <span class="text-base text-amber-400" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <span class={s <= ratingStars ? '' : 'text-fill'}>★</span>
+                ))}
+              </span>
+              <span class="font-semibold text-ink">
+                {ratingAvg!.toFixed(1)}
+              </span>
+              <span class="underline">({reviewCount(ratingCount, lang)})</span>
+            </a>
+          )
+        }
 
         <div class="mt-5 flex items-baseline gap-3">
           <span class="text-3xl font-semibold text-price"
@@ -252,6 +286,26 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
         </section>
       )
     }
+
+    <section id="reviews" class="mx-auto mt-14 max-w-[980px] scroll-mt-6">
+      <h2 class="text-xl font-semibold text-ink">
+        {tr.sectionTitle}{ratingCount > 0 ? ` (${ratingCount})` : ''}
+      </h2>
+      <div class="mt-6">
+        <ProductReviews
+          client:visible
+          productId={product.id}
+          slug={product.slug}
+          lang={lang}
+          productPath={canonical}
+          initialAggregate={{
+            average: ratingAvg,
+            count: ratingCount,
+            distribution: { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0 },
+          }}
+        />
+      </div>
+    </section>
   </div>
 
   {

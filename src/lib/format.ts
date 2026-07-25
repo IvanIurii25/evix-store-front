@@ -62,6 +62,24 @@ export function productCount(count: number, lang: Lang): string {
   return `${count} ${word}`;
 }
 
+// "N recenzii" / "N отзывов" — localized review counter with correct plural.
+// RO: 1 → recenzie, else recenzii. RU: 1 → отзыв, 2–4 → отзыва, else отзывов
+// (standard Slavic rule with the 11–14 exception). Mirrors productCount.
+export function reviewCount(count: number, lang: Lang): string {
+  const n = Math.abs(count);
+  if (lang === 'ro') {
+    return `${count} ${n === 1 ? 'recenzie' : 'recenzii'}`;
+  }
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  let word: string;
+  if (mod100 >= 11 && mod100 <= 14) word = 'отзывов';
+  else if (mod10 === 1) word = 'отзыв';
+  else if (mod10 >= 2 && mod10 <= 4) word = 'отзыва';
+  else word = 'отзывов';
+  return `${count} ${word}`;
+}
+
 // "N persoane" / "N человек" — localized person counter for the honest PDP
 // social-proof badge ("in N people's carts"). RO: 1 → persoană, else persoane.
 // RU: 1 → человек, 2–4 → человека, else человек (standard Slavic rule with the

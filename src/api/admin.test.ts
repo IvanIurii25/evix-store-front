@@ -761,4 +761,57 @@ describe('admin api', () => {
       await expect(listPromos()).rejects.toThrow('promo down');
     });
   });
+
+  // ------------------------------------------------------------------- reviews
+  describe('reviews moderation', () => {
+    it('listAdminReviews forwards status/cursor and drops null filters', async () => {
+      stubOnce(jsonResponse({ data: [{ id: 1 }], next_cursor: 'c2' }));
+      const { listAdminReviews } = await load();
+      const res = await listAdminReviews({ status: 'pending', cursor: 'c1' });
+      expect(res.next_cursor).toBe('c2');
+      const req = lastRequest();
+      expect(req.url).toContain('/api/v1/admin/reviews');
+      expect(req.url).toContain('status=pending');
+      expect(req.url).toContain('cursor=c1');
+      expect(req.url).not.toContain('product_id');
+    });
+
+    it('moderateReview PATCHes the status', async () => {
+      stubOnce(jsonResponse({ id: 4, status: 'approved' }));
+      const { moderateReview } = await load();
+      const res = await moderateReview(4, 'approved');
+      expect(res.status).toBe('approved');
+      const req = lastRequest();
+      expect(req.method).toBe('PATCH');
+      expect(req.url).toContain('/api/v1/admin/reviews/4');
+      expect(await req.text()).toBe('{"status":"approved"}');
+    });
+
+    it('deleteAdminReview DELETEs the id path', async () => {
+      stubOnce(jsonResponse(null, 204));
+      const { deleteAdminReview } = await load();
+      await deleteAdminReview(4);
+      const req = lastRequest();
+      expect(req.method).toBe('DELETE');
+      expect(req.url).toContain('/api/v1/admin/reviews/4');
+    });
+
+    it('getPendingReviewsCount unwraps count and yields 0 on error', async () => {
+      stubOnce(jsonResponse({ count: 5 }));
+      const { getPendingReviewsCount } = await load();
+      await expect(getPendingReviewsCount()).resolves.toBe(5);
+    });
+
+    it('getPendingReviewsCount returns 0 when the request fails', async () => {
+      stubOnce(envelope('nope', 500));
+      const { getPendingReviewsCount } = await load();
+      await expect(getPendingReviewsCount()).resolves.toBe(0);
+    });
+
+    it('moderateReview throws the envelope message on error', async () => {
+      stubOnce(envelope('bad status'));
+      const { moderateReview } = await load();
+      await expect(moderateReview(4, 'approved')).rejects.toThrow('bad status');
+    });
+  });
 });

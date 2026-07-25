@@ -92,6 +92,37 @@ describe('productJsonLd', () => {
     expect(ld.description).toBeUndefined();
     expect(ld.image).toBeUndefined();
   });
+
+  it('adds aggregateRating when there are approved reviews', () => {
+    const ld = productJsonLd(ORIGIN, '/ro/p/cam', {
+      ...base,
+      rating_avg: 4.3,
+      rating_count: 12,
+    });
+    expect(ld.aggregateRating).toEqual({
+      '@type': 'AggregateRating',
+      ratingValue: 4.3,
+      reviewCount: 12,
+    });
+  });
+
+  it('omits aggregateRating when there are no reviews', () => {
+    expect(
+      productJsonLd(ORIGIN, '/ro/p/cam', {
+        ...base,
+        rating_avg: null,
+        rating_count: 0,
+      }).aggregateRating,
+    ).toBeUndefined();
+    // A count of 0 with a stray average must still be omitted.
+    expect(
+      productJsonLd(ORIGIN, '/ro/p/cam', {
+        ...base,
+        rating_avg: 5,
+        rating_count: 0,
+      }).aggregateRating,
+    ).toBeUndefined();
+  });
 });
 
 describe('organizationJsonLd', () => {

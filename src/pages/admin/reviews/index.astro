@@ -1,0 +1,12 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ReviewsQueue from '../../../islands/admin/ReviewsQueue.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+export const prerender = false;
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout title="Отзывы" email={guard.user.email} active="reviews">
+  <ReviewsQueue client:load />
+</AdminLayout>

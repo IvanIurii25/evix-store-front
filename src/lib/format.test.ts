@@ -7,6 +7,7 @@ import {
   personCount,
   price,
   productCount,
+  reviewCount,
 } from './format';
 
 describe('price', () => {
@@ -138,5 +139,28 @@ describe('personCount', () => {
     expect(personCount(12, 'ru')).toBe('12 человек');
     expect(personCount(13, 'ru')).toBe('13 человек');
     expect(personCount(14, 'ru')).toBe('14 человек');
+  });
+});
+
+describe('reviewCount', () => {
+  it('formats RO singular vs plural', () => {
+    expect(reviewCount(1, 'ro')).toBe('1 recenzie');
+    expect(reviewCount(0, 'ro')).toBe('0 recenzii');
+    expect(reviewCount(5, 'ro')).toBe('5 recenzii');
+  });
+
+  it('applies the RU Slavic plural rule', () => {
+    expect(reviewCount(1, 'ru')).toBe('1 отзыв');
+    expect(reviewCount(2, 'ru')).toBe('2 отзыва');
+    expect(reviewCount(4, 'ru')).toBe('4 отзыва');
+    expect(reviewCount(5, 'ru')).toBe('5 отзывов');
+    expect(reviewCount(21, 'ru')).toBe('21 отзыв');
+    expect(reviewCount(22, 'ru')).toBe('22 отзыва');
+  });
+
+  it('applies the RU 11–14 exception (always отзывов)', () => {
+    expect(reviewCount(11, 'ru')).toBe('11 отзывов');
+    expect(reviewCount(12, 'ru')).toBe('12 отзывов');
+    expect(reviewCount(14, 'ru')).toBe('14 отзывов');
   });
 });

@@ -592,6 +592,109 @@ export function pdpStrings(lang: Lang): PdpStrings {
   return PDP[lang];
 }
 
+// --- Reviews & ratings (PDP section + rating summary) ---------------------- //
+
+export interface ReviewStrings {
+  sectionTitle: string; // "Отзывы" / "Recenzii" (count appended by caller)
+  noReviews: string; // empty state under the aggregate
+  verifiedBadge: string; // "✓ Проверенная покупка" / "✓ Achiziție verificată"
+  anonymous: string; // author fallback — "Покупатель" / "Client"
+  // Sort control
+  sortLabel: string;
+  sortNewest: string;
+  sortHighest: string;
+  sortLowest: string;
+  loadMore: string; // "Показать ещё" / "Arată mai multe"
+  // "Leave a review" CTA + form
+  leaveReview: string;
+  yourRating: string; // star-picker label
+  ratingRequired: string; // client-side: no star chosen
+  titlePlaceholder: string;
+  bodyPlaceholder: string;
+  namePlaceholder: string;
+  submit: string;
+  submitting: string;
+  submitted: string; // "Отзыв отправлен на модерацию"
+  submitError: string;
+  cancel: string;
+  edit: string;
+  save: string;
+  remove: string;
+  removeConfirm: string;
+  // "Your review" panel + statuses
+  yourReview: string;
+  statusPending: string; // "на проверке" / "în verificare"
+  statusRejected: string; // "отклонён" / "respinsă"
+  statusApproved: string; // "опубликован" / "publicată"
+}
+
+const REVIEWS: Record<Lang, ReviewStrings> = {
+  ro: {
+    sectionTitle: 'Recenzii',
+    noReviews: 'Încă nu există recenzii. Fii primul care lasă una.',
+    verifiedBadge: '✓ Achiziție verificată',
+    anonymous: 'Client',
+    sortLabel: 'Sortează',
+    sortNewest: 'Cele mai noi',
+    sortHighest: 'Notă mare',
+    sortLowest: 'Notă mică',
+    loadMore: 'Arată mai multe',
+    leaveReview: 'Lasă o recenzie',
+    yourRating: 'Nota ta',
+    ratingRequired: 'Alege o notă',
+    titlePlaceholder: 'Titlu (opțional)',
+    bodyPlaceholder: 'Părerea ta despre produs (opțional)',
+    namePlaceholder: 'Numele tău (opțional)',
+    submit: 'Trimite recenzia',
+    submitting: 'Se trimite…',
+    submitted: 'Recenzia a fost trimisă spre moderare',
+    submitError: 'Nu s-a putut trimite recenzia',
+    cancel: 'Anulează',
+    edit: 'Editează',
+    save: 'Salvează',
+    remove: 'Șterge',
+    removeConfirm: 'Ștergi recenzia ta?',
+    yourReview: 'Recenzia ta',
+    statusPending: 'în verificare',
+    statusRejected: 'respinsă',
+    statusApproved: 'publicată',
+  },
+  ru: {
+    sectionTitle: 'Отзывы',
+    noReviews: 'Отзывов пока нет. Будьте первым, кто оставит отзыв.',
+    verifiedBadge: '✓ Проверенная покупка',
+    anonymous: 'Покупатель',
+    sortLabel: 'Сортировка',
+    sortNewest: 'Сначала новые',
+    sortHighest: 'Высокая оценка',
+    sortLowest: 'Низкая оценка',
+    loadMore: 'Показать ещё',
+    leaveReview: 'Оставить отзыв',
+    yourRating: 'Ваша оценка',
+    ratingRequired: 'Выберите оценку',
+    titlePlaceholder: 'Заголовок (необязательно)',
+    bodyPlaceholder: 'Ваше мнение о товаре (необязательно)',
+    namePlaceholder: 'Ваше имя (необязательно)',
+    submit: 'Отправить отзыв',
+    submitting: 'Отправка…',
+    submitted: 'Отзыв отправлен на модерацию',
+    submitError: 'Не удалось отправить отзыв',
+    cancel: 'Отмена',
+    edit: 'Изменить',
+    save: 'Сохранить',
+    remove: 'Удалить',
+    removeConfirm: 'Удалить ваш отзыв?',
+    yourReview: 'Ваш отзыв',
+    statusPending: 'на проверке',
+    statusRejected: 'отклонён',
+    statusApproved: 'опубликован',
+  },
+};
+
+export function reviewStrings(lang: Lang): ReviewStrings {
+  return REVIEWS[lang];
+}
+
 // --- Social share block ("Distribuie" / "Поделиться") ---------------------- //
 
 export interface ShareStrings {

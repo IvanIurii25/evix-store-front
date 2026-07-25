@@ -546,3 +546,61 @@ export async function getRestockDemand(lang = 'ru'): Promise<DemandItem[]> {
   if (error) fail(error, 'Не удалось загрузить спрос');
   return data;
 }
+
+// --- Reviews moderation -----------------------------------------------------
+export type AdminReview = Schemas['AdminReviewOut'];
+export type AdminReviewList = Schemas['AdminReviewList'];
+export type ReviewModerateStatus = 'approved' | 'rejected';
+
+export interface ReviewQueueFilters {
+  status?: string | null;
+  product_id?: number | null;
+  cursor?: string | null;
+}
+
+export async function listAdminReviews(
+  filters: ReviewQueueFilters = {},
+): Promise<AdminReviewList> {
+  const { data, error } = await api.GET('/api/v1/admin/reviews', {
+    params: {
+      query: {
+        status: filters.status ?? undefined,
+        product_id: filters.product_id ?? undefined,
+        cursor: filters.cursor ?? undefined,
+      },
+    },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить отзывы');
+  return data as AdminReviewList;
+}
+
+export async function moderateReview(
+  id: number,
+  status: ReviewModerateStatus,
+): Promise<AdminReview> {
+  const { data, error } = await api.PATCH('/api/v1/admin/reviews/{review_id}', {
+    params: { path: { review_id: id } },
+    body: { status },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось изменить статус отзыва');
+  return data;
+}
+
+export async function deleteAdminReview(id: number): Promise<void> {
+  const { error } = await api.DELETE('/api/v1/admin/reviews/{review_id}', {
+    params: { path: { review_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось удалить отзыв');
+}
+
+export async function getPendingReviewsCount(): Promise<number> {
+  const { data, error } = await api.GET(
+    '/api/v1/admin/reviews/pending-count',
+    CREDS,
+  );
+  if (error || !data) return 0;
+  return data.count;
+}

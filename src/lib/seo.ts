@@ -18,6 +18,12 @@ interface ProductLike {
   description?: string | null;
   seo_description?: string | null;
   media?: { url: string }[] | null;
+  // Real approved-review aggregate (from ProductDetail). Emitted as
+  // schema.org AggregateRating only when there is at least one review, so the
+  // structured data always reflects what the page actually shows (Google
+  // policy — no fabricated ratings).
+  rating_avg?: number | null;
+  rating_count?: number | null;
 }
 
 const abs = (origin: string, path: string): string =>
@@ -59,6 +65,11 @@ export function productJsonLd(
 ): JsonLd {
   const description = product.description ?? product.seo_description;
   const images = (product.media ?? []).map((m) => abs(origin, m.url));
+  const ratingCount = product.rating_count ?? 0;
+  const hasRating =
+    ratingCount > 0 &&
+    product.rating_avg != null &&
+    Number.isFinite(product.rating_avg);
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -66,6 +77,15 @@ export function productJsonLd(
     sku: product.code,
     ...(description ? { description } : {}),
     ...(images.length ? { image: images } : {}),
+    ...(hasRating
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: product.rating_avg,
+            reviewCount: ratingCount,
+          },
+        }
+      : {}),
     offers: {
       '@type': 'Offer',
       url: abs(origin, canonicalPath),

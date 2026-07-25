@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { pendingReviewsCount } from '../lib/admin-badges';
 
 interface Props {
   title?: string;
@@ -11,7 +12,10 @@ interface Props {
 
 const { title = 'Админка', email, active = '' } = Astro.props;
 
-const NAV: { key: string; href: string; label: string }[] = [
+// Reviews-queue badge: number awaiting moderation (SSR, best-effort → 0).
+const reviewsPending = await pendingReviewsCount(Astro.cookies);
+
+const NAV: { key: string; href: string; label: string; badge?: number }[] = [
   { key: 'dashboard', href: '/admin', label: 'Дашборд' },
   { key: 'products', href: '/admin/products', label: 'Товары' },
   { key: 'categories', href: '/admin/categories', label: 'Категории' },
@@ -19,6 +23,12 @@ const NAV: { key: string; href: string; label: string }[] = [
   { key: 'promo', href: '/admin/promo', label: 'Промокоды' },
   { key: 'orders', href: '/admin/orders', label: 'Заказы' },
   { key: 'customers', href: '/admin/customers', label: 'Клиенты' },
+  {
+    key: 'reviews',
+    href: '/admin/reviews',
+    label: 'Отзывы',
+    badge: reviewsPending,
+  },
   { key: 'support', href: '/admin/support', label: 'Поддержка' },
   { key: 'analytics', href: '/admin/analytics', label: 'Аналитика' },
   { key: 'demand', href: '/admin/demand', label: 'Спрос' },
@@ -54,13 +64,25 @@ const NAV: { key: string; href: string; label: string }[] = [
               <a
                 href={item.href}
                 class:list={[
-                  'mb-1 block rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                  'mb-1 flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
                   active === item.key
                     ? 'bg-primary text-white'
                     : 'text-body hover:bg-fill',
                 ]}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.badge ? (
+                  <span
+                    class:list={[
+                      'ml-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-semibold',
+                      active === item.key
+                        ? 'bg-white text-primary'
+                        : 'bg-danger text-white',
+                    ]}
+                  >
+                    {item.badge}
+                  </span>
+                ) : null}
               </a>
             ))
           }
