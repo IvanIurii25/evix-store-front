@@ -152,7 +152,7 @@ describe('onRequest — analytics', () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('http://api.test/api/v1/track/pageview');
     const headers = (init as RequestInit).headers as Record<string, string>;
-    expect(headers['X-Forwarded-For']).toBe('10.0.0.5');
+    expect(headers['CF-Connecting-IP']).toBe('10.0.0.5');
     expect(headers['User-Agent']).toBe('UA');
     expect(headers['Authorization']).toBeUndefined();
     const body = JSON.parse((init as RequestInit).body as string);
@@ -178,7 +178,7 @@ describe('onRequest — analytics', () => {
     expect(body.referrer).toBeNull();
   });
 
-  it('forwards an empty XFF when clientAddress is undefined', async () => {
+  it('forwards an empty client IP when clientAddress is undefined', async () => {
     const next = vi.fn(async () => okResponse());
     const { context } = makeCtx({
       path: '/ro',
@@ -188,7 +188,7 @@ describe('onRequest — analytics', () => {
     await onRequest(context as never, next as never);
     const [, init] = fetchMock.mock.calls[0];
     const headers = (init as RequestInit).headers as Record<string, string>;
-    expect(headers['X-Forwarded-For']).toBe('');
+    expect(headers['CF-Connecting-IP']).toBe('');
     expect(headers['User-Agent']).toBe('');
   });
 
@@ -205,11 +205,12 @@ describe('onRequest — analytics', () => {
   });
 
   it('does not set a sid or fire a pageview without analytics consent', async () => {
-    for (const cookies of [
+    const cases: Record<string, string>[] = [
       {}, // no decision yet
       { evix_consent: '1:necessary' }, // rejected analytics
       { evix_consent: '0:all' }, // stale policy version → re-prompt
-    ]) {
+    ];
+    for (const cookies of cases) {
       fetchMock.mockClear();
       const next = vi.fn(async () => okResponse());
       const { context, setCalls } = makeCtx({ path: '/ro', cookies });
@@ -217,5 +218,31 @@ describe('onRequest — analytics', () => {
       expect(fetchMock).not.toHaveBeenCalled();
       expect(setCalls.find((c) => c.name === 'sid')).toBeUndefined();
     }
+  });
+});
+
+describe('onRequest — security headers', () => {
+  it('sets conservative security headers on the response', async () => {
+    const next = vi.fn(async () => okResponse());
+    const { context } = makeCtx({ path: '/ro' });
+    const res = (await onRequest(context as never, next as never)) as Response;
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(res.headers.get('X-Frame-Options')).toBe('SAMEORIGIN');
+    expect(res.headers.get('Referrer-Policy')).toBe(
+      'strict-origin-when-cross-origin',
+    );
+    expect(res.headers.get('Strict-Transport-Security')).toBe(
+      'max-age=31536000; includeSubDomains',
+    );
+  });
+
+  it('does not clobber a downstream-set security header', async () => {
+    const next = vi.fn(
+      async () =>
+        new Response('ok', { headers: { 'X-Frame-Options': 'DENY' } }),
+    );
+    const { context } = makeCtx({ path: '/admin/orders' });
+    const res = (await onRequest(context as never, next as never)) as Response;
+    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
   });
 });

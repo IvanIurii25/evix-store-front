@@ -92,11 +92,16 @@ const analytics: MiddlewareHandler = async (context, next) => {
 
   // Fire-and-forget: never block the page render on analytics, never throw.
   const access = cookies.get('access')?.value;
+  // This is an internal front→app call (no Cloudflare hop), so the backend can't
+  // see the real visitor IP itself. Forward the edge-authoritative
+  // CF-Connecting-IP (which cloudflared passes to the front) under the same
+  // header the backend rate-limiter keys on, so track is limited per visitor —
+  // not per Astro server. Falls back to the connection peer off-Cloudflare (dev).
+  const visitorIp =
+    request.headers.get('CF-Connecting-IP') ?? clientAddress ?? '';
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    // Forward the visitor's IP + UA so the backend rate-limits per visitor
-    // (not per Astro server) and derives the device class.
-    'X-Forwarded-For': clientAddress ?? '',
+    'CF-Connecting-IP': visitorIp,
     'User-Agent': request.headers.get('User-Agent') ?? '',
   };
   if (access) headers['Authorization'] = `Bearer ${access}`;
@@ -116,5 +121,23 @@ const analytics: MiddlewareHandler = async (context, next) => {
   return next();
 };
 
-// i18n routing first (exempting /admin), then first-party analytics.
-export const onRequest = sequence(i18nRouting, analytics);
+// Conservative security headers on every storefront response (the API sets its
+// own; this covers the HTML surface). nosniff + SAMEORIGIN framing +
+// strict-origin referrer + HSTS. No CSP yet — a strict policy needs per-page
+// tuning against the islands' inline styles/scripts and is tracked separately.
+const securityHeaders: MiddlewareHandler = async (_context, next) => {
+  const response = await next();
+  const h = response.headers;
+  if (!h.has('X-Content-Type-Options'))
+    h.set('X-Content-Type-Options', 'nosniff');
+  if (!h.has('X-Frame-Options')) h.set('X-Frame-Options', 'SAMEORIGIN');
+  if (!h.has('Referrer-Policy'))
+    h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (!h.has('Strict-Transport-Security'))
+    h.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  return response;
+};
+
+// Security headers wrap everything; then i18n routing (exempting /admin), then
+// first-party analytics.
+export const onRequest = sequence(securityHeaders, i18nRouting, analytics);
