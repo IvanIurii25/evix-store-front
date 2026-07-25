@@ -483,7 +483,8 @@ export interface paths {
      *         QuoteOut: The subtotal / discount / delivery / total breakdown.
      *
      *     Raises:
-     *         HTTPException: 400 for an empty cart; 422 for courier without an address.
+     *         HTTPException: 400 for an empty cart; 422 for courier without an address;
+     *             403 for a ``delivery_address_id`` the caller does not own.
      */
     post: operations['quote_api_v1_checkout_quote_post'];
     delete?: never;
@@ -518,7 +519,8 @@ export interface paths {
      *             envelope when stock is insufficient.
      *
      *     Raises:
-     *         HTTPException: 400 empty cart; 422 courier without an address.
+     *         HTTPException: 400 empty cart; 422 courier without an address; 403 for a
+     *             ``delivery_address_id`` the caller does not own.
      */
     post: operations['checkout_api_v1_checkout_post'];
     delete?: never;
@@ -563,16 +565,14 @@ export interface paths {
     };
     /**
      * Get Order
-     * @description Return one order, authorized by JWT ownership OR guest ``?email=`` (§9).
+     * @description Return one order the JWT caller owns (§9). No personal data in the URL.
      *
-     *     A logged-in caller may only see their own order. A guest (no/any token) must
-     *     supply the matching ``email`` of a guest order. Any authorization miss —
-     *     unknown number, not-your-order, wrong/absent email — returns 404 so order
-     *     existence is never leaked.
+     *     A logged-in caller may only see their own order; anyone else (a guest, or a
+     *     different user) gets 404 so existence is never leaked. Guests look up their
+     *     order via ``POST /orders/{number}/lookup`` (email in the body).
      *
      *     Args:
      *         number: The order number.
-     *         email: Contact email (required for guest-order lookup).
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
      *
@@ -580,11 +580,48 @@ export interface paths {
      *         OrderOut: The order with its lines.
      *
      *     Raises:
-     *         HTTPException: 404 if the order is absent or not authorized to the caller.
+     *         HTTPException: 404 if the order is absent or not owned by the caller.
      */
     get: operations['get_order_api_v1_orders__number__get'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/orders/{number}/lookup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Lookup Order
+     * @description Look up an order by number + matching email in the body (§9).
+     *
+     *     The email travels in the request body, never a query string, so it is not
+     *     captured in access logs or browser history (LP195/2024 — no PII in URLs). Any
+     *     authorization miss (unknown number, wrong/absent email, not the owner)
+     *     returns 404.
+     *
+     *     Args:
+     *         number: The order number.
+     *         payload: The lookup body carrying the contact ``email``.
+     *         user: The authenticated user, or ``None`` for a guest.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         OrderOut: The order with its lines.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the order is absent or the email does not match.
+     */
+    post: operations['lookup_order_api_v1_orders__number__lookup_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -685,7 +722,15 @@ export interface paths {
     get: operations['get_me_api_v1_users_me_get'];
     put?: never;
     post?: never;
-    delete?: never;
+    /**
+     * Delete Me
+     * @description Erase the authenticated user's account (right to erasure, Art.17).
+     *
+     *     Anonymizes the profile + deletes addresses/subscriptions/carts (orders are
+     *     kept for the fiscal obligation), then clears the auth cookies so the now
+     *     inactive session is dropped client-side.
+     */
+    delete: operations['delete_me_api_v1_users_me_delete'];
     options?: never;
     head?: never;
     /**
@@ -1502,6 +1547,168 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/support/conversations': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Conversations
+     * @description Return a filtered, paginated page of inbox conversations.
+     *
+     *     Args:
+     *         status: Optional exact conversation-status filter.
+     *         page: 1-based page number.
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (required by the service ctor).
+     *
+     *     Returns:
+     *         ConversationList: The ``{data, total, page, page_size}`` envelope.
+     */
+    get: operations['list_conversations_api_v1_admin_support_conversations_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/support/conversations/stream': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Stream
+     * @description Stream live conversation-updated events over Server-Sent Events.
+     *
+     *     The admin inbox subscribes here (via ``EventSource``) and refetches on each
+     *     event ``{conversation_id, kind}`` so the list/thread update without polling.
+     *     Auth is the router's ``current_staff`` dependency (cookie-based, works with
+     *     ``EventSource`` same-origin credentials). The stream opens with an SSE
+     *     comment so proxies flush headers immediately.
+     *
+     *     Args:
+     *         redis: Injected async Redis client (the pub/sub source).
+     *
+     *     Returns:
+     *         StreamingResponse: A ``text/event-stream`` of support events.
+     */
+    get: operations['stream_api_v1_admin_support_conversations_stream_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/support/conversations/{conversation_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Conversation
+     * @description Return one conversation with a page of its messages, marking it read.
+     *
+     *     Opening a conversation clears its unread counter (``mark_read`` commits);
+     *     the conversation is re-read afterwards so ``unread_count`` in the response is
+     *     already ``0``.
+     *
+     *     Args:
+     *         conversation_id: The conversation's primary key.
+     *         page: 1-based page number over the message thread.
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (required by the service ctor).
+     *
+     *     Returns:
+     *         ThreadOut: The conversation plus one page of its messages.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the conversation does not exist.
+     */
+    get: operations['get_conversation_api_v1_admin_support_conversations__conversation_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/support/conversations/{conversation_id}/reply': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reply
+     * @description Send an operator reply into a conversation.
+     *
+     *     Args:
+     *         conversation_id: The conversation to reply in.
+     *         payload: The reply body.
+     *         staff: The authenticated staff user (recorded as the sender).
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (live-event publishing).
+     *
+     *     Returns:
+     *         MessageOut: The persisted outbound message (with its delivery badge).
+     *
+     *     Raises:
+     *         HTTPException: 404 if the conversation does not exist.
+     */
+    post: operations['reply_api_v1_admin_support_conversations__conversation_id__reply_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/support/conversations/{conversation_id}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Set Status
+     * @description Change a conversation's status.
+     *
+     *     Args:
+     *         conversation_id: The conversation to update.
+     *         payload: The target status (validated against ``SUPPORT_STATUSES``).
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (live-event publishing).
+     *
+     *     Returns:
+     *         ConversationOut: The updated conversation.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the conversation does not exist.
+     */
+    post: operations['set_status_api_v1_admin_support_conversations__conversation_id__status_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/site/seo': {
     parameters: {
       query?: never;
@@ -1609,6 +1816,73 @@ export interface paths {
      *         TrackAck: A minimal ``{"ok": true}`` acknowledgement.
      */
     post: operations['track_pageview_api_v1_track_pageview_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/telegram/webhook': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Telegram Webhook
+     * @description Ingest one Telegram webhook update and ack it fast.
+     *
+     *     Verifies the secret token, parses the update and — when it's a private text
+     *     message this MVP handles — persists it and publishes a live inbox event via
+     *     :class:`~app.services.support_service.SupportService`. Any non-handled or
+     *     malformed update is ignored and still answered ``200`` so Telegram stops
+     *     retrying.
+     *
+     *     Args:
+     *         request: The incoming webhook request (raw update in the JSON body).
+     *         x_telegram_secret: The ``X-Telegram-Bot-Api-Secret-Token`` header echoed
+     *             by Telegram; the sole authenticator for this public path.
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (live-event publishing).
+     *
+     *     Returns:
+     *         dict: ``{"ok": True}`` — a prompt success ack for Telegram.
+     *
+     *     Raises:
+     *         HTTPException: 403 if the secret token is missing or does not match.
+     */
+    post: operations['telegram_webhook_api_v1_telegram_webhook_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/consent': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Record Consent
+     * @description Record one cookie/privacy consent decision (append-only).
+     *
+     *     Args:
+     *         payload: The decision (analytics flag + action/source/lang + anon id).
+     *         user: The authenticated user, or ``None`` for a guest.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         ConsentAck: ``{ok, policy_version}`` — the client stores the version.
+     */
+    post: operations['record_consent_api_v1_consent_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2165,6 +2439,42 @@ export interface components {
       delivery_address?: components['schemas']['DeliveryAddressIn'] | null;
     };
     /**
+     * ConsentAck
+     * @description Acknowledgement echoing the policy version the client should store.
+     */
+    ConsentAck: {
+      /**
+       * Ok
+       * @default true
+       */
+      ok: boolean;
+      /** Policy Version */
+      policy_version: number;
+    };
+    /**
+     * ConsentIn
+     * @description Body of ``POST /consent`` — one consent decision from the storefront.
+     */
+    ConsentIn: {
+      /** Analytics */
+      analytics: boolean;
+      /**
+       * Action
+       * @enum {string}
+       */
+      action: 'accept_all' | 'reject_all' | 'custom' | 'withdraw';
+      /**
+       * Source
+       * @default banner
+       * @enum {string}
+       */
+      source: 'banner' | 'settings';
+      /** Lang */
+      lang: string;
+      /** Anonymous Id */
+      anonymous_id?: string | null;
+    };
+    /**
      * ContentPageAdminOut
      * @description Full admin view of a content page (structure + translations).
      */
@@ -2293,6 +2603,48 @@ export interface components {
       position: number;
       /** Translations */
       translations: components['schemas']['ContentPageTranslationIn'][];
+    };
+    /**
+     * ConversationList
+     * @description List envelope ``{data, total, page, page_size}`` for the inbox (§4).
+     */
+    ConversationList: {
+      /** Data */
+      data: components['schemas']['ConversationOut'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
+    };
+    /**
+     * ConversationOut
+     * @description One support conversation with its inbox metadata (no internal chat id).
+     */
+    ConversationOut: {
+      /** Id */
+      id: number;
+      /** Customer Name */
+      customer_name: string | null;
+      /** Customer Username */
+      customer_username: string | null;
+      /** Lang */
+      lang: string | null;
+      /** Status */
+      status: string;
+      /** Unread Count */
+      unread_count: number;
+      /**
+       * Last Message At
+       * Format: date-time
+       */
+      last_message_at: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
     };
     /**
      * CustomerAddress
@@ -2582,6 +2934,27 @@ export interface components {
       ordered_ids: number[];
     };
     /**
+     * MessageOut
+     * @description One message in a conversation (no internal Telegram message id).
+     */
+    MessageOut: {
+      /** Id */
+      id: number;
+      /** Direction */
+      direction: string;
+      /** Text */
+      text: string;
+      /** Delivery */
+      delivery: string | null;
+      /** Sender Staff Id */
+      sender_staff_id: number | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /**
      * NameCount
      * @description A generic ``{name, count}`` breakdown row (status, path, device, ...).
      */
@@ -2604,6 +2977,20 @@ export interface components {
       price_snapshot: string;
       /** Qty */
       qty: number;
+    };
+    /**
+     * OrderLookupIn
+     * @description Body of ``POST /orders/{number}/lookup`` — guest order lookup by email.
+     *
+     *     The email travels in the request body, never the URL, so it is not captured
+     *     in access logs or browser history (LP195/2024 — no personal data in URLs).
+     */
+    OrderLookupIn: {
+      /**
+       * Email
+       * @description Contact email of the guest order.
+       */
+      email: string;
     };
     /**
      * OrderOut
@@ -2986,6 +3373,17 @@ export interface components {
       phone?: string | null;
     };
     /**
+     * ReplyIn
+     * @description Body for ``POST /admin/support/conversations/{id}/reply``.
+     */
+    ReplyIn: {
+      /**
+       * Text
+       * @description Operator reply body (Telegram's 4096-char text cap).
+       */
+      text: string;
+    };
+    /**
      * RestockSubscribeIn
      * @description Request body to subscribe to a product's restock notification.
      */
@@ -3194,6 +3592,32 @@ export interface components {
       is_active?: boolean | null;
       /** Is Staff */
       is_staff?: boolean | null;
+    };
+    /**
+     * StatusIn
+     * @description Body for ``POST /admin/support/conversations/{id}/status``.
+     */
+    StatusIn: {
+      /**
+       * Status
+       * @description Target conversation status (open | pending | closed).
+       */
+      status: string;
+    };
+    /**
+     * ThreadOut
+     * @description One conversation plus a single page of its messages (§4).
+     */
+    ThreadOut: {
+      conversation: components['schemas']['ConversationOut'];
+      /** Data */
+      data: components['schemas']['MessageOut'][];
+      /** Total */
+      total: number;
+      /** Page */
+      page: number;
+      /** Page Size */
+      page_size: number;
     };
     /**
      * TokenPair
@@ -3929,9 +4353,7 @@ export interface operations {
   };
   get_order_api_v1_orders__number__get: {
     parameters: {
-      query?: {
-        email?: string | null;
-      };
+      query?: never;
       header?: never;
       path: {
         number: string;
@@ -3939,6 +4361,41 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  lookup_order_api_v1_orders__number__lookup_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['OrderLookupIn'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -4107,6 +4564,24 @@ export interface operations {
         content: {
           'application/json': components['schemas']['UserMe'];
         };
+      };
+    };
+  };
+  delete_me_api_v1_users_me_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -5714,6 +6189,164 @@ export interface operations {
       };
     };
   };
+  list_conversations_api_v1_admin_support_conversations_get: {
+    parameters: {
+      query?: {
+        /** @description Exact conversation-status filter. */
+        status?: string | null;
+        /** @description 1-based page number. */
+        page?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConversationList'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  stream_api_v1_admin_support_conversations_stream_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': unknown;
+        };
+      };
+    };
+  };
+  get_conversation_api_v1_admin_support_conversations__conversation_id__get: {
+    parameters: {
+      query?: {
+        /** @description 1-based page number. */
+        page?: number;
+      };
+      header?: never;
+      path: {
+        conversation_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ThreadOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  reply_api_v1_admin_support_conversations__conversation_id__reply_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversation_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ReplyIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MessageOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_status_api_v1_admin_support_conversations__conversation_id__status_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversation_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['StatusIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConversationOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   get_site_seo_api_v1_site_seo_get: {
     parameters: {
       query?: never;
@@ -5818,6 +6451,72 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['TrackAck'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  telegram_webhook_api_v1_telegram_webhook_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        'X-Telegram-Bot-Api-Secret-Token'?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  record_consent_api_v1_consent_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConsentIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ConsentAck'];
         };
       };
       /** @description Validation Error */
