@@ -6,6 +6,7 @@
 import { isLang, langFromPath, localePath, type Lang } from '../lib/i18n';
 import { consentStrings, footerLabels } from '../lib/i18n-strings';
 import { loadFooterPages } from '../api/site';
+import SupportLink from './SupportLink.astro';
 
 interface Props {
   lang?: string;
@@ -35,6 +36,13 @@ const pages = await loadFooterPages(lang);
             >
               {labels.catalog}
             </a>
+          </li>
+          <li>
+            <SupportLink
+              label={labels.support}
+              payload="site"
+              class="text-gray-300 transition hover:text-primary"
+            />
           </li>
         </ul>
       </div>

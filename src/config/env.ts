@@ -12,3 +12,8 @@ export const API_BASE = import.meta.env.SSR
   : PUBLIC_BASE;
 
 export const DEFAULT_LANG = import.meta.env.PUBLIC_DEFAULT_LANG ?? 'ro';
+
+// Telegram support bot username (without @). When set, storefront "Написать в
+// поддержку" deep-links are shown; empty → the feature is hidden.
+export const TELEGRAM_BOT_USERNAME =
+  import.meta.env.PUBLIC_TELEGRAM_BOT_USERNAME ?? '';

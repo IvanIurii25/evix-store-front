@@ -1,0 +1,23 @@
+---
+// Storefront "Написать в поддержку" deep-link. Renders nothing when no support
+// bot is configured (PUBLIC_TELEGRAM_BOT_USERNAME empty). `payload` is passed to
+// the bot's /start (e.g. `p123` for a product) so the operator gets context.
+import { supportDeepLink } from '../lib/support';
+
+interface Props {
+  label: string;
+  payload?: string;
+  class?: string;
+}
+
+const { label, payload, class: className } = Astro.props;
+const url = supportDeepLink(payload);
+---
+
+{
+  url && (
+    <a href={url} target="_blank" rel="noopener noreferrer" class={className}>
+      {label}
+    </a>
+  )
+}

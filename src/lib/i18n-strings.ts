@@ -434,11 +434,22 @@ export interface FooterLabels {
   shopTitle: string;
   catalog: string;
   infoTitle: string;
+  support: string;
 }
 
 const FOOTER_LABELS: Record<Lang, FooterLabels> = {
-  ro: { shopTitle: 'Magazin', catalog: 'Catalog', infoTitle: 'Informații' },
-  ru: { shopTitle: 'Магазин', catalog: 'Каталог', infoTitle: 'Информация' },
+  ro: {
+    shopTitle: 'Magazin',
+    catalog: 'Catalog',
+    infoTitle: 'Informații',
+    support: 'Scrieți la suport',
+  },
+  ru: {
+    shopTitle: 'Магазин',
+    catalog: 'Каталог',
+    infoTitle: 'Информация',
+    support: 'Написать в поддержку',
+  },
 };
 
 export function footerLabels(lang: Lang): FooterLabels {

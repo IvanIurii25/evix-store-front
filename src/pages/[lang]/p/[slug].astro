@@ -7,6 +7,9 @@ import RestockNotify from '../../../islands/RestockNotify.vue';
 import ProductTabs from '../../../islands/ProductTabs.vue';
 import ProductRail from '../../../components/ProductRail.astro';
 import RecentlyViewed from '../../../islands/RecentlyViewed.vue';
+import SupportLink from '../../../components/SupportLink.astro';
+import { footerLabels } from '../../../lib/i18n-strings';
+import { productPayload } from '../../../lib/support';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
 import { price } from '../../../lib/format';
 import {
@@ -120,6 +123,12 @@ const jsonLd = [
             )
           }
         </div>
+
+        <SupportLink
+          label={footerLabels(lang).support}
+          payload={productPayload(product.id)}
+          class="mt-3 inline-block text-sm text-subtle underline transition hover:text-primary"
+        />
 
         <ProductTabs
           client:visible
