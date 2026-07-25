@@ -157,6 +157,50 @@ describe('checkout api', () => {
     ).rejects.toThrow(message);
   });
 
+  it('quickBuy POSTs product + phone and returns the order', async () => {
+    stubOnce(jsonResponse({ number: 'ORD-Q1' }, 201));
+    const { quickBuy } = await load();
+    const res = await quickBuy({ product_id: 5, phone: '069123456' }, 'ru');
+    expect(res).toEqual({ data: { number: 'ORD-Q1' }, error: null });
+    const r = req();
+    expect(r.method).toBe('POST');
+    expect(r.url).toContain('/api/v1/checkout/quick');
+    expect(r.url).toContain('lang=ru');
+    expect(await r.text()).toBe('{"product_id":5,"phone":"069123456","qty":1}');
+  });
+
+  it('quickBuy sends name only when non-empty (trimmed)', async () => {
+    stubOnce(jsonResponse({ number: 'ORD-Q2' }, 201));
+    const { quickBuy } = await load();
+    await quickBuy({ product_id: 7, phone: '111', name: '  Ion  ' });
+    expect(await req().text()).toBe(
+      '{"product_id":7,"phone":"111","qty":1,"name":"Ion"}',
+    );
+  });
+
+  it('quickBuy omits an empty/whitespace name', async () => {
+    stubOnce(jsonResponse({ number: 'ORD-Q3' }, 201));
+    const { quickBuy } = await load();
+    await quickBuy({ product_id: 7, phone: '111', name: '   ' });
+    expect(await req().text()).toBe('{"product_id":7,"phone":"111","qty":1}');
+  });
+
+  it('quickBuy surfaces the out_of_stock error code', async () => {
+    stubOnce(
+      jsonResponse({ error: { code: 'out_of_stock', message: 'x' } }, 409),
+    );
+    const { quickBuy } = await load();
+    const res = await quickBuy({ product_id: 5, phone: '069123456' });
+    expect(res).toEqual({ data: null, error: 'out_of_stock' });
+  });
+
+  it('quickBuy maps a 422 (no envelope code) to "validation"', async () => {
+    stubOnce(jsonResponse({ detail: [] }, 422));
+    const { quickBuy } = await load();
+    const res = await quickBuy({ product_id: 5, phone: 'x' });
+    expect(res).toEqual({ data: null, error: 'validation' });
+  });
+
   it('getOrder returns the order when found', async () => {
     stubOnce(jsonResponse({ number: 'ORD-1' }));
     const { getOrder } = await load();

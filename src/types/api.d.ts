@@ -529,6 +529,42 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/checkout/quick': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Quick Buy
+     * @description Create a one-product COD order in one click (feature A2).
+     *
+     *     A phone-only guest flow (no cart, no full checkout): the caller supplies a
+     *     ``product_id`` and a ``phone`` and an operator calls back. Always free
+     *     pickup. Reuses the same atomic path as ``POST /checkout`` and is rate-limited
+     *     with the same ``checkout`` bucket to blunt spam.
+     *
+     *     Args:
+     *         data: Product + contact details for the one-click order.
+     *         session: Injected async DB session.
+     *         lang: Language captured into the line's ``name_snapshot`` (default
+     *             ``ro``; unsupported values fall back to the default).
+     *
+     *     Returns:
+     *         OrderOut | JSONResponse: The created order, a 404 ``product_not_found``
+     *             envelope for a missing/inactive product, or a 409 ``out_of_stock``
+     *             envelope when stock is insufficient.
+     */
+    post: operations['quick_buy_api_v1_checkout_quick_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/orders': {
     parameters: {
       query?: never;
@@ -3749,6 +3785,44 @@ export interface components {
       is_active?: boolean | null;
     };
     /**
+     * QuickBuyRequest
+     * @description Request body for ``POST /checkout/quick`` — one-click COD buy (feature A2).
+     *
+     *     A phone-only flow: the guest supplies a ``product_id`` and a ``phone`` and
+     *     an operator calls back. ``email`` is optional (the ``order.email`` column is
+     *     NOT NULL, so a placeholder is derived from the phone when it is omitted);
+     *     ``name`` is optional and snapshotted onto the order's ``delivery_name``.
+     *     Delivery is always free pickup — no address, no cart, no full checkout.
+     */
+    QuickBuyRequest: {
+      /**
+       * Product Id
+       * @description Product to buy in one click.
+       */
+      product_id: number;
+      /**
+       * Phone
+       * @description Contact phone (required).
+       */
+      phone: string;
+      /**
+       * Name
+       * @description Optional customer name (snapshotted as delivery_name).
+       */
+      name?: string | null;
+      /**
+       * Email
+       * @description Optional contact email; a placeholder is derived from the phone when omitted (the order email column is NOT NULL).
+       */
+      email?: string | null;
+      /**
+       * Qty
+       * @description Quantity (defaults to 1).
+       * @default 1
+       */
+      qty: number;
+    };
+    /**
      * QuoteOut
      * @description Computed checkout totals returned by ``POST /checkout/quote`` (§9).
      */
@@ -4753,6 +4827,56 @@ export interface operations {
         content: {
           'application/json': components['schemas']['OrderOut'];
         };
+      };
+      /** @description Insufficient stock */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  quick_buy_api_v1_checkout_quick_post: {
+    parameters: {
+      query?: {
+        /** @description Snapshot language (ru|ro). */
+        lang?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['QuickBuyRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrderOut'];
+        };
+      };
+      /** @description Product not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Insufficient stock */
       409: {

@@ -573,6 +573,61 @@ export function pdpStrings(lang: Lang): PdpStrings {
   return PDP[lang];
 }
 
+// --- Quick buy ("Купить в один клик", feature A2) -------------------------- //
+
+export interface QuickBuyStrings {
+  trigger: string; // secondary button label on the PDP
+  title: string; // mini-modal heading
+  phone: string; // phone field label / placeholder
+  name: string; // optional name field label / placeholder
+  submit: string; // submit button
+  submitting: string; // submit button while pending
+  successPre: string; // "Заказ №" — followed by the order number
+  successPost: string; // "принят, мы перезвоним"
+  close: string; // close / dismiss (aria + confirmation button)
+  errPhone: string; // client-side: phone required/too short
+  errOutOfStock: string; // 409 out_of_stock
+  errNotFound: string; // 404 product_not_found
+  errGeneric: string; // validation / anything else
+}
+
+const QUICK_BUY: Record<Lang, QuickBuyStrings> = {
+  ro: {
+    trigger: 'Cumpără într-un clic',
+    title: 'Cumpără într-un clic',
+    phone: 'Telefon',
+    name: 'Nume',
+    submit: 'Comandă',
+    submitting: 'Se trimite…',
+    successPre: 'Comanda №',
+    successPost: 'a fost primită, vă vom suna',
+    close: 'Închide',
+    errPhone: 'Introduceți telefonul',
+    errOutOfStock: 'Produsul nu este în stoc',
+    errNotFound: 'Produsul nu a fost găsit',
+    errGeneric: 'Nu s-a putut plasa comanda',
+  },
+  ru: {
+    trigger: 'Купить в один клик',
+    title: 'Купить в один клик',
+    phone: 'Телефон',
+    name: 'Имя',
+    submit: 'Заказать',
+    submitting: 'Отправляем…',
+    successPre: 'Заказ №',
+    successPost: 'принят, мы перезвоним',
+    close: 'Закрыть',
+    errPhone: 'Введите телефон',
+    errOutOfStock: 'Товара нет в наличии',
+    errNotFound: 'Товар не найден',
+    errGeneric: 'Не удалось оформить заказ',
+  },
+};
+
+export function quickBuyStrings(lang: Lang): QuickBuyStrings {
+  return QUICK_BUY[lang];
+}
+
 // --- Search results page chrome -------------------------------------------- //
 
 export interface SearchStrings {

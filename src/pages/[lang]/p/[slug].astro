@@ -3,6 +3,7 @@ import Layout from '../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import ProductGallery from '../../../islands/ProductGallery.vue';
 import AddToCart from '../../../islands/AddToCart.vue';
+import QuickBuy from '../../../islands/QuickBuy.vue';
 import RestockNotify from '../../../islands/RestockNotify.vue';
 import ProductTabs from '../../../islands/ProductTabs.vue';
 import ProductRail from '../../../components/ProductRail.astro';
@@ -121,12 +122,15 @@ const jsonLd = [
         <div class="mt-6">
           {
             product.in_stock ? (
-              <AddToCart
-                client:visible
-                productId={product.id}
-                inStock={product.in_stock}
-                lang={lang}
-              />
+              <div class="space-y-3">
+                <AddToCart
+                  client:visible
+                  productId={product.id}
+                  inStock={product.in_stock}
+                  lang={lang}
+                />
+                <QuickBuy client:visible productId={product.id} lang={lang} />
+              </div>
             ) : (
               <RestockNotify
                 client:visible
