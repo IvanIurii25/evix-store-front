@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { discountPercent, personCount, price, productCount } from './format';
+import {
+  discountPercent,
+  installmentMonthly,
+  INSTALLMENT_TERM,
+  personCount,
+  price,
+  productCount,
+} from './format';
 
 describe('price', () => {
   it('formats a numeric MDL amount with no fraction digits', () => {
@@ -46,6 +53,33 @@ describe('discountPercent', () => {
   it('returns 0 for non-positive / non-numeric old_price', () => {
     expect(discountPercent(0, 50)).toBe(0);
     expect(discountPercent('not-a-number', 50)).toBe(0);
+  });
+});
+
+describe('installmentMonthly', () => {
+  it('rounds the monthly payment UP (ceil of price / term)', () => {
+    expect(installmentMonthly(6000, 6)).toBe(1000);
+    expect(installmentMonthly(6001, 6)).toBe(1001); // 1000.16 -> ceil 1001
+    expect(installmentMonthly(500, 6)).toBe(84); // 83.33 -> ceil 84
+  });
+
+  it('defaults the term to INSTALLMENT_TERM', () => {
+    expect(installmentMonthly(3000)).toBe(
+      installmentMonthly(3000, INSTALLMENT_TERM),
+    );
+    expect(installmentMonthly(1200)).toBe(Math.ceil(1200 / INSTALLMENT_TERM));
+  });
+
+  it('parses a numeric string price', () => {
+    expect(installmentMonthly('900', 6)).toBe(150);
+  });
+
+  it('returns 0 for non-positive / non-finite price or non-positive term', () => {
+    expect(installmentMonthly(0, 6)).toBe(0);
+    expect(installmentMonthly(-100, 6)).toBe(0);
+    expect(installmentMonthly('not-a-number', 6)).toBe(0);
+    expect(installmentMonthly(1000, 0)).toBe(0);
+    expect(installmentMonthly(1000, -3)).toBe(0);
   });
 });
 

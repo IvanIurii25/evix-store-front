@@ -551,6 +551,12 @@ export interface PdpStrings {
   // Honest social-proof badge prefix; followed by personCount(n, lang).
   // RO → "🛒 În coșul a {N persoane}", RU → "🛒 В корзине у {N человек}".
   inCartPrefix: string;
+  // Indicative installment line (NOT a real BNPL). "Rate de la ~{monthly} ..."
+  // installmentPrefix + monthly amount + installmentSuffix ("lei/lună").
+  installmentPrefix: string;
+  installmentSuffix: string;
+  installmentNote: string; // small honesty note ("orientativ" / "оценочно")
+  installmentDetails: string; // optional "Detalii" / "Подробнее" link label
 }
 
 const PDP: Record<Lang, PdpStrings> = {
@@ -562,6 +568,10 @@ const PDP: Record<Lang, PdpStrings> = {
     tabAttributes: 'Specificații',
     relatedTitle: 'Produse similare',
     inCartPrefix: '🛒 În coșul a',
+    installmentPrefix: 'Rate de la ~',
+    installmentSuffix: 'lei/lună',
+    installmentNote: 'orientativ',
+    installmentDetails: 'Detalii',
   },
   ru: {
     code: 'Код:',
@@ -571,11 +581,55 @@ const PDP: Record<Lang, PdpStrings> = {
     tabAttributes: 'Характеристики',
     relatedTitle: 'Похожие товары',
     inCartPrefix: '🛒 В корзине у',
+    installmentPrefix: 'Рассрочка от ~',
+    installmentSuffix: 'лей/мес',
+    installmentNote: 'оценочно',
+    installmentDetails: 'Подробнее',
   },
 };
 
 export function pdpStrings(lang: Lang): PdpStrings {
   return PDP[lang];
+}
+
+// --- Social share block ("Distribuie" / "Поделиться") ---------------------- //
+
+export interface ShareStrings {
+  title: string; // block heading
+  facebook: string; // aria-labels / tooltips for each network
+  telegram: string;
+  whatsapp: string;
+  viber: string;
+  copy: string; // "Copiază linkul" / "Копировать ссылку"
+  copied: string; // toast after successful copy — "Copiat ✓" / "Скопировано ✓"
+  copyFailed: string; // fallback when clipboard is unavailable
+}
+
+const SHARE: Record<Lang, ShareStrings> = {
+  ro: {
+    title: 'Distribuie',
+    facebook: 'Distribuie pe Facebook',
+    telegram: 'Distribuie pe Telegram',
+    whatsapp: 'Distribuie pe WhatsApp',
+    viber: 'Distribuie pe Viber',
+    copy: 'Copiază linkul',
+    copied: 'Copiat ✓',
+    copyFailed: 'Nu s-a putut copia',
+  },
+  ru: {
+    title: 'Поделиться',
+    facebook: 'Поделиться в Facebook',
+    telegram: 'Поделиться в Telegram',
+    whatsapp: 'Поделиться в WhatsApp',
+    viber: 'Поделиться в Viber',
+    copy: 'Копировать ссылку',
+    copied: 'Скопировано ✓',
+    copyFailed: 'Не удалось скопировать',
+  },
+};
+
+export function shareStrings(lang: Lang): ShareStrings {
+  return SHARE[lang];
 }
 
 // --- Quick buy ("Купить в один клик", feature A2) -------------------------- //

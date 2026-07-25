@@ -6,13 +6,21 @@ import AddToCart from '../../../islands/AddToCart.vue';
 import QuickBuy from '../../../islands/QuickBuy.vue';
 import RestockNotify from '../../../islands/RestockNotify.vue';
 import ProductTabs from '../../../islands/ProductTabs.vue';
+import ShareButtons from '../../../islands/ShareButtons.vue';
 import ProductRail from '../../../components/ProductRail.astro';
 import RecentlyViewed from '../../../islands/RecentlyViewed.vue';
 import SupportLink from '../../../components/SupportLink.astro';
 import { footerLabels, ui, pdpStrings } from '../../../lib/i18n-strings';
 import { productPayload } from '../../../lib/support';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
-import { price, discountPercent, personCount } from '../../../lib/format';
+import {
+  price,
+  discountPercent,
+  personCount,
+  installmentMonthly,
+  INSTALLMENT_TERM,
+  INSTALLMENT_THRESHOLD,
+} from '../../../lib/format';
 import {
   isLang,
   localePath,
@@ -73,6 +81,14 @@ const jsonLd = [
     path: canonical,
   }),
 ];
+
+// Absolute canonical URL for social sharing (same source as <link canonical>).
+const shareUrl = new URL(canonical, Astro.site ?? origin).href;
+
+// Indicative installment line (NOT a real BNPL — estimated trigger, gated by a
+// price threshold so cheap items stay silent).
+const installment = installmentMonthly(product.price, INSTALLMENT_TERM);
+const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
 ---
 
 <Layout
@@ -134,6 +150,31 @@ const jsonLd = [
           )
         }
 
+        {
+          showInstallment && (
+            <div class="mt-4 flex items-center gap-2 rounded-lg bg-fill/40 px-3 py-2 text-sm text-ink">
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+                class="text-subtle"
+              >
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <path d="M2 10h20" />
+              </svg>
+              <span>
+                {tp.installmentPrefix}
+                {installment.toLocaleString('ro-MD')} {tp.installmentSuffix}
+              </span>
+              <span class="text-xs text-subtle">· {tp.installmentNote}</span>
+            </div>
+          )
+        }
+
         <div class="mt-6">
           {
             product.in_stock ? (
@@ -161,6 +202,13 @@ const jsonLd = [
           label={footerLabels(lang).support}
           payload={productPayload(product.id)}
           class="mt-3 inline-block text-sm text-subtle underline transition hover:text-primary"
+        />
+
+        <ShareButtons
+          client:visible
+          url={shareUrl}
+          name={product.name}
+          lang={lang}
         />
 
         <ProductTabs

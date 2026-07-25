@@ -10,6 +10,7 @@ import {
   listingStrings,
   pdpStrings,
   searchStrings,
+  shareStrings,
   ui,
 } from './i18n-strings';
 import { LANGS, type Lang } from './i18n';
@@ -134,5 +135,18 @@ describe('searchStrings', () => {
     assertNonEmptyStrings(s);
     expect(s.prev.length).toBeGreaterThan(0);
     expect(s.next.length).toBeGreaterThan(0);
+  });
+});
+
+describe('shareStrings', () => {
+  it.each(LANGS)('resolves share block strings for %s', (lang: Lang) => {
+    const s = shareStrings(lang);
+    assertNonEmptyStrings(s);
+    expect(s.title.length).toBeGreaterThan(0);
+    expect(s.copy.length).toBeGreaterThan(0);
+    expect(s.copied.length).toBeGreaterThan(0);
+  });
+  it('differs between languages', () => {
+    expect(shareStrings('ro').title).not.toBe(shareStrings('ru').title);
   });
 });

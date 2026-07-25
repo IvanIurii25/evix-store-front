@@ -25,6 +25,25 @@ export function discountPercent(
   return Math.round((1 - current / original) * 100);
 }
 
+// --- Indicative installment (PDP "rate de la ~N lei/lună") ------------------ //
+// NOT a real BNPL/iutePay integration — a purely estimated trigger line, like
+// flystore's visual. `INSTALLMENT_TERM` months and the `INSTALLMENT_THRESHOLD`
+// (below which we stay silent, so cheap items don't show it) are the two knobs.
+export const INSTALLMENT_TERM = 6;
+export const INSTALLMENT_THRESHOLD = 500;
+
+// Estimated monthly payment: ceil(price / term). Rounds UP so the shown figure
+// is never optimistically lower than the plain division. Non-positive term or
+// non-finite price yields 0 (caller gates on the threshold anyway).
+export function installmentMonthly(
+  value: string | number,
+  term: number = INSTALLMENT_TERM,
+): number {
+  const n = typeof value === 'string' ? Number(value) : value;
+  if (!Number.isFinite(n) || n <= 0 || !(term > 0)) return 0;
+  return Math.ceil(n / term);
+}
+
 // "N produse" / "N товаров" — localized product counter with correct plural
 // form. RO: 1 → produs, else produse. RU: 1 → товар, 2–4 → товара, else товаров
 // (the standard Slavic plural rule, minding the 11–14 exception).
