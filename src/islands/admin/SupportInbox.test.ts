@@ -111,6 +111,22 @@ describe('SupportInbox', () => {
     expect(w.text()).toContain('Выберите диалог'); // no thread selected yet
   });
 
+  it('renders status badges for pending / closed / unknown statuses', async () => {
+    mockList.mockResolvedValue(
+      listOf([
+        conv({ id: 1, status: 'open' }),
+        conv({ id: 2, status: 'pending' }),
+        conv({ id: 3, status: 'closed' }),
+        conv({ id: 4, status: 'weird' }),
+      ]),
+    );
+    const w = mount(SupportInbox);
+    await flushPromises();
+    expect(w.text()).toContain('Ждёт'); // pending label
+    expect(w.text()).toContain('Закрыт'); // closed label
+    expect(w.text()).toContain('weird'); // unknown falls back to raw
+  });
+
   it('shows the empty state when there are no conversations', async () => {
     mockList.mockResolvedValue(listOf([]));
     const w = mount(SupportInbox);

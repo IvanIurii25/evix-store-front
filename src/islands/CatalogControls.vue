@@ -34,6 +34,9 @@ const priceMin = ref<number | null>(null);
 const priceMax = ref<number | null>(null);
 const selectedValues = ref<number[]>([]);
 const loading = ref(false);
+const error = ref('');
+// Re-runs the last failed fetch (reload or loadMore) when the user retries.
+let retryFn: (() => Promise<void>) | null = null;
 
 function optsFromState() {
   return {
@@ -76,6 +79,7 @@ function readUrl() {
 
 async function reload() {
   loading.value = true;
+  error.value = '';
   writeUrl();
   try {
     const res = await listProducts(
@@ -85,6 +89,9 @@ async function reload() {
     );
     products.value = res.data;
     cursor.value = res.next_cursor ?? null;
+  } catch {
+    error.value = t.loadError;
+    retryFn = reload;
   } finally {
     loading.value = false;
   }
@@ -93,6 +100,7 @@ async function reload() {
 async function loadMore() {
   if (!cursor.value) return;
   loading.value = true;
+  error.value = '';
   try {
     const res = await listProducts(props.categorySlug, props.lang, {
       ...optsFromState(),
@@ -100,6 +108,9 @@ async function loadMore() {
     });
     products.value = [...products.value, ...res.data];
     cursor.value = res.next_cursor ?? null;
+  } catch {
+    error.value = t.loadError;
+    retryFn = loadMore;
   } finally {
     loading.value = false;
   }
@@ -196,7 +207,18 @@ onMounted(() => {
       </div>
       <p v-else class="text-subtle">{{ t.emptyCategory }}</p>
 
-      <div v-if="cursor" class="mt-8 text-center">
+      <div v-if="error" class="mt-8 text-center">
+        <p class="mb-2 text-sm text-danger">{{ error }}</p>
+        <button
+          :disabled="loading"
+          class="rounded-xl border-2 border-primary px-6 py-2 font-medium text-primary transition hover:bg-primary hover:text-white disabled:opacity-50"
+          @click="retryFn && retryFn()"
+        >
+          {{ loading ? t.loading : t.retry }}
+        </button>
+      </div>
+
+      <div v-else-if="cursor" class="mt-8 text-center">
         <button
           :disabled="loading"
           class="rounded-xl border-2 border-primary px-6 py-2 font-medium text-primary transition hover:bg-primary hover:text-white disabled:opacity-50"

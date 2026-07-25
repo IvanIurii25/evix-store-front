@@ -286,4 +286,57 @@ describe('CatalogControls', () => {
       valueIds: [100],
     });
   });
+
+  it('shows an error + retry when load-more fails, then recovers', async () => {
+    listProducts.mockRejectedValueOnce(new Error('boom'));
+    const wrapper = mount(CatalogControls, {
+      props: baseProps({ initialCursor: 'c1' }),
+    });
+    await flushPromises();
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Показать ещё')!
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Не удалось загрузить товары.');
+    const retryBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Повторить');
+    expect(retryBtn).toBeTruthy();
+
+    listProducts.mockResolvedValueOnce({
+      data: [makeProduct(9)],
+      next_cursor: null,
+    });
+    await retryBtn!.trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('Не удалось загрузить товары.');
+    expect(wrapper.text()).toContain('Товар 9');
+  });
+
+  it('shows an error + retry when a filter reload fails', async () => {
+    listProducts.mockRejectedValueOnce(new Error('boom'));
+    const wrapper = mount(CatalogControls, { props: baseProps() });
+    await flushPromises();
+
+    await wrapper.findAll('input[type="number"]')[0].setValue('50');
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Применить')!
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Не удалось загрузить товары.');
+
+    listProducts.mockResolvedValueOnce({
+      data: [makeProduct(9)],
+      next_cursor: null,
+    });
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Повторить')!
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Товар 9');
+  });
 });

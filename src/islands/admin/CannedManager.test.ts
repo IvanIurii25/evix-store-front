@@ -118,4 +118,28 @@ describe('CannedManager', () => {
     await flushPromises();
     expect(w.text()).toContain('нет доступа');
   });
+
+  it('shows fallback messages on non-Error rejections (save & delete)', async () => {
+    mockList.mockResolvedValue([item()]);
+    mockCreate.mockRejectedValue('boom'); // not an Error
+    const w = mount(CannedManager);
+    await flushPromises();
+
+    await w.find('input').setValue('T');
+    await w.find('textarea').setValue('x');
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Создать')!
+      .trigger('click');
+    await flushPromises();
+    expect(w.text()).toContain('Не удалось сохранить');
+
+    mockDelete.mockRejectedValue('boom');
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!
+      .trigger('click');
+    await flushPromises();
+    expect(w.text()).toContain('Не удалось удалить');
+  });
 });

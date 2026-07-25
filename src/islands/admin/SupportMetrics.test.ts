@@ -55,6 +55,20 @@ describe('SupportMetrics', () => {
     expect(w.text()).toContain('—');
   });
 
+  it('formats a sub-minute response time in seconds', async () => {
+    mockGet.mockResolvedValue(metrics({ avg_first_response_seconds: 45 }));
+    const w = mount(SupportMetrics);
+    await flushPromises();
+    expect(w.text()).toContain('45 с');
+  });
+
+  it('formats an hours+minutes response time', async () => {
+    mockGet.mockResolvedValue(metrics({ avg_first_response_seconds: 3900 }));
+    const w = mount(SupportMetrics);
+    await flushPromises();
+    expect(w.text()).toContain('1 ч');
+  });
+
   it('renders a chart bar per series point', async () => {
     const w = mount(SupportMetrics);
     await flushPromises();

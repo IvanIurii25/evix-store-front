@@ -504,6 +504,8 @@ export interface ListingStrings {
   sortNewest: string;
   sortPriceAsc: string;
   sortPriceDesc: string;
+  loadError: string;
+  retry: string;
 }
 
 const LISTING: Record<Lang, ListingStrings> = {
@@ -519,6 +521,8 @@ const LISTING: Record<Lang, ListingStrings> = {
     sortNewest: 'Cele mai noi',
     sortPriceAsc: 'Preț crescător',
     sortPriceDesc: 'Preț descrescător',
+    loadError: 'Nu s-au putut încărca produsele.',
+    retry: 'Reîncearcă',
   },
   ru: {
     breadcrumbHome: 'Главная',
@@ -532,6 +536,8 @@ const LISTING: Record<Lang, ListingStrings> = {
     sortNewest: 'Сначала новые',
     sortPriceAsc: 'Сначала дешёвые',
     sortPriceDesc: 'Сначала дорогие',
+    loadError: 'Не удалось загрузить товары.',
+    retry: 'Повторить',
   },
 };
 

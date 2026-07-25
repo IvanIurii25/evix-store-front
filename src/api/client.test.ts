@@ -83,3 +83,92 @@ describe('api client', () => {
     );
   });
 });
+
+function resp(status: number): Response {
+  return new Response(null, { status });
+}
+
+describe('retryFetch', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('retries a GET on 502 and returns the eventual success', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(resp(502))
+      .mockResolvedValueOnce(resp(200));
+    vi.stubGlobal('fetch', fetchMock);
+    const { retryFetch } = await import('./client');
+
+    const res = await retryFetch('/x'); // no method → GET
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after the retry budget and returns the last 5xx', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(resp(503));
+    vi.stubGlobal('fetch', fetchMock);
+    const { retryFetch } = await import('./client');
+
+    const res = await retryFetch('/x');
+    expect(res.status).toBe(503);
+    expect(fetchMock).toHaveBeenCalledTimes(3); // initial + 2 retries
+  });
+
+  it('retries a GET on a network error, then succeeds', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('network'))
+      .mockResolvedValueOnce(resp(200));
+    vi.stubGlobal('fetch', fetchMock);
+    const { retryFetch } = await import('./client');
+
+    const res = await retryFetch('/x');
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does NOT retry a POST (writes must not double-submit)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(resp(502));
+    vi.stubGlobal('fetch', fetchMock);
+    const { retryFetch } = await import('./client');
+
+    const res = await retryFetch('/x', { method: 'POST' });
+    expect(res.status).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry a successful GET', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(resp(200));
+    vi.stubGlobal('fetch', fetchMock);
+    const { retryFetch } = await import('./client');
+
+    await retryFetch('/x');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads the method from a GET Request object and retries', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(resp(502))
+      .mockResolvedValueOnce(resp(200));
+    vi.stubGlobal('fetch', fetchMock);
+    const { retryFetch } = await import('./client');
+
+    const res = await retryFetch(new Request('http://x/y'));
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry a POST Request object', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(resp(502));
+    vi.stubGlobal('fetch', fetchMock);
+    const { retryFetch } = await import('./client');
+
+    const res = await retryFetch(new Request('http://x/y', { method: 'POST' }));
+    expect(res.status).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
