@@ -8,8 +8,10 @@ import {
   setConversationStatus,
   deleteConversation,
   subscribeSupport,
+  listCanned,
   type ConversationOut,
   type MessageOut,
+  type CannedOut,
 } from '../../api/support';
 
 // --------------------------------------------------------------------------- //
@@ -62,6 +64,20 @@ const replyError = ref('');
 
 // Erasure confirm toggle (reset whenever a conversation is opened)
 const confirmingDelete = ref(false);
+
+// Canned responses (reply templates) — loaded once, filtered by the open
+// conversation's language for the picker.
+const canned = ref<CannedOut[]>([]);
+const showCanned = ref(false);
+const cannedForLang = computed(() => {
+  const lang = threadConv.value?.lang;
+  const matches = lang ? canned.value.filter((c) => c.lang === lang) : [];
+  return matches.length ? matches : canned.value;
+});
+function insertCanned(text: string) {
+  replyText.value = replyText.value ? `${replyText.value}\n${text}` : text;
+  showCanned.value = false;
+}
 
 const threadEl = ref<HTMLElement | null>(null);
 
@@ -166,6 +182,9 @@ let source: EventSource | null = null;
 
 onMounted(() => {
   loadList();
+  listCanned()
+    .then((rows) => (canned.value = rows))
+    .catch(() => {});
   source = subscribeSupport((evt) => {
     loadList();
     if (evt.conversation_id === selectedId.value && evt.kind === 'inbound') {
@@ -205,6 +224,12 @@ const listEmpty = computed(
   <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
     <!-- Left: conversation list -->
     <div class="flex flex-col gap-3 md:col-span-1">
+      <a
+        href="/admin/support/templates"
+        class="self-start text-sm text-subtle hover:text-primary"
+      >
+        Шаблоны ответов →
+      </a>
       <select
         v-model="statusFilter"
         class="rounded-xl border-2 border-fill px-3 py-2 outline-none focus:border-primary"
@@ -375,6 +400,32 @@ const listEmpty = computed(
           <p v-if="replyError" class="mb-2 text-sm text-danger">
             {{ replyError }}
           </p>
+
+          <!-- Canned-response picker -->
+          <div v-if="canned.length" class="relative mb-2">
+            <button
+              type="button"
+              class="rounded-lg bg-fill px-2 py-1 text-xs font-medium text-subtle hover:text-ink"
+              @click="showCanned = !showCanned"
+            >
+              Шаблоны ▾
+            </button>
+            <ul
+              v-if="showCanned"
+              class="absolute bottom-full z-10 mb-1 max-h-60 w-72 overflow-y-auto rounded-xl border-2 border-fill bg-white shadow-lg"
+            >
+              <li
+                v-for="c in cannedForLang"
+                :key="c.id"
+                class="cursor-pointer px-3 py-2 hover:bg-fill"
+                @click="insertCanned(c.text)"
+              >
+                <p class="text-sm font-medium text-ink">{{ c.title }}</p>
+                <p class="truncate text-xs text-subtle">{{ c.text }}</p>
+              </li>
+            </ul>
+          </div>
+
           <div class="flex items-end gap-2">
             <textarea
               v-model="replyText"

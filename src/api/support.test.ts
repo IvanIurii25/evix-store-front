@@ -157,6 +157,60 @@ describe('support api', () => {
     const { deleteConversation } = await load();
     await expect(deleteConversation(1)).rejects.toThrow('нет доступа');
   });
+
+  it('listCanned GETs templates, with an optional lang filter', async () => {
+    stubOnce(jsonResponse([{ id: 1, title: 'T', text: 'x', lang: 'ru' }]));
+    const { listCanned } = await load();
+    await expect(listCanned('ru')).resolves.toHaveLength(1);
+    expect(lastRequest().url).toBe(
+      `${BASE}/api/v1/admin/support/canned?lang=ru`,
+    );
+  });
+
+  it('listCanned returns [] on failure', async () => {
+    stubOnce(envelope('нет', 500));
+    const { listCanned } = await load();
+    await expect(listCanned()).rejects.toThrow('нет');
+  });
+
+  it('createCanned POSTs the body', async () => {
+    stubOnce(jsonResponse({ id: 5, title: 'T', text: 'x', lang: 'ru' }, 201));
+    const { createCanned } = await load();
+    const res = await createCanned({
+      title: 'T',
+      text: 'x',
+      lang: 'ru',
+      sort_order: 0,
+    });
+    expect(res.id).toBe(5);
+    const req = lastRequest();
+    expect(req.method).toBe('POST');
+    expect(req.url).toBe(`${BASE}/api/v1/admin/support/canned`);
+  });
+
+  it('updateCanned PATCHes by id', async () => {
+    stubOnce(jsonResponse({ id: 5, title: 'T2', text: 'x', lang: 'ru' }, 200));
+    const { updateCanned } = await load();
+    const res = await updateCanned(5, {
+      title: 'T2',
+      text: 'x',
+      lang: 'ru',
+      sort_order: 1,
+    });
+    expect(res.title).toBe('T2');
+    const req = lastRequest();
+    expect(req.method).toBe('PATCH');
+    expect(req.url).toBe(`${BASE}/api/v1/admin/support/canned/5`);
+  });
+
+  it('deleteCanned DELETEs by id', async () => {
+    stubOnce(jsonResponse(null, 204));
+    const { deleteCanned } = await load();
+    await expect(deleteCanned(5)).resolves.toBeUndefined();
+    const req = lastRequest();
+    expect(req.method).toBe('DELETE');
+    expect(req.url).toBe(`${BASE}/api/v1/admin/support/canned/5`);
+  });
 });
 
 interface FakeSource {

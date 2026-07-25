@@ -9,6 +9,7 @@ import {
   setConversationStatus,
   deleteConversation,
   subscribeSupport,
+  listCanned,
   type ConversationOut,
   type MessageOut,
   type SupportEvent,
@@ -21,6 +22,7 @@ vi.mock('../../api/support', () => ({
   setConversationStatus: vi.fn(),
   deleteConversation: vi.fn(),
   subscribeSupport: vi.fn(),
+  listCanned: vi.fn(),
 }));
 
 const mockList = vi.mocked(listConversations);
@@ -29,6 +31,7 @@ const mockReply = vi.mocked(replyToConversation);
 const mockStatus = vi.mocked(setConversationStatus);
 const mockDelete = vi.mocked(deleteConversation);
 const mockSubscribe = vi.mocked(subscribeSupport);
+const mockCanned = vi.mocked(listCanned);
 
 const conv = (over: Partial<ConversationOut> = {}): ConversationOut =>
   ({
@@ -73,6 +76,7 @@ const fakeSource = { close: vi.fn() } as unknown as EventSource;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockCanned.mockResolvedValue([]);
   mockSubscribe.mockImplementation((cb) => {
     sseCallback = cb;
     return fakeSource;
@@ -345,5 +349,29 @@ describe('SupportInbox', () => {
     await w.find('li').trigger('click');
     await flushPromises();
     expect(w.text()).toContain('не доставлено');
+  });
+
+  it('inserts a canned template into the reply box', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(threadOf(conv(), [msg()]));
+    mockCanned.mockResolvedValue([
+      { id: 1, title: 'Доставка', text: 'Доставка 1–2 дня', lang: 'ru' },
+    ] as never);
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    // open the picker, then click the template
+    await w
+      .findAll('button')
+      .find((b) => b.text().includes('Шаблоны'))!
+      .trigger('click');
+    await w.find('ul.absolute li').trigger('click');
+    await flushPromises();
+
+    expect((w.find('textarea').element as HTMLTextAreaElement).value).toBe(
+      'Доставка 1–2 дня',
+    );
   });
 });

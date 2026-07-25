@@ -18,6 +18,8 @@ export type ConversationOut = Schemas['ConversationOut'];
 export type MessageOut = Schemas['MessageOut'];
 export type ConversationList = Schemas['ConversationList'];
 export type ThreadOut = Schemas['ThreadOut'];
+export type CannedOut = Schemas['CannedOut'];
+export type CannedIn = Schemas['CannedIn'];
 
 // One live event pushed over SSE: which conversation changed and how.
 export interface SupportEvent {
@@ -128,4 +130,45 @@ export function subscribeSupport(
     }
   };
   return source;
+}
+
+// --------------------------------------------------------------------------- //
+// Canned responses (reply templates) — admin CRUD
+// --------------------------------------------------------------------------- //
+export async function listCanned(lang?: string): Promise<CannedOut[]> {
+  const { data, error } = await api.GET('/api/v1/admin/support/canned', {
+    params: { query: lang ? { lang } : {} },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить шаблоны');
+  return data ?? [];
+}
+
+export async function createCanned(body: CannedIn): Promise<CannedOut> {
+  const { data, error } = await api.POST('/api/v1/admin/support/canned', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось создать шаблон');
+  return data as CannedOut;
+}
+
+export async function updateCanned(
+  cannedId: number,
+  body: CannedIn,
+): Promise<CannedOut> {
+  const { data, error } = await api.PATCH(
+    '/api/v1/admin/support/canned/{canned_id}',
+    { params: { path: { canned_id: cannedId } }, body, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось сохранить шаблон');
+  return data as CannedOut;
+}
+
+export async function deleteCanned(cannedId: number): Promise<void> {
+  const { error } = await api.DELETE(
+    '/api/v1/admin/support/canned/{canned_id}',
+    { params: { path: { canned_id: cannedId } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось удалить шаблон');
 }

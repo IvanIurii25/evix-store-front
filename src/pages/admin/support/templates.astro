@@ -1,0 +1,19 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import CannedManager from '../../../islands/admin/CannedManager.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+
+export const prerender = false;
+
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout title="Шаблоны ответов" email={guard.user.email} active="support">
+  <div class="mb-4">
+    <a href="/admin/support" class="text-sm text-subtle hover:text-primary">
+      ← К диалогам
+    </a>
+  </div>
+  <CannedManager client:load />
+</AdminLayout>

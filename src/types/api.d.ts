@@ -1726,6 +1726,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/support/canned': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Canned
+     * @description Return canned reply templates, optionally filtered by language.
+     *
+     *     Args:
+     *         lang: Optional exact template-language filter.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         list[CannedOut]: The templates, ordered for the picker.
+     */
+    get: operations['list_canned_api_v1_admin_support_canned_get'];
+    put?: never;
+    /**
+     * Create Canned
+     * @description Create a canned reply template.
+     *
+     *     Args:
+     *         payload: The validated template body.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         CannedOut: The persisted template.
+     */
+    post: operations['create_canned_api_v1_admin_support_canned_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/support/canned/{canned_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Canned
+     * @description Delete a canned reply template.
+     *
+     *     Args:
+     *         canned_id: The template's primary key.
+     *         session: Injected async DB session.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the template does not exist.
+     */
+    delete: operations['delete_canned_api_v1_admin_support_canned__canned_id__delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Update Canned
+     * @description Update a canned reply template.
+     *
+     *     Args:
+     *         canned_id: The template's primary key.
+     *         payload: The validated template body.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         CannedOut: The updated template.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the template does not exist.
+     */
+    patch: operations['update_canned_api_v1_admin_support_canned__canned_id__patch'];
+    trace?: never;
+  };
   '/api/v1/site/seo': {
     parameters: {
       query?: never;
@@ -1854,9 +1934,11 @@ export interface paths {
      *
      *     Verifies the secret token, parses the update and — when it's a private text
      *     message this MVP handles — persists it and publishes a live inbox event via
-     *     :class:`~app.services.support_service.SupportService`. Any non-handled or
-     *     malformed update is ignored and still answered ``200`` so Telegram stops
-     *     retrying.
+     *     :class:`~app.services.support_service.SupportService`. When that message
+     *     starts a fresh unread burst (and a staff chat is configured), enqueues the
+     *     ``support.notify_staff`` Celery task so the heavy/failable staff-group send
+     *     happens off the ack path. Any non-handled or malformed update is ignored and
+     *     still answered ``200`` so Telegram stops retrying.
      *
      *     Args:
      *         request: The incoming webhook request (raw update in the JSON body).
@@ -2227,6 +2309,53 @@ export interface components {
       name: string;
       /** Slug */
       slug: string;
+    };
+    /**
+     * CannedIn
+     * @description Body for creating / updating a canned reply template.
+     */
+    CannedIn: {
+      /**
+       * Title
+       * @description Short picker label.
+       */
+      title: string;
+      /**
+       * Text
+       * @description Reply body (Telegram's 4096-char text cap).
+       */
+      text: string;
+      /**
+       * Lang
+       * @description Template language (ro | ru).
+       */
+      lang: string;
+      /**
+       * Sort Order
+       * @default 0
+       */
+      sort_order: number;
+    };
+    /**
+     * CannedOut
+     * @description One canned reply template (admin picker / management).
+     */
+    CannedOut: {
+      /** Id */
+      id: number;
+      /** Title */
+      title: string;
+      /** Text */
+      text: string;
+      /** Lang */
+      lang: string;
+      /** Sort Order */
+      sort_order: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
     };
     /**
      * CartItemOut
@@ -6380,6 +6509,135 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ConversationOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_canned_api_v1_admin_support_canned_get: {
+    parameters: {
+      query?: {
+        /** @description Exact template-language filter (ro/ru). */
+        lang?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CannedOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_canned_api_v1_admin_support_canned_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CannedIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CannedOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_canned_api_v1_admin_support_canned__canned_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        canned_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_canned_api_v1_admin_support_canned__canned_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        canned_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CannedIn'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['CannedOut'];
         };
       };
       /** @description Validation Error */
