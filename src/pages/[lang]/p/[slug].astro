@@ -5,7 +5,6 @@ import ProductGallery from '../../../islands/ProductGallery.vue';
 import AddToCart from '../../../islands/AddToCart.vue';
 import QuickBuy from '../../../islands/QuickBuy.vue';
 import RestockNotify from '../../../islands/RestockNotify.vue';
-import ProductTabs from '../../../islands/ProductTabs.vue';
 import ShareButtons from '../../../islands/ShareButtons.vue';
 import ProductRail from '../../../components/ProductRail.astro';
 import RecentlyViewed from '../../../islands/RecentlyViewed.vue';
@@ -13,6 +12,7 @@ import SupportLink from '../../../components/SupportLink.astro';
 import { footerLabels, ui, pdpStrings } from '../../../lib/i18n-strings';
 import { productPayload } from '../../../lib/support';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
+import { optimizeDescriptionHtml } from '../../../lib/description';
 import {
   price,
   discountPercent,
@@ -44,6 +44,14 @@ const tp = pdpStrings(lang);
 const related = await getRelatedProducts(product.slug, lang, 8);
 
 const media = product.media ?? [];
+
+// Product details (feature B): description + specs render full-width below the
+// hero, both shown at once (no tabs). optimizeDescriptionHtml is pure string
+// work (sanitize + WebP <picture>), safe to run server-side here.
+const attributes = product.attributes ?? [];
+const descriptionHtml = optimizeDescriptionHtml(product.description);
+const hasDescription = Boolean(descriptionHtml);
+const hasAttributes = attributes.length > 0;
 
 // Discount badge (-N%): shown only when old_price is set and > current price.
 const salePercent = discountPercent(product.old_price, product.price);
@@ -106,14 +114,14 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
       lang={lang}
     />
 
-    <div class="mt-6 flex flex-col gap-10 lg:flex-row">
+    <div class="mt-6 flex flex-col gap-10 lg:flex-row lg:items-start">
       <!-- Gallery (island: switch main image via thumbnails) -->
-      <div class="lg:w-1/2">
+      <div class="lg:flex-1 lg:min-w-0">
         <ProductGallery client:visible images={media} alt={product.name} />
       </div>
 
-      <!-- Info -->
-      <div class="lg:w-[525px]">
+      <!-- Info (sticky within the hero row while scanning the gallery) -->
+      <div class="lg:sticky lg:top-6 lg:w-[380px] lg:shrink-0">
         <h1 class="text-2xl font-bold text-ink">{product.name}</h1>
         <div class="mt-1 text-sm text-subtle">{tp.code} {product.code}</div>
 
@@ -211,14 +219,39 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
           lang={lang}
         />
 
-        <ProductTabs
-          client:visible
-          description={product.description}
-          attributes={product.attributes ?? []}
-          lang={lang}
-        />
+        {
+          hasAttributes && (
+            <div class="mt-8">
+              <h2 class="text-sm font-semibold uppercase tracking-wide text-subtle">
+                {tp.tabAttributes}
+              </h2>
+              <dl class="mt-3 divide-y divide-fill rounded-2xl border-2 border-fill px-4 py-1">
+                {attributes.map((a) => (
+                  <div class="flex justify-between gap-4 py-2 text-sm">
+                    <dt class="text-subtle">{a.name}</dt>
+                    <dd class="text-right text-ink">
+                      {(a.values ?? []).join(', ')}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )
+        }
       </div>
     </div>
+
+    {
+      hasDescription && (
+        <section class="mx-auto mt-12 max-w-[820px]">
+          <h2 class="text-xl font-semibold text-ink">{tp.tabDescription}</h2>
+          <div
+            class="prod-description mt-4 text-body"
+            set:html={descriptionHtml}
+          />
+        </section>
+      )
+    }
   </div>
 
   {
@@ -238,3 +271,23 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
     }}
   />
 </Layout>
+
+<style>
+  /* set:html'd product description: keep imported images responsive + readable
+     flow. Astro scopes .prod-description; :global() reaches the injected HTML. */
+  .prod-description :global(img),
+  .prod-description :global(picture) {
+    max-width: 100%;
+    height: auto;
+    margin: 0.75rem auto;
+    display: block;
+  }
+  .prod-description :global(p) {
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+  }
+  .prod-description :global(a) {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+</style>
