@@ -6,6 +6,7 @@ import {
   updateProduct,
   type ProductSearchItem,
 } from '../../api/admin';
+import { discountPercent } from '../../lib/format';
 
 // --------------------------------------------------------------------------- //
 // A product is "on sale" when old_price is set AND old_price > price:
@@ -20,17 +21,6 @@ const error = ref('');
 
 function money(x: string | number): string {
   return `${Number(x).toLocaleString('ru-RU')} L`;
-}
-
-// Discount percentage from the two prices, rounded to a whole number.
-function discountPercent(
-  oldPrice: string | null | undefined,
-  price: string,
-): number {
-  const original = Number(oldPrice);
-  const current = Number(price);
-  if (!(original > 0) || !(current >= 0) || current >= original) return 0;
-  return Math.round((1 - current / original) * 100);
 }
 
 const isEmpty = computed(

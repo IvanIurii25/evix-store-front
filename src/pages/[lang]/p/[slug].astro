@@ -11,7 +11,7 @@ import SupportLink from '../../../components/SupportLink.astro';
 import { footerLabels } from '../../../lib/i18n-strings';
 import { productPayload } from '../../../lib/support';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
-import { price } from '../../../lib/format';
+import { price, discountPercent } from '../../../lib/format';
 import {
   isLang,
   localePath,
@@ -32,6 +32,9 @@ if (!product) return new Response('Product not found', { status: 404 });
 const related = await getRelatedProducts(product.slug, lang, 8);
 
 const media = product.media ?? [];
+
+// Discount badge (-N%): shown only when old_price is set and > current price.
+const salePercent = discountPercent(product.old_price, product.price);
 
 // Per-locale slugs come from the backend (slugs[]) → real hreflang equivalents.
 const canonical = localePath(lang, `p/${product.slug}`);
@@ -95,6 +98,13 @@ const jsonLd = [
             product.old_price && (
               <span class="text-lg text-subtle line-through">
                 {price(product.old_price)}
+              </span>
+            )
+          }
+          {
+            salePercent > 0 && (
+              <span class="rounded-lg bg-badge-sale-bg px-2 py-1 text-sm font-semibold text-badge-sale">
+                -{salePercent}%
               </span>
             )
           }
