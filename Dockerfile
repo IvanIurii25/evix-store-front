@@ -18,6 +18,9 @@ ENV PUBLIC_API_BASE=$PUBLIC_API_BASE
 # Canonical/hreflang/sitemap base (Astro `site`).
 ARG SITE_URL=https://shop.evix.md
 ENV SITE_URL=$SITE_URL
+# Telegram support bot username — empty hides the "Написать в поддержку" links.
+ARG PUBLIC_TELEGRAM_BOT_USERNAME=
+ENV PUBLIC_TELEGRAM_BOT_USERNAME=$PUBLIC_TELEGRAM_BOT_USERNAME
 RUN pnpm build
 
 FROM node:22-slim AS runtime
