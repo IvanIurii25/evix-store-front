@@ -1638,7 +1638,24 @@ export interface paths {
     get: operations['get_conversation_api_v1_admin_support_conversations__conversation_id__get'];
     put?: never;
     post?: never;
-    delete?: never;
+    /**
+     * Delete Conversation
+     * @description Hard-delete a conversation and its messages (on-request erasure).
+     *
+     *     The on-request erasure path (LP195/2024 Art.17) for Telegram support data,
+     *     which is not account-linked (so account erasure cannot reach it). Deleting
+     *     the conversation cascades to its messages; other operators' live inboxes are
+     *     told to drop it via a published event.
+     *
+     *     Args:
+     *         conversation_id: The conversation to erase.
+     *         session: Injected async DB session.
+     *         redis: Injected async Redis client (live-event publishing).
+     *
+     *     Raises:
+     *         HTTPException: 404 if the conversation does not exist.
+     */
+    delete: operations['delete_conversation_api_v1_admin_support_conversations__conversation_id__delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -6265,6 +6282,35 @@ export interface operations {
         content: {
           'application/json': components['schemas']['ThreadOut'];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_conversation_api_v1_admin_support_conversations__conversation_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversation_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation Error */
       422: {

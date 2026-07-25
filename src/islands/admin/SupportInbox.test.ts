@@ -7,6 +7,7 @@ import {
   getThread,
   replyToConversation,
   setConversationStatus,
+  deleteConversation,
   subscribeSupport,
   type ConversationOut,
   type MessageOut,
@@ -18,6 +19,7 @@ vi.mock('../../api/support', () => ({
   getThread: vi.fn(),
   replyToConversation: vi.fn(),
   setConversationStatus: vi.fn(),
+  deleteConversation: vi.fn(),
   subscribeSupport: vi.fn(),
 }));
 
@@ -25,6 +27,7 @@ const mockList = vi.mocked(listConversations);
 const mockThread = vi.mocked(getThread);
 const mockReply = vi.mocked(replyToConversation);
 const mockStatus = vi.mocked(setConversationStatus);
+const mockDelete = vi.mocked(deleteConversation);
 const mockSubscribe = vi.mocked(subscribeSupport);
 
 const conv = (over: Partial<ConversationOut> = {}): ConversationOut =>
@@ -258,6 +261,73 @@ describe('SupportInbox', () => {
       .trigger('click');
     await flushPromises();
     expect(w.text()).toContain('статус не сменился');
+  });
+
+  it('deletes a conversation after confirming and drops it from the list', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(threadOf(conv(), [msg()]));
+    mockDelete.mockResolvedValue();
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    // reveal the confirm, then confirm
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!
+      .trigger('click');
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Да')!
+      .trigger('click');
+    await flushPromises();
+
+    expect(mockDelete).toHaveBeenCalledWith(1);
+    expect(w.findAll('li')).toHaveLength(0);
+    expect(w.text()).toContain('Выберите диалог'); // pane cleared
+  });
+
+  it('cancels the delete without calling the api', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(threadOf(conv(), [msg()]));
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!
+      .trigger('click');
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Нет')!
+      .trigger('click');
+    await flushPromises();
+    expect(mockDelete).not.toHaveBeenCalled();
+    // back to the single "Удалить" affordance
+    expect(w.findAll('button').find((b) => b.text() === 'Да')).toBeUndefined();
+  });
+
+  it('surfaces a delete error', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(threadOf(conv(), [msg()]));
+    mockDelete.mockRejectedValue(new Error('не удалить'));
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!
+      .trigger('click');
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Да')!
+      .trigger('click');
+    await flushPromises();
+    expect(w.text()).toContain('не удалить');
   });
 
   it('falls back to a generic name and shows a failed-delivery badge', async () => {

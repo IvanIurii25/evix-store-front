@@ -141,6 +141,22 @@ describe('support api', () => {
       `${BASE}/api/v1/admin/support/conversations/3?page=1`,
     );
   });
+
+  it('deleteConversation DELETEs the conversation', async () => {
+    stubOnce(jsonResponse(null, 204));
+    const { deleteConversation } = await load();
+    await expect(deleteConversation(7)).resolves.toBeUndefined();
+    const req = lastRequest();
+    expect(req.method).toBe('DELETE');
+    expect(req.credentials).toBe('include');
+    expect(req.url).toBe(`${BASE}/api/v1/admin/support/conversations/7`);
+  });
+
+  it('deleteConversation throws on error', async () => {
+    stubOnce(envelope('нет доступа', 403));
+    const { deleteConversation } = await load();
+    await expect(deleteConversation(1)).rejects.toThrow('нет доступа');
+  });
 });
 
 interface FakeSource {

@@ -97,6 +97,19 @@ export async function setConversationStatus(
   return data as ConversationOut;
 }
 
+// On-request erasure (LP195/2024 Art.17): hard-delete a conversation and its
+// messages. Telegram support data is not account-linked, so this is the manual
+// erasure path an operator actions on a subject's request.
+export async function deleteConversation(
+  conversationId: number,
+): Promise<void> {
+  const { error } = await api.DELETE(
+    '/api/v1/admin/support/conversations/{conversation_id}',
+    { params: { path: { conversation_id: conversationId } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось удалить диалог');
+}
+
 // Open the SSE live feed. Returns the EventSource so the caller closes it on
 // teardown. `onEvent` fires per pushed conversation-changed event; malformed
 // frames (and the initial `: connected` comment) are ignored.

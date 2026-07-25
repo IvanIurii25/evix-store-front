@@ -6,6 +6,7 @@ import {
   getThread,
   replyToConversation,
   setConversationStatus,
+  deleteConversation,
   subscribeSupport,
   type ConversationOut,
   type MessageOut,
@@ -59,6 +60,9 @@ const replyText = ref('');
 const sending = ref(false);
 const replyError = ref('');
 
+// Erasure confirm toggle (reset whenever a conversation is opened)
+const confirmingDelete = ref(false);
+
 const threadEl = ref<HTMLElement | null>(null);
 
 // --------------------------------------------------------------------------- //
@@ -85,6 +89,7 @@ async function openConversation(id: number) {
   threadLoading.value = true;
   threadError.value = '';
   replyError.value = '';
+  confirmingDelete.value = false;
   try {
     const res = await getThread(id);
     threadConv.value = res.conversation;
@@ -127,6 +132,23 @@ async function changeStatus(status: string) {
     if (row) row.status = conv.status;
   } catch (e) {
     threadError.value = e instanceof Error ? e.message : 'Не удалось изменить';
+  }
+}
+
+// On-request erasure (LP195 Art.17): two-step confirm, then hard-delete and drop
+// the conversation from the list / clear the pane.
+async function removeConversation() {
+  const id = selectedId.value;
+  if (id === null) return;
+  try {
+    await deleteConversation(id);
+    conversations.value = conversations.value.filter((c) => c.id !== id);
+    selectedId.value = null;
+    threadConv.value = null;
+    messages.value = [];
+    confirmingDelete.value = false;
+  } catch (e) {
+    threadError.value = e instanceof Error ? e.message : 'Не удалось удалить';
   }
 }
 
@@ -285,6 +307,31 @@ const listEmpty = computed(
             >
               {{ statusLabel(s) }}
             </button>
+
+            <!-- Erasure: two-step confirm -->
+            <template v-if="!confirmingDelete">
+              <button
+                class="ml-2 rounded-lg bg-fill px-2 py-1 text-xs font-medium text-subtle hover:text-danger"
+                @click="confirmingDelete = true"
+              >
+                Удалить
+              </button>
+            </template>
+            <template v-else>
+              <span class="ml-2 text-xs text-subtle">Удалить?</span>
+              <button
+                class="rounded-lg bg-danger px-2 py-1 text-xs font-medium text-white"
+                @click="removeConversation"
+              >
+                Да
+              </button>
+              <button
+                class="rounded-lg bg-fill px-2 py-1 text-xs font-medium text-subtle"
+                @click="confirmingDelete = false"
+              >
+                Нет
+              </button>
+            </template>
           </div>
         </div>
 
