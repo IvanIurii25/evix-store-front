@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import {
   quote,
+  quoteResult,
   checkout,
   type QuoteOut,
   type DeliveryAddressIn,
@@ -29,6 +30,33 @@ const q = ref<QuoteOut | null>(null);
 const quoteError = ref('');
 const error = ref('');
 const loading = ref(false);
+
+// Promo code: `promoInput` is the field, `appliedCode` is the code currently
+// held in the quote state (re-sent on every re-quote). `promoError` shows a
+// localized message under the field; `promoBusy` guards the Apply button.
+const promoInput = ref('');
+const appliedCode = ref('');
+const promoError = ref('');
+const promoBusy = ref(false);
+
+// Discount amount from the current quote ("0" when none), for the summary line.
+const discount = computed(() => (q.value ? Number(q.value.discount_total) : 0));
+
+// Map a backend promo error code to a localized message.
+function promoMessage(code: string | null): string {
+  switch (code) {
+    case 'promo_invalid':
+      return t.promoErrInvalid;
+    case 'promo_expired':
+      return t.promoErrExpired;
+    case 'promo_min_order':
+      return t.promoErrMinOrder;
+    case 'promo_usage_limit':
+      return t.promoErrUsageLimit;
+    default:
+      return t.promoErrGeneric;
+  }
+}
 
 // Inline courier address (guest + user). Snapshotted onto the order by the API.
 const addrName = ref('');
@@ -89,15 +117,69 @@ const courierAddressReady = computed(
 
 async function refreshQuote() {
   quoteError.value = '';
-  q.value = await quote(
+  q.value = appliedCode.value
+    ? await quote(
+        deliveryType.value,
+        deliveryAddress.value,
+        props.lang,
+        deliveryAddressId.value,
+        appliedCode.value,
+      )
+    : await quote(
+        deliveryType.value,
+        deliveryAddress.value,
+        props.lang,
+        deliveryAddressId.value,
+      );
+  // A held code that became unusable on re-quote (delivery/address change) must
+  // not break the base quote: drop it and re-quote without it.
+  if (!q.value && appliedCode.value) {
+    promoError.value = t.promoErrGeneric;
+    appliedCode.value = '';
+    q.value = await quote(
+      deliveryType.value,
+      deliveryAddress.value,
+      props.lang,
+      deliveryAddressId.value,
+    );
+  }
+  if (!q.value && deliveryType.value === 'courier') {
+    quoteError.value = t.errAddress;
+  }
+}
+
+// Apply the code in the field: try a quote with it; keep it on success,
+// otherwise show the mapped error and leave nothing applied.
+async function applyPromo() {
+  const code = promoInput.value.trim();
+  if (!code || promoBusy.value) return;
+  promoBusy.value = true;
+  promoError.value = '';
+  const res = await quoteResult(
     deliveryType.value,
     deliveryAddress.value,
     props.lang,
     deliveryAddressId.value,
+    code,
   );
-  if (!q.value && deliveryType.value === 'courier') {
-    quoteError.value = t.errAddress;
+  if (res.data && Number(res.data.discount_total) > 0) {
+    appliedCode.value = code;
+    q.value = res.data;
+  } else if (res.data) {
+    // Quote succeeded but the code produced no discount — treat as invalid.
+    promoError.value = t.promoErrInvalid;
+  } else {
+    promoError.value = promoMessage(res.error);
   }
+  promoBusy.value = false;
+}
+
+// Remove the applied code and re-quote without it.
+async function removePromo() {
+  appliedCode.value = '';
+  promoInput.value = '';
+  promoError.value = '';
+  await refreshQuote();
 }
 
 onMounted(refreshQuote);
@@ -141,6 +223,9 @@ async function submit() {
         delivery_type: deliveryType.value,
         delivery_address: deliveryAddress.value,
         delivery_address_id: deliveryAddressId.value,
+        // Only include the code when one is applied, so promo-free orders keep
+        // their prior request body.
+        ...(appliedCode.value ? { promo_code: appliedCode.value } : {}),
       },
       props.lang,
     );
@@ -290,6 +375,15 @@ async function submit() {
             <dt class="text-subtle">{{ t.items }} ({{ q.item_count }})</dt>
             <dd>{{ price(q.subtotal) }}</dd>
           </div>
+          <div v-if="discount > 0" class="flex justify-between text-price">
+            <dt>
+              {{ t.discount }}
+              <span v-if="appliedCode" class="font-mono text-xs uppercase">{{
+                appliedCode
+              }}</span>
+            </dt>
+            <dd>−{{ price(discount) }}</dd>
+          </div>
           <div class="flex justify-between">
             <dt class="text-subtle">{{ t.delivery }}</dt>
             <dd>
@@ -308,6 +402,47 @@ async function submit() {
           </div>
         </dl>
         <p v-else class="mt-4 text-sm text-subtle">{{ t.quoteUnavailable }}</p>
+
+        <div class="mt-4 border-t border-fill pt-4">
+          <label class="text-sm font-medium text-ink">{{ t.promoCode }}</label>
+          <div
+            v-if="appliedCode && discount > 0"
+            class="mt-2 flex items-center justify-between gap-2 rounded-lg bg-fill px-3 py-2 text-sm"
+          >
+            <span>
+              <span class="text-price">{{ t.promoApplied }}:</span>
+              <span class="ml-1 font-mono uppercase text-ink">{{
+                appliedCode
+              }}</span>
+            </span>
+            <button
+              type="button"
+              class="font-medium text-danger hover:underline"
+              @click="removePromo"
+            >
+              {{ t.promoRemove }}
+            </button>
+          </div>
+          <div v-else class="mt-2 flex gap-2">
+            <input
+              v-model="promoInput"
+              :placeholder="t.promoPlaceholder"
+              class="min-w-0 flex-1 rounded-lg bg-fill px-3 py-2 uppercase outline-none"
+              @keydown.enter.prevent="applyPromo"
+            />
+            <button
+              type="button"
+              :disabled="promoBusy || !promoInput.trim()"
+              class="rounded-lg border-2 border-fill px-4 py-2 text-sm font-medium text-body transition hover:border-primary hover:text-primary disabled:opacity-50"
+              @click="applyPromo"
+            >
+              {{ t.promoApply }}
+            </button>
+          </div>
+          <p v-if="promoError" class="mt-2 text-sm text-danger">
+            {{ promoError }}
+          </p>
+        </div>
 
         <button
           type="button"

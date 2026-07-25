@@ -474,6 +474,58 @@ export async function deleteContentPage(id: number): Promise<void> {
   if (error) fail(error, 'Не удалось удалить страницу');
 }
 
+// --------------------------------------------------------------------------- //
+// Promo codes (coupons)
+// --------------------------------------------------------------------------- //
+export type PromoOut = Schemas['PromoOut'];
+export type PromoCreate = Schemas['PromoCreate'];
+export type PromoUpdate = Schemas['PromoUpdate'];
+
+export async function listPromos(): Promise<PromoOut[]> {
+  const { data, error } = await api.GET('/api/v1/admin/promo', CREDS);
+  if (error) fail(error, 'Не удалось загрузить промокоды');
+  return data?.data ?? [];
+}
+
+export async function getPromo(id: number): Promise<PromoOut> {
+  const { data, error } = await api.GET('/api/v1/admin/promo/{promo_id}', {
+    params: { path: { promo_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Промокод не найден');
+  return data;
+}
+
+export async function createPromo(body: PromoCreate): Promise<PromoOut> {
+  const { data, error } = await api.POST('/api/v1/admin/promo', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось создать промокод');
+  return data;
+}
+
+export async function updatePromo(
+  id: number,
+  body: PromoUpdate,
+): Promise<PromoOut> {
+  const { data, error } = await api.PATCH('/api/v1/admin/promo/{promo_id}', {
+    params: { path: { promo_id: id } },
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось сохранить промокод');
+  return data;
+}
+
+export async function deletePromo(id: number): Promise<void> {
+  const { error } = await api.DELETE('/api/v1/admin/promo/{promo_id}', {
+    params: { path: { promo_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось удалить промокод');
+}
+
 // --- Restock waiters (demand signal) ----------------------------------------
 export async function getRestockWaiters(productId: number): Promise<number> {
   const { data, error } = await api.GET(

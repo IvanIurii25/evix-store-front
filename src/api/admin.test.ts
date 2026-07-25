@@ -703,4 +703,62 @@ describe('admin api', () => {
       await expect(getRestockDemand()).rejects.toThrow('demand down');
     });
   });
+
+  // ------------------------------------------------------------------- promos
+  describe('promos', () => {
+    it('listPromos unwraps data.data', async () => {
+      stubOnce(jsonResponse({ data: [{ id: 1 }, { id: 2 }] }));
+      const { listPromos } = await load();
+      const res = await listPromos();
+      expect(res).toEqual([{ id: 1 }, { id: 2 }]);
+      const req = lastRequest();
+      expect(req.url).toContain('/api/v1/admin/promo');
+      expect(req.credentials).toBe('include');
+    });
+
+    it('createPromo POSTs the coupon body', async () => {
+      stubOnce(jsonResponse({ id: 5 }, 200));
+      const { createPromo } = await load();
+      const body = {
+        code: 'SALE10',
+        discount_type: 'percent',
+        discount_value: '10',
+        active_from: '2026-01-01T00:00:00Z',
+        active_to: '2026-12-31T00:00:00Z',
+        min_order_total: null,
+        usage_limit: null,
+        is_active: true,
+      };
+      const res = await createPromo(body);
+      expect(res).toEqual({ id: 5 });
+      const req = lastRequest();
+      expect(req.method).toBe('POST');
+      expect(await req.text()).toBe(JSON.stringify(body));
+    });
+
+    it('updatePromo PATCHes the id path', async () => {
+      stubOnce(jsonResponse({ id: 5 }, 200));
+      const { updatePromo } = await load();
+      await updatePromo(5, { is_active: false });
+      const req = lastRequest();
+      expect(req.method).toBe('PATCH');
+      expect(req.url).toContain('/api/v1/admin/promo/5');
+      expect(await req.text()).toBe('{"is_active":false}');
+    });
+
+    it('deletePromo DELETEs the id path', async () => {
+      stubOnce(jsonResponse(null, 204));
+      const { deletePromo } = await load();
+      await deletePromo(5);
+      const req = lastRequest();
+      expect(req.method).toBe('DELETE');
+      expect(req.url).toContain('/api/v1/admin/promo/5');
+    });
+
+    it('listPromos throws on error', async () => {
+      stubOnce(envelope('promo down'));
+      const { listPromos } = await load();
+      await expect(listPromos()).rejects.toThrow('promo down');
+    });
+  });
 });

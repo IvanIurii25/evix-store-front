@@ -164,6 +164,18 @@ export interface CheckoutStrings {
   free: string;
   quoteUnavailable: string;
   placeOrder: string;
+  // promo code
+  promoCode: string;
+  promoPlaceholder: string;
+  promoApply: string;
+  promoRemove: string;
+  promoApplied: string;
+  discount: string;
+  promoErrInvalid: string;
+  promoErrExpired: string;
+  promoErrMinOrder: string;
+  promoErrUsageLimit: string;
+  promoErrGeneric: string;
   errAddress: string;
   errEmail: string;
   errPhone: string;
@@ -210,6 +222,17 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     free: 'gratuit',
     quoteUnavailable: 'Calcul indisponibil.',
     placeOrder: 'Finalizează comanda',
+    promoCode: 'Cod promoțional',
+    promoPlaceholder: 'Introduceți codul',
+    promoApply: 'Aplică',
+    promoRemove: 'Elimină',
+    promoApplied: 'Cod aplicat',
+    discount: 'Reducere',
+    promoErrInvalid: 'Cod promoțional invalid.',
+    promoErrExpired: 'Codul promoțional a expirat.',
+    promoErrMinOrder: 'Comanda nu atinge suma minimă pentru acest cod.',
+    promoErrUsageLimit: 'Limita de utilizări a codului a fost atinsă.',
+    promoErrGeneric: 'Nu s-a putut aplica codul.',
     errAddress: 'Indicați adresa de livrare (nume, oraș, stradă).',
     errEmail: 'Introduceți un email valid',
     errPhone: 'Introduceți telefonul',
@@ -253,6 +276,17 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     free: 'бесплатно',
     quoteUnavailable: 'Расчёт недоступен.',
     placeOrder: 'Оформить заказ',
+    promoCode: 'Промокод',
+    promoPlaceholder: 'Введите код',
+    promoApply: 'Применить',
+    promoRemove: 'Убрать',
+    promoApplied: 'Код применён',
+    discount: 'Скидка',
+    promoErrInvalid: 'Неверный промокод.',
+    promoErrExpired: 'Срок действия промокода истёк.',
+    promoErrMinOrder: 'Заказ не достигает минимальной суммы для этого кода.',
+    promoErrUsageLimit: 'Достигнут лимит использований кода.',
+    promoErrGeneric: 'Не удалось применить код.',
     errAddress: 'Укажите адрес доставки (имя, город, улица).',
     errEmail: 'Введите корректный email',
     errPhone: 'Введите телефон',

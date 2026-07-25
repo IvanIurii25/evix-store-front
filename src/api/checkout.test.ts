@@ -75,6 +75,48 @@ describe('checkout api', () => {
     await expect(quote('courier')).resolves.toBeNull();
   });
 
+  it('quote sends promo_code only when a code is passed', async () => {
+    stubOnce(jsonResponse({ total: '90', discount_total: '10' }));
+    const { quote } = await load();
+    await quote('pickup', null, 'ru', null, '  SALE10 ');
+    expect(await req().text()).toBe(
+      '{"delivery_type":"pickup","delivery_address":null,"delivery_address_id":null,"promo_code":"SALE10"}',
+    );
+  });
+
+  it('quoteResult returns data and no error on success', async () => {
+    stubOnce(jsonResponse({ total: '90', discount_total: '10' }));
+    const { quoteResult } = await load();
+    const res = await quoteResult('pickup', null, 'ru', null, 'SALE10');
+    expect(res).toEqual({
+      data: { total: '90', discount_total: '10' },
+      error: null,
+    });
+  });
+
+  it('quoteResult surfaces the promo error code', async () => {
+    stubOnce(
+      jsonResponse({ error: { code: 'promo_expired', message: 'x' } }, 400),
+    );
+    const { quoteResult } = await load();
+    const res = await quoteResult('pickup', null, 'ru', null, 'OLD');
+    expect(res).toEqual({ data: null, error: 'promo_expired' });
+  });
+
+  it('checkout forwards promo_code in the body', async () => {
+    stubOnce(jsonResponse({ number: 'ORD-P' }, 201));
+    const { checkout } = await load();
+    await checkout({
+      email: 'a@b.c',
+      phone: '1',
+      delivery_type: 'pickup',
+      promo_code: 'SALE10',
+    });
+    expect(await req().text()).toBe(
+      '{"email":"a@b.c","phone":"1","delivery_type":"pickup","promo_code":"SALE10"}',
+    );
+  });
+
   it('checkout returns the created order', async () => {
     stubOnce(jsonResponse({ number: 'ORD-1' }, 201));
     const { checkout } = await load();

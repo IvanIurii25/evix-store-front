@@ -2,9 +2,11 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const quote = vi.fn();
+const quoteResult = vi.fn();
 const checkout = vi.fn();
 vi.mock('../api/checkout', () => ({
   quote: (...a: unknown[]) => quote(...a),
+  quoteResult: (...a: unknown[]) => quoteResult(...a),
   checkout: (...a: unknown[]) => checkout(...a),
 }));
 
@@ -257,7 +259,8 @@ describe('CheckoutForm', () => {
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
-    const btn = wrapper.find('aside button');
+    const asideButtons = wrapper.findAll('aside button');
+    const btn = asideButtons[asideButtons.length - 1]; // submit is the last one
     // Nothing filled yet → disabled.
     expect(btn.attributes('disabled')).toBeDefined();
 
@@ -274,11 +277,80 @@ describe('CheckoutForm', () => {
 
     await fillContacts(wrapper);
     await flushPromises();
-    await wrapper.find('aside button').trigger('click');
+    const asideButtons = wrapper.findAll('aside button');
+    await asideButtons[asideButtons.length - 1].trigger('click'); // submit
     await flushPromises();
 
     expect(checkout).toHaveBeenCalled();
     expect(hrefStore).toContain('number=B-2');
+  });
+
+  // --- Promo code ------------------------------------------------------- //
+  const QUOTE_DISCOUNTED = {
+    ...QUOTE,
+    discount_total: '100',
+    total: '898',
+  };
+
+  function promoInput(wrapper: ReturnType<typeof mount>) {
+    return wrapper.find('input[placeholder="Введите код"]');
+  }
+
+  it('applies a promo code and shows the discount line', async () => {
+    quote.mockResolvedValue(QUOTE);
+    quoteResult.mockResolvedValue({ data: QUOTE_DISCOUNTED, error: null });
+    const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    await promoInput(wrapper).setValue('SALE100');
+    await wrapper.find('button').trigger('click'); // Apply button (first button)
+    await flushPromises();
+
+    expect(quoteResult).toHaveBeenCalledWith(
+      'pickup',
+      null,
+      'ru',
+      null,
+      'SALE100',
+    );
+    expect(wrapper.text()).toContain('Скидка');
+    expect(wrapper.text()).toContain('898'); // discounted total
+    expect(wrapper.text()).toContain('Код применён');
+  });
+
+  it('shows a localized error for an invalid promo code', async () => {
+    quote.mockResolvedValue(QUOTE);
+    quoteResult.mockResolvedValue({ data: null, error: 'promo_expired' });
+    const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    await promoInput(wrapper).setValue('OLD');
+    await wrapper.find('button').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Срок действия промокода истёк');
+    // The base quote is untouched — no discount line.
+    expect(wrapper.text()).not.toContain('Скидка');
+  });
+
+  it('includes the applied promo_code in the checkout body', async () => {
+    quote.mockResolvedValue(QUOTE);
+    quoteResult.mockResolvedValue({ data: QUOTE_DISCOUNTED, error: null });
+    checkout.mockResolvedValue({ number: 'P-1', email: 'buyer@example.com' });
+    const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    await promoInput(wrapper).setValue('SALE100');
+    await wrapper.find('button').trigger('click');
+    await flushPromises();
+    await fillContacts(wrapper);
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(checkout).toHaveBeenCalledWith(
+      expect.objectContaining({ promo_code: 'SALE100' }),
+      'ru',
+    );
   });
 
   const SAVED = [

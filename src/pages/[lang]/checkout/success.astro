@@ -70,7 +70,18 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
                 </li>
               ))}
             </ul>
-            <div class="mt-4 flex justify-between border-t border-fill pt-3">
+            {Number(order.discount_total) > 0 && (
+              <div class="mt-3 flex justify-between border-t border-fill pt-3 text-sm text-price">
+                <span>{t.discount}</span>
+                <span>−{price(order.discount_total)}</span>
+              </div>
+            )}
+            <div
+              class:list={[
+                'flex justify-between border-t border-fill pt-3',
+                Number(order.discount_total) > 0 ? 'mt-3' : 'mt-4',
+              ]}
+            >
               <span class="font-semibold text-ink">{t.total}</span>
               <span class="text-xl font-semibold text-price">
                 {price(order.total)}
