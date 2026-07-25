@@ -90,7 +90,7 @@ describe('CatalogControls', () => {
     const wrapper = mount(CatalogControls, { props: baseProps() });
     await flushPromises();
 
-    expect(wrapper.text()).toContain('2 товаров');
+    expect(wrapper.text()).toContain('2 товара');
     expect(wrapper.text()).toContain('Цвет');
     expect(wrapper.text()).toContain('Красный');
     // No filters active on a clean URL → no reload.
@@ -138,7 +138,7 @@ describe('CatalogControls', () => {
     );
     // Product list replaced with the reload result.
     expect(wrapper.text()).toContain('Товар 3');
-    expect(wrapper.text()).toContain('1 товаров');
+    expect(wrapper.text()).toContain('1 товар');
   });
 
   it('toggles a facet value on and off, reloading each time', async () => {
@@ -230,7 +230,7 @@ describe('CatalogControls', () => {
       cursor: 'cur-1',
     });
     // Appended: original 2 + 1 more = 3.
-    expect(wrapper.text()).toContain('3 товаров');
+    expect(wrapper.text()).toContain('3 товара');
     // Cursor exhausted → button gone.
     expect(
       wrapper.findAll('button').find((b) => b.text() === 'Показать ещё'),

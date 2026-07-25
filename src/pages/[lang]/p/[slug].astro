@@ -8,7 +8,7 @@ import ProductTabs from '../../../islands/ProductTabs.vue';
 import ProductRail from '../../../components/ProductRail.astro';
 import RecentlyViewed from '../../../islands/RecentlyViewed.vue';
 import SupportLink from '../../../components/SupportLink.astro';
-import { footerLabels } from '../../../lib/i18n-strings';
+import { footerLabels, ui, pdpStrings } from '../../../lib/i18n-strings';
 import { productPayload } from '../../../lib/support';
 import { getProduct, getRelatedProducts } from '../../../api/catalog';
 import { price, discountPercent } from '../../../lib/format';
@@ -28,6 +28,9 @@ if (!isLang(lang)) return new Response('Not found', { status: 404 });
 const product = slug ? await getProduct(slug, lang) : null;
 
 if (!product) return new Response('Product not found', { status: 404 });
+
+const t = ui(lang);
+const tp = pdpStrings(lang);
 
 const related = await getRelatedProducts(product.slug, lang, 8);
 
@@ -88,7 +91,7 @@ const jsonLd = [
       <!-- Info -->
       <div class="lg:w-[525px]">
         <h1 class="text-2xl font-bold text-ink">{product.name}</h1>
-        <div class="mt-1 text-sm text-subtle">Код: {product.code}</div>
+        <div class="mt-1 text-sm text-subtle">{tp.code} {product.code}</div>
 
         <div class="mt-5 flex items-baseline gap-3">
           <span class="text-3xl font-semibold text-price"
@@ -112,7 +115,7 @@ const jsonLd = [
         <div
           class={`mt-2 text-sm ${product.in_stock ? 'text-price' : 'text-subtle'}`}
         >
-          {product.in_stock ? 'В наличии' : 'Нет в наличии'}
+          {product.in_stock ? t.inStock : t.outOfStock}
         </div>
 
         <div class="mt-6">
@@ -122,6 +125,7 @@ const jsonLd = [
                 client:visible
                 productId={product.id}
                 inStock={product.in_stock}
+                lang={lang}
               />
             ) : (
               <RestockNotify
@@ -144,6 +148,7 @@ const jsonLd = [
           client:visible
           description={product.description}
           attributes={product.attributes ?? []}
+          lang={lang}
         />
       </div>
     </div>
@@ -151,11 +156,7 @@ const jsonLd = [
 
   {
     related.length > 0 && (
-      <ProductRail
-        title={lang === 'ru' ? 'Похожие товары' : 'Produse similare'}
-        products={related}
-        lang={lang}
-      />
+      <ProductRail title={tp.relatedTitle} products={related} lang={lang} />
     )
   }
 

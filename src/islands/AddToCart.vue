@@ -2,8 +2,16 @@
 import { ref } from 'vue';
 import { addToCart } from '../api/cart';
 import { notifyCartChanged } from '../lib/cart-events';
+import type { Lang } from '../lib/i18n';
+import { ui, pdpStrings } from '../lib/i18n-strings';
 
-const props = defineProps<{ productId: number; inStock: boolean }>();
+const props = defineProps<{
+  productId: number;
+  inStock: boolean;
+  lang: Lang;
+}>();
+const t = ui(props.lang);
+const tp = pdpStrings(props.lang);
 
 const qty = ref(1);
 const state = ref<'idle' | 'loading' | 'done' | 'error'>('idle');
@@ -46,17 +54,17 @@ async function add() {
       >
         {{
           state === 'done'
-            ? 'Добавлено ✓'
+            ? tp.addedToCart
             : state === 'loading'
               ? '…'
               : inStock
-                ? 'В корзину'
-                : 'Нет в наличии'
+                ? t.addToCart
+                : t.outOfStock
         }}
       </button>
     </div>
     <p v-if="state === 'error'" class="mt-2 text-sm text-danger">
-      Не удалось добавить в корзину
+      {{ tp.addToCartError }}
     </p>
   </div>
 </template>

@@ -26,7 +26,9 @@ function ctaButton(w: ReturnType<typeof mount>) {
 
 describe('AddToCart', () => {
   it('increments and decrements the quantity (not below 1)', async () => {
-    const w = mount(AddToCart, { props: { productId: 7, inStock: true } });
+    const w = mount(AddToCart, {
+      props: { productId: 7, inStock: true, lang: 'ru' },
+    });
     const [minus, plus] = w.findAll('button');
     expect(w.find('.w-8').text()).toBe('1');
     await plus.trigger('click');
@@ -45,7 +47,9 @@ describe('AddToCart', () => {
     const changed = vi.fn();
     window.addEventListener(CART_CHANGED, changed);
 
-    const w = mount(AddToCart, { props: { productId: 7, inStock: true } });
+    const w = mount(AddToCart, {
+      props: { productId: 7, inStock: true, lang: 'ru' },
+    });
     await w.findAll('button')[1].trigger('click'); // qty -> 2
     await ctaButton(w).trigger('click');
     await flushPromises();
@@ -62,14 +66,18 @@ describe('AddToCart', () => {
 
   it('shows an error message when the API call fails', async () => {
     mockAdd.mockRejectedValue(new Error('boom'));
-    const w = mount(AddToCart, { props: { productId: 7, inStock: true } });
+    const w = mount(AddToCart, {
+      props: { productId: 7, inStock: true, lang: 'ru' },
+    });
     await ctaButton(w).trigger('click');
     await flushPromises();
     expect(w.text()).toContain('Не удалось добавить в корзину');
   });
 
   it('does nothing and stays disabled when out of stock', async () => {
-    const w = mount(AddToCart, { props: { productId: 7, inStock: false } });
+    const w = mount(AddToCart, {
+      props: { productId: 7, inStock: false, lang: 'ru' },
+    });
     const cta = ctaButton(w);
     expect(cta.attributes('disabled')).toBeDefined();
     expect(cta.text()).toContain('Нет в наличии');
@@ -81,7 +89,9 @@ describe('AddToCart', () => {
   it('ignores a second click while a request is in flight', async () => {
     let resolve!: () => void;
     mockAdd.mockReturnValue(new Promise<void>((r) => (resolve = r)) as never);
-    const w = mount(AddToCart, { props: { productId: 7, inStock: true } });
+    const w = mount(AddToCart, {
+      props: { productId: 7, inStock: true, lang: 'ru' },
+    });
     const cta = ctaButton(w);
     await cta.trigger('click');
     expect(w.text()).toContain('…');

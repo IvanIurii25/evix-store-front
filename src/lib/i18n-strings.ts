@@ -456,6 +456,126 @@ export function footerLabels(lang: Lang): FooterLabels {
   return FOOTER_LABELS[lang];
 }
 
+// --- Catalog listing / category page chrome -------------------------------- //
+
+export interface ListingStrings {
+  breadcrumbHome: string;
+  priceFilter: string;
+  priceFrom: string;
+  priceTo: string;
+  apply: string;
+  loadMore: string;
+  loading: string;
+  emptyCategory: string;
+  sortNewest: string;
+  sortPriceAsc: string;
+  sortPriceDesc: string;
+}
+
+const LISTING: Record<Lang, ListingStrings> = {
+  ro: {
+    breadcrumbHome: 'Acasă',
+    priceFilter: 'Preț, MDL',
+    priceFrom: 'de la',
+    priceTo: 'până la',
+    apply: 'Aplică',
+    loadMore: 'Arată mai multe',
+    loading: 'Se încarcă…',
+    emptyCategory: 'În această categorie nu există produse încă.',
+    sortNewest: 'Cele mai noi',
+    sortPriceAsc: 'Preț crescător',
+    sortPriceDesc: 'Preț descrescător',
+  },
+  ru: {
+    breadcrumbHome: 'Главная',
+    priceFilter: 'Цена, MDL',
+    priceFrom: 'от',
+    priceTo: 'до',
+    apply: 'Применить',
+    loadMore: 'Показать ещё',
+    loading: 'Загрузка…',
+    emptyCategory: 'В этой категории пока нет товаров.',
+    sortNewest: 'Сначала новые',
+    sortPriceAsc: 'Сначала дешёвые',
+    sortPriceDesc: 'Сначала дорогие',
+  },
+};
+
+export function listingStrings(lang: Lang): ListingStrings {
+  return LISTING[lang];
+}
+
+// --- Product detail page (PDP) chrome -------------------------------------- //
+
+export interface PdpStrings {
+  code: string;
+  addedToCart: string;
+  addToCartError: string;
+  tabDescription: string;
+  tabAttributes: string;
+  relatedTitle: string;
+}
+
+const PDP: Record<Lang, PdpStrings> = {
+  ro: {
+    code: 'Cod:',
+    addedToCart: 'Adăugat ✓',
+    addToCartError: 'Nu s-a putut adăuga în coș',
+    tabDescription: 'Descriere',
+    tabAttributes: 'Specificații',
+    relatedTitle: 'Produse similare',
+  },
+  ru: {
+    code: 'Код:',
+    addedToCart: 'Добавлено ✓',
+    addToCartError: 'Не удалось добавить в корзину',
+    tabDescription: 'Описание',
+    tabAttributes: 'Характеристики',
+    relatedTitle: 'Похожие товары',
+  },
+};
+
+export function pdpStrings(lang: Lang): PdpStrings {
+  return PDP[lang];
+}
+
+// --- Search results page chrome -------------------------------------------- //
+
+export interface SearchStrings {
+  titlePlain: string;
+  titleQueryPre: string; // "Поиск: " prefix for <title>
+  resultsForPre: string; // «Результаты по» — followed by the quoted query
+  enterQuery: string;
+  nothingFoundPre: string; // «Ничего не найдено по» — followed by the query
+  prev: string;
+  next: string;
+}
+
+const SEARCH_STRINGS: Record<Lang, SearchStrings> = {
+  ro: {
+    titlePlain: 'Căutare',
+    titleQueryPre: 'Căutare: ',
+    resultsForPre: 'Rezultate pentru',
+    enterQuery: 'Introduceți o interogare în bara de căutare.',
+    nothingFoundPre: 'Nu s-a găsit nimic pentru',
+    prev: '← Înapoi',
+    next: 'Înainte →',
+  },
+  ru: {
+    titlePlain: 'Поиск',
+    titleQueryPre: 'Поиск: ',
+    resultsForPre: 'Результаты по',
+    enterQuery: 'Введите запрос в строке поиска.',
+    nothingFoundPre: 'Ничего не найдено по',
+    prev: '← Назад',
+    next: 'Вперёд →',
+  },
+};
+
+export function searchStrings(lang: Lang): SearchStrings {
+  return SEARCH_STRINGS[lang];
+}
+
 export interface ConsentStrings {
   message: string;
   acceptAll: string;

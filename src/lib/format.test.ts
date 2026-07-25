@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { discountPercent, price } from './format';
+import { discountPercent, price, productCount } from './format';
 
 describe('price', () => {
   it('formats a numeric MDL amount with no fraction digits', () => {
@@ -46,5 +46,36 @@ describe('discountPercent', () => {
   it('returns 0 for non-positive / non-numeric old_price', () => {
     expect(discountPercent(0, 50)).toBe(0);
     expect(discountPercent('not-a-number', 50)).toBe(0);
+  });
+});
+
+describe('productCount', () => {
+  it('uses the RO plural rule (1 → produs, else produse)', () => {
+    expect(productCount(1, 'ro')).toBe('1 produs');
+    expect(productCount(0, 'ro')).toBe('0 produse');
+    expect(productCount(2, 'ro')).toBe('2 produse');
+    expect(productCount(5, 'ro')).toBe('5 produse');
+    expect(productCount(21, 'ro')).toBe('21 produse');
+  });
+
+  it('uses the RU Slavic plural rule (товар / товара / товаров)', () => {
+    expect(productCount(1, 'ru')).toBe('1 товар');
+    expect(productCount(2, 'ru')).toBe('2 товара');
+    expect(productCount(3, 'ru')).toBe('3 товара');
+    expect(productCount(4, 'ru')).toBe('4 товара');
+    expect(productCount(5, 'ru')).toBe('5 товаров');
+    expect(productCount(0, 'ru')).toBe('0 товаров');
+    expect(productCount(21, 'ru')).toBe('21 товар');
+    expect(productCount(22, 'ru')).toBe('22 товара');
+    expect(productCount(25, 'ru')).toBe('25 товаров');
+  });
+
+  it('applies the RU 11–14 exception (always товаров)', () => {
+    expect(productCount(11, 'ru')).toBe('11 товаров');
+    expect(productCount(12, 'ru')).toBe('12 товаров');
+    expect(productCount(13, 'ru')).toBe('13 товаров');
+    expect(productCount(14, 'ru')).toBe('14 товаров');
+    expect(productCount(111, 'ru')).toBe('111 товаров');
+    expect(productCount(112, 'ru')).toBe('112 товаров');
   });
 });

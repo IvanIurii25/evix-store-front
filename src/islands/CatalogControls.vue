@@ -8,6 +8,8 @@ import {
   type FacetsResponse,
 } from '../api/catalog';
 import type { Lang } from '../lib/i18n';
+import { listingStrings } from '../lib/i18n-strings';
+import { productCount } from '../lib/format';
 
 const props = defineProps<{
   categorySlug: string;
@@ -17,10 +19,12 @@ const props = defineProps<{
   facets: FacetsResponse;
 }>();
 
+const t = listingStrings(props.lang);
+
 const SORTS: { value: ProductSort; label: string }[] = [
-  { value: 'newest', label: 'Сначала новые' },
-  { value: 'price_asc', label: 'Сначала дешёвые' },
-  { value: 'price_desc', label: 'Сначала дорогие' },
+  { value: 'newest', label: t.sortNewest },
+  { value: 'price_asc', label: t.sortPriceAsc },
+  { value: 'price_desc', label: t.sortPriceDesc },
 ];
 
 const products = ref<PCard[]>(props.initialProducts);
@@ -116,18 +120,18 @@ onMounted(() => {
   <div class="flex gap-6">
     <aside class="hidden w-64 shrink-0 lg:block">
       <div class="rounded-2xl border-2 border-fill p-4">
-        <h3 class="text-sm font-semibold text-ink">Цена, MDL</h3>
+        <h3 class="text-sm font-semibold text-ink">{{ t.priceFilter }}</h3>
         <div class="mt-3 flex items-center gap-2">
           <input
             v-model.number="priceMin"
             type="number"
-            placeholder="от"
+            :placeholder="t.priceFrom"
             class="w-full rounded-lg bg-fill px-2 py-1.5 text-sm outline-none"
           />
           <input
             v-model.number="priceMax"
             type="number"
-            placeholder="до"
+            :placeholder="t.priceTo"
             class="w-full rounded-lg bg-fill px-2 py-1.5 text-sm outline-none"
           />
         </div>
@@ -135,7 +139,7 @@ onMounted(() => {
           class="mt-3 w-full rounded-lg bg-primary py-1.5 text-sm font-medium text-white hover:bg-primary-hover"
           @click="reload"
         >
-          Применить
+          {{ t.apply }}
         </button>
 
         <!-- Attribute facets: clickable filters (OR within, AND across attrs;
@@ -168,7 +172,9 @@ onMounted(() => {
 
     <div class="flex-1">
       <div class="mb-4 flex items-center justify-between">
-        <span class="text-sm text-subtle">{{ products.length }} товаров</span>
+        <span class="text-sm text-subtle">{{
+          productCount(products.length, props.lang)
+        }}</span>
         <select
           v-model="sort"
           class="rounded-lg border-2 border-fill px-3 py-1.5 text-sm outline-none"
@@ -188,7 +194,7 @@ onMounted(() => {
           :lang="props.lang"
         />
       </div>
-      <p v-else class="text-subtle">В этой категории пока нет товаров.</p>
+      <p v-else class="text-subtle">{{ t.emptyCategory }}</p>
 
       <div v-if="cursor" class="mt-8 text-center">
         <button
@@ -196,7 +202,7 @@ onMounted(() => {
           class="rounded-xl border-2 border-primary px-6 py-2 font-medium text-primary transition hover:bg-primary hover:text-white disabled:opacity-50"
           @click="loadMore"
         >
-          {{ loading ? 'Загрузка…' : 'Показать ещё' }}
+          {{ loading ? t.loading : t.loadMore }}
         </button>
       </div>
     </div>

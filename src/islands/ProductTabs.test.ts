@@ -11,14 +11,14 @@ const attrs = [
 describe('ProductTabs', () => {
   it('renders nothing when there is neither description nor attributes', () => {
     const w = mount(ProductTabs, {
-      props: { description: null, attributes: [] },
+      props: { description: null, attributes: [], lang: 'ru' },
     });
     expect(w.find('div.mt-8').exists()).toBe(false);
   });
 
   it('shows both tabs and defaults to description when a description exists', () => {
     const w = mount(ProductTabs, {
-      props: { description: '<p>Hello</p>', attributes: attrs },
+      props: { description: '<p>Hello</p>', attributes: attrs, lang: 'ru' },
     });
     const tabs = w.findAll('[role="tab"]');
     expect(tabs).toHaveLength(2);
@@ -30,7 +30,7 @@ describe('ProductTabs', () => {
 
   it('defaults to the attributes tab when there is no description', () => {
     const w = mount(ProductTabs, {
-      props: { description: '', attributes: attrs },
+      props: { description: '', attributes: attrs, lang: 'ru' },
     });
     const tabs = w.findAll('[role="tab"]');
     expect(tabs).toHaveLength(1);
@@ -40,7 +40,7 @@ describe('ProductTabs', () => {
 
   it('switches to the attributes tab on click', async () => {
     const w = mount(ProductTabs, {
-      props: { description: '<p>Hi</p>', attributes: attrs },
+      props: { description: '<p>Hi</p>', attributes: attrs, lang: 'ru' },
     });
     const tabs = w.findAll('[role="tab"]');
     // description tab starts active (border-primary), attributes inactive.
@@ -57,7 +57,7 @@ describe('ProductTabs', () => {
 
   it('round-trips back to the description tab', async () => {
     const w = mount(ProductTabs, {
-      props: { description: '<p>Hi</p>', attributes: attrs },
+      props: { description: '<p>Hi</p>', attributes: attrs, lang: 'ru' },
     });
     const tabs = w.findAll('[role="tab"]');
     await tabs[1].trigger('click'); // -> attributes
@@ -69,7 +69,7 @@ describe('ProductTabs', () => {
 
   it('renders attribute rows, joining values and tolerating null values', () => {
     const w = mount(ProductTabs, {
-      props: { description: null, attributes: attrs },
+      props: { description: null, attributes: attrs, lang: 'ru' },
     });
     const rows = w.findAll('dl > div');
     expect(rows).toHaveLength(2);
@@ -81,7 +81,7 @@ describe('ProductTabs', () => {
 
   it('renders only the description tab when there are no attributes', () => {
     const w = mount(ProductTabs, {
-      props: { description: '<p>Only</p>', attributes: null },
+      props: { description: '<p>Only</p>', attributes: null, lang: 'ru' },
     });
     const tabs = w.findAll('[role="tab"]');
     expect(tabs).toHaveLength(1);

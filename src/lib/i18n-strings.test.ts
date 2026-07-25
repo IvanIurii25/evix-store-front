@@ -7,6 +7,9 @@ import {
   checkoutStrings,
   footerLabels,
   homeStrings,
+  listingStrings,
+  pdpStrings,
+  searchStrings,
   ui,
 } from './i18n-strings';
 import { LANGS, type Lang } from './i18n';
@@ -95,5 +98,41 @@ describe('footerLabels', () => {
   });
   it('differs between languages', () => {
     expect(footerLabels('ro').shopTitle).not.toBe(footerLabels('ru').shopTitle);
+  });
+});
+
+describe('listingStrings', () => {
+  it.each(LANGS)('resolves listing chrome for %s', (lang: Lang) => {
+    const s = listingStrings(lang);
+    assertNonEmptyStrings(s);
+    expect(s.apply.length).toBeGreaterThan(0);
+    expect(s.loadMore.length).toBeGreaterThan(0);
+    expect(s.sortNewest.length).toBeGreaterThan(0);
+  });
+  it('uses RO breadcrumb root on ro and RU on ru', () => {
+    expect(listingStrings('ro').breadcrumbHome).toBe('Acasă');
+    expect(listingStrings('ru').breadcrumbHome).toBe('Главная');
+  });
+});
+
+describe('pdpStrings', () => {
+  it.each(LANGS)('resolves PDP chrome for %s', (lang: Lang) => {
+    const s = pdpStrings(lang);
+    assertNonEmptyStrings(s);
+    expect(s.tabDescription.length).toBeGreaterThan(0);
+    expect(s.tabAttributes.length).toBeGreaterThan(0);
+  });
+  it('uses RO tab labels on ro and RU on ru', () => {
+    expect(pdpStrings('ro').tabAttributes).toBe('Specificații');
+    expect(pdpStrings('ru').tabAttributes).toBe('Характеристики');
+  });
+});
+
+describe('searchStrings', () => {
+  it.each(LANGS)('resolves search chrome for %s', (lang: Lang) => {
+    const s = searchStrings(lang);
+    assertNonEmptyStrings(s);
+    expect(s.prev.length).toBeGreaterThan(0);
+    expect(s.next.length).toBeGreaterThan(0);
   });
 });

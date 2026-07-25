@@ -4,6 +4,8 @@ import ProductCard from '../../components/ProductCard.astro';
 import { search } from '../../api/search';
 import type { SearchResponse } from '../../api/search';
 import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
+import { searchStrings } from '../../lib/i18n-strings';
+import { productCount } from '../../lib/format';
 
 // SSR: results are in the initial HTML (plan §2). Live-search is the header island.
 export const prerender = false;
@@ -33,25 +35,35 @@ const href = (p: number) =>
 const suffix = q ? `search?q=${encodeURIComponent(q)}` : 'search';
 const canonical = localePath(lang, suffix);
 const alternates = hreflangAlternates((l) => localePath(l, suffix));
+
+const t = searchStrings(lang);
 ---
 
 <Layout
-  title={q ? `Поиск: ${q}` : 'Поиск'}
+  title={q ? `${t.titleQueryPre}${q}` : t.titlePlain}
   lang={lang}
   canonical={canonical}
   alternates={alternates}
 >
   <div class="mx-auto max-w-[1360px] px-5 py-6">
     <h1 class="text-2xl font-bold text-ink">
-      {q ? `Результаты по «${q}»` : 'Поиск'}
+      {q ? `${t.resultsForPre} «${q}»` : t.titlePlain}
     </h1>
-    {q && <p class="mt-1 text-sm text-subtle">{results.total} товаров</p>}
+    {
+      q && (
+        <p class="mt-1 text-sm text-subtle">
+          {productCount(results.total, lang)}
+        </p>
+      )
+    }
 
     {
       !q ? (
-        <p class="mt-6 text-subtle">Введите запрос в строке поиска.</p>
+        <p class="mt-6 text-subtle">{t.enterQuery}</p>
       ) : (results.data ?? []).length === 0 ? (
-        <p class="mt-6 text-subtle">Ничего не найдено по «{q}».</p>
+        <p class="mt-6 text-subtle">
+          {t.nothingFoundPre} «{q}».
+        </p>
       ) : (
         <div class="mt-6 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
           {(results.data ?? []).map((hit) => (
@@ -69,7 +81,7 @@ const alternates = hreflangAlternates((l) => localePath(l, suffix));
               href={href(page - 1)}
               class="rounded-lg border-2 border-fill px-4 py-1.5 text-body hover:border-primary hover:text-primary"
             >
-              ← Назад
+              {t.prev}
             </a>
           )}
           <span class="text-subtle">
@@ -80,7 +92,7 @@ const alternates = hreflangAlternates((l) => localePath(l, suffix));
               href={href(page + 1)}
               class="rounded-lg border-2 border-fill px-4 py-1.5 text-body hover:border-primary hover:text-primary"
             >
-              Вперёд →
+              {t.next}
             </a>
           )}
         </nav>

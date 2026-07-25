@@ -2,9 +2,11 @@
 import { price } from '../lib/format';
 import type { ProductCard } from '../api/catalog';
 import { localePath, type Lang } from '../lib/i18n';
+import { ui } from '../lib/i18n-strings';
 import { webpSrcset } from '../lib/img';
 
 const props = defineProps<{ product: ProductCard; lang: Lang }>();
+const t = ui(props.lang);
 </script>
 
 <template>
@@ -31,7 +33,7 @@ const props = defineProps<{ product: ProductCard; lang: Lang }>();
           class="max-h-full object-contain"
         />
       </picture>
-      <span v-else class="text-sm text-subtle">нет фото</span>
+      <span v-else class="text-sm text-subtle">{{ t.noPhoto }}</span>
     </div>
 
     <h3 class="mt-3 line-clamp-2 text-sm font-semibold text-ink">
@@ -53,11 +55,11 @@ const props = defineProps<{ product: ProductCard; lang: Lang }>();
         class="mt-1 text-xs"
         :class="product.in_stock ? 'text-price' : 'text-subtle'"
       >
-        {{ product.in_stock ? 'В наличии' : 'Нет в наличии' }}
+        {{ product.in_stock ? t.inStock : t.outOfStock }}
       </div>
       <span
         class="mt-3 block rounded-xl bg-primary py-2 text-center text-sm font-medium text-white transition group-hover:bg-primary-hover"
-        >В корзину</span
+        >{{ t.addToCart }}</span
       >
     </div>
   </a>

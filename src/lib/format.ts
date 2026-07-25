@@ -1,3 +1,5 @@
+import type { Lang } from './i18n';
+
 // Price formatting — one fixed currency (MDL), formatted per locale.
 const formatter = new Intl.NumberFormat('ro-MD', {
   style: 'currency',
@@ -21,4 +23,22 @@ export function discountPercent(
   const current = Number(price);
   if (!(original > 0) || !(current >= 0) || current >= original) return 0;
   return Math.round((1 - current / original) * 100);
+}
+
+// "N produse" / "N товаров" — localized product counter with correct plural
+// form. RO: 1 → produs, else produse. RU: 1 → товар, 2–4 → товара, else товаров
+// (the standard Slavic plural rule, minding the 11–14 exception).
+export function productCount(count: number, lang: Lang): string {
+  const n = Math.abs(count);
+  if (lang === 'ro') {
+    return `${count} ${n === 1 ? 'produs' : 'produse'}`;
+  }
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  let word: string;
+  if (mod100 >= 11 && mod100 <= 14) word = 'товаров';
+  else if (mod10 === 1) word = 'товар';
+  else if (mod10 >= 2 && mod10 <= 4) word = 'товара';
+  else word = 'товаров';
+  return `${count} ${word}`;
 }

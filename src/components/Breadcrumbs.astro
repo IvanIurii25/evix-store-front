@@ -7,6 +7,7 @@ interface Crumb {
 
 import type { Lang } from '../lib/i18n';
 import { localePath } from '../lib/i18n';
+import { listingStrings } from '../lib/i18n-strings';
 
 interface Props {
   items: Crumb[];
@@ -15,11 +16,16 @@ interface Props {
 }
 
 const { items, current, lang } = Astro.props;
+const t = listingStrings(lang);
 ---
 
 <nav aria-label="breadcrumbs" class="text-sm text-subtle">
   <ol class="flex flex-wrap items-center gap-x-2 gap-y-1">
-    <li><a href={localePath(lang)} class="hover:text-primary">Главная</a></li>
+    <li>
+      <a href={localePath(lang)} class="hover:text-primary"
+        >{t.breadcrumbHome}</a
+      >
+    </li>
     {
       items.map((c) => (
         <li class="flex items-center gap-2">

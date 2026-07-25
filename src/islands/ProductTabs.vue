@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue';
 
 import { optimizeDescriptionHtml } from '../lib/description';
+import type { Lang } from '../lib/i18n';
+import { pdpStrings } from '../lib/i18n-strings';
 
 interface Attr {
   name: string;
@@ -11,7 +13,10 @@ interface Attr {
 const props = defineProps<{
   description?: string | null;
   attributes?: Attr[] | null;
+  lang: Lang;
 }>();
+
+const t = pdpStrings(props.lang);
 
 const hasDescription = computed(() => Boolean(props.description));
 // Sanitized + image-optimized HTML for v-html (source renders as escaped text
@@ -44,7 +49,7 @@ const tabClass = (isActive: boolean) =>
         :class="tabClass(active === 'description')"
         @click="active = 'description'"
       >
-        Описание
+        {{ t.tabDescription }}
       </button>
       <button
         v-if="hasAttributes"
@@ -55,7 +60,7 @@ const tabClass = (isActive: boolean) =>
         :class="tabClass(active === 'attributes')"
         @click="active = 'attributes'"
       >
-        Характеристики
+        {{ t.tabAttributes }}
       </button>
     </div>
 
