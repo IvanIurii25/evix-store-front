@@ -166,6 +166,16 @@ export async function updateCanned(
   return data as CannedOut;
 }
 
+// Full URL of the staff-only attachment proxy (a customer's photo/document).
+// The <img>/<a> loads it directly with credentials (cookie); the server streams
+// it from private storage — the object's own URL is never exposed.
+export function attachmentUrl(
+  conversationId: number,
+  messageId: number,
+): string {
+  return `${API_BASE}/api/v1/admin/support/conversations/${conversationId}/attachments/${messageId}`;
+}
+
 export async function deleteCanned(cannedId: number): Promise<void> {
   const { error } = await api.DELETE(
     '/api/v1/admin/support/canned/{canned_id}',

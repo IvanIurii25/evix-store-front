@@ -1495,6 +1495,58 @@ export interface paths {
     patch: operations['update_staff_api_v1_admin_staff__user_id__patch'];
     trace?: never;
   };
+  '/api/v1/admin/promo': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Promos
+     * @description Return the coupon roster (newest first).
+     */
+    get: operations['list_promos_api_v1_admin_promo_get'];
+    put?: never;
+    /**
+     * Create Promo
+     * @description Create a coupon.
+     */
+    post: operations['create_promo_api_v1_admin_promo_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/promo/{promo_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Promo
+     * @description Return one coupon by id.
+     */
+    get: operations['get_promo_api_v1_admin_promo__promo_id__get'];
+    put?: never;
+    post?: never;
+    /**
+     * Delete Promo
+     * @description Delete a coupon (order history keeps its code snapshot).
+     */
+    delete: operations['delete_promo_api_v1_admin_promo__promo_id__delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Update Promo
+     * @description Apply a partial update to a coupon.
+     */
+    patch: operations['update_promo_api_v1_admin_promo__promo_id__patch'];
+    trace?: never;
+  };
   '/api/v1/admin/content-pages': {
     parameters: {
       query?: never;
@@ -1656,6 +1708,44 @@ export interface paths {
      *         HTTPException: 404 if the conversation does not exist.
      */
     delete: operations['delete_conversation_api_v1_admin_support_conversations__conversation_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/support/conversations/{conversation_id}/attachments/{message_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Attachment
+     * @description Stream a customer's stored attachment to a staff operator (private proxy).
+     *
+     *     Support attachments are never public: they are stored under a private object
+     *     key and streamed only through this staff-only endpoint (the router's
+     *     ``current_staff`` dependency). Resolves the message, verifies it belongs to
+     *     the conversation and has a stored key, fetches the bytes and returns them
+     *     inline; a document keeps its original filename in ``Content-Disposition``.
+     *
+     *     Args:
+     *         conversation_id: The conversation the attachment must belong to.
+     *         message_id: The attachment message's primary key.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         Response: The attachment bytes with the stored content type.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the message is missing, does not belong to the
+     *             conversation, has no stored attachment, or the object is gone.
+     */
+    get: operations['get_attachment_api_v1_admin_support_conversations__conversation_id__attachments__message_id__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -1977,12 +2067,13 @@ export interface paths {
      * @description Ingest one Telegram webhook update and ack it fast.
      *
      *     Verifies the secret token, parses the update and — when it's a private text
-     *     message this MVP handles — persists it and publishes a live inbox event via
-     *     :class:`~app.services.support_service.SupportService`. When that message
-     *     starts a fresh unread burst (and a staff chat is configured), enqueues the
-     *     ``support.notify_staff`` Celery task so the heavy/failable staff-group send
-     *     happens off the ack path. Any non-handled or malformed update is ignored and
-     *     still answered ``200`` so Telegram stops retrying.
+     *     message or photo/document this MVP handles — persists it and publishes a live
+     *     inbox event via :class:`~app.services.support_service.SupportService`. When
+     *     that message starts a fresh unread burst (and a staff chat is configured),
+     *     enqueues the ``support.notify_staff`` Celery task; when it carried an
+     *     attachment, enqueues ``support.fetch_attachment`` to download and store the
+     *     file — both off the ack path. Any non-handled or malformed update is ignored
+     *     and still answered ``200`` so Telegram stops retrying.
      *
      *     Args:
      *         request: The incoming webhook request (raw update in the JSON body).
@@ -2627,6 +2718,11 @@ export interface components {
       delivery_address_id?: number | null;
       /** @description Inline courier address (guest or user). Alternative to id. */
       delivery_address?: components['schemas']['DeliveryAddressIn'] | null;
+      /**
+       * Promo Code
+       * @description Optional coupon code; re-validated server-side at order time.
+       */
+      promo_code?: string | null;
     };
     /**
      * ConsentAck
@@ -3173,6 +3269,13 @@ export interface components {
        * Format: date-time
        */
       created_at: string;
+      /** Attachment Kind */
+      attachment_kind?: string | null;
+      /**
+       * Attachment Ready
+       * @default false
+       */
+      attachment_ready: boolean;
     };
     /**
      * NameCount
@@ -3534,6 +3637,118 @@ export interface components {
       is_featured?: boolean | null;
     };
     /**
+     * PromoCreate
+     * @description Create body for ``POST /admin/promo`` — a full coupon definition.
+     */
+    PromoCreate: {
+      /**
+       * Code
+       * @description Unique coupon code.
+       */
+      code: string;
+      /**
+       * Discount Type
+       * @description Discount kind (percent | fixed).
+       */
+      discount_type: string;
+      /**
+       * Discount Value
+       * @description Percent (0<value<=100 for 'percent') or fixed MDL amount.
+       */
+      discount_value: number | string;
+      /**
+       * Active From
+       * Format: date-time
+       * @description Validity window start (UTC).
+       */
+      active_from: string;
+      /**
+       * Active To
+       * Format: date-time
+       * @description Validity window end (UTC).
+       */
+      active_to: string;
+      /**
+       * Min Order Total
+       * @description Minimum subtotal required to redeem, or null.
+       */
+      min_order_total?: number | string | null;
+      /**
+       * Usage Limit
+       * @description Maximum number of redemptions, or null for unlimited.
+       */
+      usage_limit?: number | null;
+      /**
+       * Is Active
+       * @description Whether the coupon is enabled.
+       * @default true
+       */
+      is_active: boolean;
+    };
+    /**
+     * PromoList
+     * @description Envelope for the promo-code roster.
+     */
+    PromoList: {
+      /** Data */
+      data?: components['schemas']['PromoOut'][];
+    };
+    /**
+     * PromoOut
+     * @description A persisted promo code as returned to staff.
+     */
+    PromoOut: {
+      /** Id */
+      id: number;
+      /** Code */
+      code: string;
+      /** Discount Type */
+      discount_type: string;
+      /** Discount Value */
+      discount_value: string;
+      /**
+       * Active From
+       * Format: date-time
+       */
+      active_from: string;
+      /**
+       * Active To
+       * Format: date-time
+       */
+      active_to: string;
+      /** Min Order Total */
+      min_order_total?: string | null;
+      /** Usage Limit */
+      usage_limit?: number | null;
+      /** Is Active */
+      is_active: boolean;
+    };
+    /**
+     * PromoUpdate
+     * @description Partial update for ``PATCH /admin/promo/{id}`` (unset fields untouched).
+     */
+    PromoUpdate: {
+      /** Code */
+      code?: string | null;
+      /**
+       * Discount Type
+       * @description Discount kind (percent | fixed).
+       */
+      discount_type?: string | null;
+      /** Discount Value */
+      discount_value?: number | string | null;
+      /** Active From */
+      active_from?: string | null;
+      /** Active To */
+      active_to?: string | null;
+      /** Min Order Total */
+      min_order_total?: number | string | null;
+      /** Usage Limit */
+      usage_limit?: number | null;
+      /** Is Active */
+      is_active?: boolean | null;
+    };
+    /**
      * QuoteOut
      * @description Computed checkout totals returned by ``POST /checkout/quote`` (§9).
      */
@@ -3568,6 +3783,11 @@ export interface components {
       delivery_address_id?: number | null;
       /** @description Inline courier address (guest or user). Alternative to id. */
       delivery_address?: components['schemas']['DeliveryAddressIn'] | null;
+      /**
+       * Promo Code
+       * @description Optional coupon code to apply to the subtotal.
+       */
+      promo_code?: string | null;
     };
     /**
      * RefreshRequest
@@ -6262,6 +6482,154 @@ export interface operations {
       };
     };
   };
+  list_promos_api_v1_admin_promo_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PromoList'];
+        };
+      };
+    };
+  };
+  create_promo_api_v1_admin_promo_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PromoCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PromoOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_promo_api_v1_admin_promo__promo_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        promo_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PromoOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_promo_api_v1_admin_promo__promo_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        promo_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_promo_api_v1_admin_promo__promo_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        promo_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PromoUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PromoOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   list_pages_api_v1_admin_content_pages_get: {
     parameters: {
       query?: never;
@@ -6515,6 +6883,38 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_attachment_api_v1_admin_support_conversations__conversation_id__attachments__message_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        conversation_id: number;
+        message_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': unknown;
+        };
       };
       /** @description Validation Error */
       422: {

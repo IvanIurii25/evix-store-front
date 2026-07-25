@@ -27,6 +27,7 @@ vi.mock('../../api/support', () => ({
   listCanned: vi.fn(),
   linkOrder: vi.fn(),
   unlinkOrder: vi.fn(),
+  attachmentUrl: (c: number, m: number) => `/att/${c}/${m}`,
 }));
 
 const mockLink = vi.mocked(linkOrder);
@@ -437,5 +438,55 @@ describe('SupportInbox', () => {
 
     expect(mockLink).toHaveBeenCalledWith(1, 'B-7');
     expect(w.text()).toContain('B-7');
+  });
+
+  it('renders a ready photo attachment via the proxy', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(
+      threadOf(conv(), [
+        msg({ id: 5, attachment_kind: 'photo', attachment_ready: true }),
+      ]),
+    );
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    const img = w.find('img');
+    expect(img.exists()).toBe(true);
+    expect(img.attributes('src')).toBe('/att/1/5');
+  });
+
+  it('shows a loading placeholder for a not-yet-fetched attachment', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(
+      threadOf(conv(), [
+        msg({ id: 6, attachment_kind: 'photo', attachment_ready: false }),
+      ]),
+    );
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    expect(w.find('img').exists()).toBe(false);
+    expect(w.text()).toContain('загружается');
+  });
+
+  it('renders a ready document as a download link', async () => {
+    mockList.mockResolvedValue(listOf([conv()]));
+    mockThread.mockResolvedValue(
+      threadOf(conv(), [
+        msg({ id: 7, attachment_kind: 'document', attachment_ready: true }),
+      ]),
+    );
+    const w = mount(SupportInbox);
+    await flushPromises();
+    await w.find('li').trigger('click');
+    await flushPromises();
+
+    const link = w.find('a[href="/att/1/7"]');
+    expect(link.exists()).toBe(true);
+    expect(link.text()).toContain('вложение');
   });
 });

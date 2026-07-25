@@ -11,6 +11,7 @@ import {
   listCanned,
   linkOrder,
   unlinkOrder,
+  attachmentUrl,
   type ConversationOut,
   type MessageOut,
   type CannedOut,
@@ -457,6 +458,36 @@ const listEmpty = computed(
                 "
               >
                 <p class="whitespace-pre-wrap break-words">{{ m.text }}</p>
+
+                <!-- Attachment (customer photo/document via staff proxy) -->
+                <template v-if="m.attachment_kind && selectedId !== null">
+                  <a
+                    v-if="m.attachment_ready && m.attachment_kind === 'photo'"
+                    :href="attachmentUrl(selectedId, m.id)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      :src="attachmentUrl(selectedId, m.id)"
+                      crossorigin="use-credentials"
+                      alt="фото"
+                      class="mt-2 max-h-56 rounded-xl border border-fill"
+                    />
+                  </a>
+                  <a
+                    v-else-if="m.attachment_ready"
+                    :href="attachmentUrl(selectedId, m.id)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mt-2 inline-block text-primary underline"
+                  >
+                    📎 Открыть вложение
+                  </a>
+                  <span v-else class="mt-2 block text-[11px] text-subtle"
+                    >📎 загружается…</span
+                  >
+                </template>
+
                 <div
                   class="mt-1 flex items-center gap-2 text-[11px] text-subtle"
                 >

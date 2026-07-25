@@ -212,6 +212,13 @@ describe('support api', () => {
     expect(req.url).toBe(`${BASE}/api/v1/admin/support/canned/5`);
   });
 
+  it('attachmentUrl builds the staff proxy URL', async () => {
+    const { attachmentUrl } = await load();
+    expect(attachmentUrl(3, 7)).toBe(
+      `${BASE}/api/v1/admin/support/conversations/3/attachments/7`,
+    );
+  });
+
   it('linkOrder POSTs the order number', async () => {
     stubOnce(
       jsonResponse(
