@@ -158,6 +158,11 @@ export interface CheckoutStrings {
   useAnotherAddress: string;
   payment: string;
   paymentInfo: string;
+  // payment method selector
+  payMethodCod: string;
+  payMethodCard: string;
+  payCardInfo: string;
+  errPayRedirect: string;
   consent: string;
   yourOrder: string;
   items: string;
@@ -197,6 +202,13 @@ export interface CheckoutStrings {
   createAccount: string;
   notFoundPre: string;
   backToCatalog: string;
+  // payment-failed page (maib return)
+  failTitle: string;
+  failHeading: string;
+  failText: string;
+  failOrderPre: string;
+  tryAgain: string;
+  toCart: string;
 }
 
 const CHECKOUT: Record<Lang, CheckoutStrings> = {
@@ -216,6 +228,11 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     payment: 'Plata',
     paymentInfo:
       'Plata la primire (numerar sau card curierului / la punctul de ridicare).',
+    payMethodCod: 'Numerar la primire (COD)',
+    payMethodCard: 'Card online',
+    payCardInfo: 'Veți fi redirecționat spre pagina securizată de plată maib.',
+    errPayRedirect:
+      'Nu s-a putut iniția plata cu cardul. Încercați din nou sau alegeți plata la primire.',
     consent: 'Sunt de acord cu condițiile de plasare a comenzii',
     yourOrder: 'Comanda ta',
     items: 'Produse',
@@ -253,6 +270,13 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     createAccount: 'Creează cont',
     notFoundPre: 'Comanda nu a fost găsită. Verificați linkul sau',
     backToCatalog: 'reveniți la catalog',
+    failTitle: 'Plata nu a reușit',
+    failHeading: 'Plata nu a fost efectuată',
+    failText:
+      'Plata nu a trecut sau comanda a fost anulată. Puteți încerca din nou.',
+    failOrderPre: 'Comanda',
+    tryAgain: 'Încercați din nou',
+    toCart: 'Spre coș',
   },
   ru: {
     pageTitle: 'Оформление заказа',
@@ -270,6 +294,11 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     payment: 'Оплата',
     paymentInfo:
       'Оплата при получении (наличными или картой курьеру / в пункте выдачи).',
+    payMethodCod: 'Наличными при получении (COD)',
+    payMethodCard: 'Картой онлайн',
+    payCardInfo: 'Вы будете перенаправлены на защищённую страницу оплаты maib.',
+    errPayRedirect:
+      'Не удалось начать оплату картой. Попробуйте снова или выберите оплату при получении.',
     consent: 'Согласен с условиями оформления заказа',
     yourOrder: 'Ваш заказ',
     items: 'Товары',
@@ -307,6 +336,13 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     createAccount: 'Создать аккаунт',
     notFoundPre: 'Заказ не найден. Проверьте ссылку или',
     backToCatalog: 'вернитесь в каталог',
+    failTitle: 'Оплата не прошла',
+    failHeading: 'Оплата не была выполнена',
+    failText:
+      'Оплата не прошла или заказ был отменён. Вы можете попробовать снова.',
+    failOrderPre: 'Заказ',
+    tryAgain: 'Попробовать снова',
+    toCart: 'В корзину',
   },
 };
 

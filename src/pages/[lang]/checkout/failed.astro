@@ -1,0 +1,49 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { isLang, localePath } from '../../../lib/i18n';
+import { checkoutStrings } from '../../../lib/i18n-strings';
+
+// Landing page for the maib failUrl (?order=<number>): the payment failed or the
+// payer cancelled. The backend cancels the pending order and restocks it; this
+// page only informs and offers a retry. No API call, no PII — SSR-safe.
+export const prerender = false;
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return new Response('Not found', { status: 404 });
+const t = checkoutStrings(lang);
+
+const url = new URL(Astro.request.url);
+const orderNumber = url.searchParams.get('order') ?? '';
+---
+
+<Layout title={t.failTitle} lang={lang}>
+  <div class="mx-auto max-w-2xl px-5 py-12">
+    <div class="rounded-2xl border-2 border-fill p-8 text-center">
+      <div class="text-4xl text-danger">✕</div>
+      <h1 class="mt-3 text-2xl font-bold text-ink">{t.failHeading}</h1>
+      {
+        orderNumber && (
+          <p class="mt-2 text-subtle">
+            {t.failOrderPre} {orderNumber}
+          </p>
+        )
+      }
+      <p class="mt-2 text-subtle">{t.failText}</p>
+    </div>
+
+    <div class="mt-6 flex flex-wrap justify-center gap-3">
+      <a
+        href={localePath(lang, 'cart')}
+        class="rounded-xl bg-primary px-6 py-2.5 font-medium text-white transition hover:bg-primary-hover"
+      >
+        {t.tryAgain}
+      </a>
+      <a
+        href={localePath(lang)}
+        class="rounded-xl border-2 border-fill px-6 py-2.5 font-medium text-body transition hover:border-primary hover:text-primary"
+      >
+        {t.toCatalog}
+      </a>
+    </div>
+  </div>
+</Layout>

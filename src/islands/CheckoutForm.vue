@@ -17,14 +17,20 @@ const props = withDefaults(
     lang: Lang;
     isLoggedIn?: boolean;
     savedAddresses?: AddressOut[];
+    // Whether the card (maib) option may be offered. Comes from GET /site/config
+    // (SSR). When false the selector is hidden and only COD is available.
+    cardPaymentEnabled?: boolean;
   }>(),
-  { isLoggedIn: false, savedAddresses: () => [] },
+  { isLoggedIn: false, savedAddresses: () => [], cardPaymentEnabled: false },
 );
 const t = checkoutStrings(props.lang);
 
 const email = ref('');
 const phone = ref('');
 const deliveryType = ref<'pickup' | 'courier'>('pickup');
+// Payment method: COD is always the default; 'card' is selectable only when the
+// gateway is enabled server-side (props.cardPaymentEnabled).
+const paymentMethod = ref<'cod' | 'card'>('cod');
 const consent = ref(false);
 const q = ref<QuoteOut | null>(null);
 const quoteError = ref('');
@@ -214,6 +220,10 @@ async function submit() {
     error.value = quoteError.value || t.errCalc;
     return;
   }
+  // Card is only ever submitted when the gateway is enabled; guard so a stale
+  // selection can never send 'card' to a disabled backend (would 400).
+  const method: 'cod' | 'card' =
+    paymentMethod.value === 'card' && props.cardPaymentEnabled ? 'card' : 'cod';
   loading.value = true;
   try {
     const order = await checkout(
@@ -226,9 +236,22 @@ async function submit() {
         // Only include the code when one is applied, so promo-free orders keep
         // their prior request body.
         ...(appliedCode.value ? { promo_code: appliedCode.value } : {}),
+        // COD keeps the prior body shape; card is sent explicitly.
+        ...(method === 'card' ? { payment_method: 'card' } : {}),
       },
       props.lang,
     );
+    // Card flow: the backend created a pending order and returned a maib pay_url
+    // — redirect the browser there to complete payment. If it's missing, the
+    // gateway link failed: surface an error instead of a broken redirect.
+    if (method === 'card') {
+      if (order.pay_url) {
+        location.href = order.pay_url;
+        return;
+      }
+      error.value = t.errPayRedirect;
+      return;
+    }
     // Pass the contact email to the success page via a short-lived cookie, not
     // the URL, so it isn't left in browser history / logs (LP195/2024 — no PII
     // in URLs). The success page reads it server-side to fetch the order.
@@ -351,7 +374,31 @@ async function submit() {
 
       <section>
         <h2 class="font-semibold text-ink">{{ t.payment }}</h2>
-        <p class="mt-2 text-sm text-body">
+        <div v-if="cardPaymentEnabled" class="mt-3 space-y-2">
+          <label class="flex items-center gap-2">
+            <input
+              v-model="paymentMethod"
+              type="radio"
+              value="cod"
+              class="accent-primary"
+            />
+            {{ t.payMethodCod }}
+          </label>
+          <label class="flex items-center gap-2">
+            <input
+              v-model="paymentMethod"
+              type="radio"
+              value="card"
+              class="accent-primary"
+            />
+            {{ t.payMethodCard }}
+          </label>
+          <p v-if="paymentMethod === 'card'" class="text-sm text-subtle">
+            {{ t.payCardInfo }}
+          </p>
+          <p v-else class="text-sm text-body">{{ t.paymentInfo }}</p>
+        </div>
+        <p v-else class="mt-2 text-sm text-body">
           {{ t.paymentInfo }}
         </p>
       </section>

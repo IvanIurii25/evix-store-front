@@ -15,18 +15,36 @@ export interface paths {
      * Health
      * @description Report service health and verify DB connectivity with ``SELECT 1``.
      *
+     *     Accepts ``HEAD`` as well as ``GET`` so uptime monitors probing with the
+     *     default ``HEAD`` method get a ``200`` (Starlette strips the body) rather than
+     *     a ``405``.
+     *
      *     Args:
      *         session: Injected async DB session.
      *
      *     Returns:
      *         dict[str, str]: ``{"status": "ok"}`` when the service and DB respond.
      */
-    get: operations['health_api_v1_health_get'];
+    get: operations['health_api_v1_health_head'];
     put?: never;
     post?: never;
     delete?: never;
     options?: never;
-    head?: never;
+    /**
+     * Health
+     * @description Report service health and verify DB connectivity with ``SELECT 1``.
+     *
+     *     Accepts ``HEAD`` as well as ``GET`` so uptime monitors probing with the
+     *     default ``HEAD`` method get a ``200`` (Starlette strips the body) rather than
+     *     a ``405``.
+     *
+     *     Args:
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         dict[str, str]: ``{"status": "ok"}`` when the service and DB respond.
+     */
+    head: operations['health_api_v1_health_head'];
     patch?: never;
     trace?: never;
   };
@@ -658,6 +676,38 @@ export interface paths {
      *         HTTPException: 404 if the order is absent or the email does not match.
      */
     post: operations['lookup_order_api_v1_orders__number__lookup_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/payments/maib/callback': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Maib Callback
+     * @description Receive and apply a signed maib payment callback (public, idempotent).
+     *
+     *     The signature is verified inside the service; a bad signature, an unknown
+     *     ``payId`` or a repeated callback for an already-settled payment all resolve
+     *     to a no-op. We always answer 200 so maib stops retrying — the ``accepted``
+     *     flag tells whether the callback actually moved the order.
+     *
+     *     Args:
+     *         payload: The ``{result, signature}`` body maib posted.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         dict[str, bool]: ``{"accepted": <bool>}``.
+     */
+    post: operations['maib_callback_api_v1_payments_maib_callback_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1337,6 +1387,42 @@ export interface paths {
      *         HTTPException: 404 if the order is unknown; 409 for an illegal move.
      */
     post: operations['transition_order_api_v1_admin_orders__number__transition_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/orders/{number}/refund': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Refund Order
+     * @description Refund a paid card order via maib and mark it ``refunded`` (§card-payment).
+     *
+     *     Only a card order whose ``payment_status`` is ``paid`` is refundable; anything
+     *     else is rejected 409. Delegates the maib refund + the ``refunded`` transition
+     *     to :class:`~app.services.payment.payment_service.PaymentService`.
+     *
+     *     Args:
+     *         number: The order number to refund.
+     *         staff: The authenticated staff user (guards the endpoint).
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         OrderOut: The refunded order with its lines.
+     *
+     *     Raises:
+     *         HTTPException: 404 if the order/payment is unknown; 409 if the order is
+     *             not a paid card order; 502 if the maib refund call fails.
+     */
+    post: operations['refund_order_api_v1_admin_orders__number__refund_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -2027,6 +2113,32 @@ export interface paths {
      *         SeoSettings: A fully-formed block (empty strings on a fresh install).
      */
     get: operations['get_site_seo_api_v1_site_seo_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/site/config': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Site Config
+     * @description Return public storefront runtime config (feature flags), read-only.
+     *
+     *     Currently exposes only ``card_payment_enabled`` so the checkout UI can decide
+     *     whether to render the card option next to COD. No DB access, no PII.
+     *
+     *     Returns:
+     *         SiteConfigOut: The public config block.
+     */
+    get: operations['get_site_config_api_v1_site_config_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -3060,6 +3172,12 @@ export interface components {
        * @description Optional coupon code; re-validated server-side at order time.
        */
       promo_code?: string | null;
+      /**
+       * Payment Method
+       * @description Payment method: 'cod' (default) or 'card' (maib). 'card' is accepted only when card payment is enabled server-side.
+       * @default cod
+       */
+      payment_method: string;
     };
     /**
      * ConsentAck
@@ -3538,6 +3656,28 @@ export interface components {
       qty: number;
     };
     /**
+     * MaibCallbackPayload
+     * @description Inbound maib callback body: ``{result: {...}, signature: "..."}``.
+     *
+     *     ``result`` is accepted as a raw dict on purpose — the signature check hashes
+     *     the provider's own key/value set (recursively sorted), so narrowing the shape
+     *     here would break verification for any field maib adds.
+     */
+    MaibCallbackPayload: {
+      /**
+       * Result
+       * @description maib payment result block (signed).
+       */
+      result: {
+        [key: string]: unknown;
+      };
+      /**
+       * Signature
+       * @description Base64 SHA-256 signature of result.
+       */
+      signature: string;
+    };
+    /**
      * MediaAdminOut
      * @description A stored product image row (v1: one url per row, no derivatives — §2.1).
      */
@@ -3696,6 +3836,8 @@ export interface components {
       created_at: string;
       /** Items */
       items?: components['schemas']['OrderItemOut'][];
+      /** Pay Url */
+      pay_url?: string | null;
     };
     /** Page[CustomerListItem] */
     Page_CustomerListItem_: {
@@ -4470,6 +4612,20 @@ export interface components {
       og_image_url: string;
     };
     /**
+     * SiteConfigOut
+     * @description Public storefront runtime config (``GET /site/config``).
+     *
+     *     Currently exposes only the card-payment availability flag so the checkout UI
+     *     can decide whether to render the card option next to COD.
+     */
+    SiteConfigOut: {
+      /**
+       * Card Payment Enabled
+       * @description Whether the card (maib) payment option is available.
+       */
+      card_payment_enabled: boolean;
+    };
+    /**
      * SitemapData
      * @description All published, indexable entities for building per-locale sitemaps.
      */
@@ -4751,7 +4907,29 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  health_api_v1_health_get: {
+  health_api_v1_health_head: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+  };
+  health_api_v1_health_head: {
     parameters: {
       query?: never;
       header?: never;
@@ -5451,6 +5629,41 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['OrderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  maib_callback_api_v1_payments_maib_callback_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MaibCallbackPayload'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': {
+            [key: string]: boolean;
+          };
         };
       };
       /** @description Validation Error */
@@ -6752,6 +6965,37 @@ export interface operations {
       };
     };
   };
+  refund_order_api_v1_admin_orders__number__refund_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   list_customers_api_v1_admin_customers_get: {
     parameters: {
       query?: {
@@ -7844,6 +8088,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SeoSettings'];
+        };
+      };
+    };
+  };
+  get_site_config_api_v1_site_config_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SiteConfigOut'];
         };
       };
     };

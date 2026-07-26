@@ -2,6 +2,7 @@
 import Layout from '../../../layouts/Layout.astro';
 import CheckoutForm from '../../../islands/CheckoutForm.vue';
 import { listAddressesWithToken } from '../../../api/account';
+import { getSiteConfig } from '../../../api/site';
 import { isLang } from '../../../lib/i18n';
 import { checkoutStrings } from '../../../lib/i18n-strings';
 
@@ -18,6 +19,10 @@ const t = checkoutStrings(lang);
 const access = Astro.cookies.get('access')?.value;
 const isLoggedIn = Boolean(access);
 const savedAddresses = access ? await listAddressesWithToken(access) : [];
+
+// Card-payment availability is a server-side feature flag (maib creds). When the
+// gateway is off (or the call fails) the card option stays hidden — COD only.
+const { card_payment_enabled: cardPaymentEnabled } = await getSiteConfig();
 ---
 
 <Layout title={t.pageTitle} lang={lang}>
@@ -29,6 +34,7 @@ const savedAddresses = access ? await listAddressesWithToken(access) : [];
         lang={lang}
         isLoggedIn={isLoggedIn}
         savedAddresses={savedAddresses}
+        cardPaymentEnabled={cardPaymentEnabled}
       />
     </div>
   </div>

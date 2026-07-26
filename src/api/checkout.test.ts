@@ -112,9 +112,14 @@ describe('checkout api', () => {
       delivery_type: 'pickup',
       promo_code: 'SALE10',
     });
-    expect(await req().text()).toBe(
-      '{"email":"a@b.c","phone":"1","delivery_type":"pickup","promo_code":"SALE10"}',
-    );
+    // payment_method defaults to "cod" (the generated CheckoutIn requires it).
+    expect(JSON.parse(await req().text())).toEqual({
+      payment_method: 'cod',
+      email: 'a@b.c',
+      phone: '1',
+      delivery_type: 'pickup',
+      promo_code: 'SALE10',
+    });
   });
 
   it('checkout returns the created order', async () => {
@@ -139,9 +144,31 @@ describe('checkout api', () => {
       delivery_type: 'courier',
       delivery_address_id: 3,
     });
-    expect(await req().text()).toBe(
-      '{"email":"a@b.c","phone":"123","delivery_type":"courier","delivery_address_id":3}',
-    );
+    expect(JSON.parse(await req().text())).toEqual({
+      payment_method: 'cod',
+      email: 'a@b.c',
+      phone: '123',
+      delivery_type: 'courier',
+      delivery_address_id: 3,
+    });
+  });
+
+  it('checkout forwards payment_method:card and returns the pay_url order', async () => {
+    stubOnce(jsonResponse({ number: 'ORD-C', pay_url: 'https://maib/x' }, 201));
+    const { checkout } = await load();
+    const res = await checkout({
+      email: 'a@b.c',
+      phone: '1',
+      delivery_type: 'pickup',
+      payment_method: 'card',
+    });
+    expect(res).toEqual({ number: 'ORD-C', pay_url: 'https://maib/x' });
+    expect(JSON.parse(await req().text())).toEqual({
+      payment_method: 'card',
+      email: 'a@b.c',
+      phone: '1',
+      delivery_type: 'pickup',
+    });
   });
 
   it.each([

@@ -150,4 +150,21 @@ describe('site api (fetch-backed accessors)', () => {
     const { getContentPage } = await load();
     await expect(getContentPage('missing', 'ru')).resolves.toBeNull();
   });
+
+  it('getSiteConfig returns the backend card flag', async () => {
+    stub(jsonResponse({ card_payment_enabled: true }));
+    const { getSiteConfig } = await load();
+    await expect(getSiteConfig()).resolves.toEqual({
+      card_payment_enabled: true,
+    });
+    expect(url()).toBe(`${BASE}/api/v1/site/config`);
+  });
+
+  it('getSiteConfig fails closed (card disabled) on error', async () => {
+    stub(envelope());
+    const { getSiteConfig } = await load();
+    await expect(getSiteConfig()).resolves.toEqual({
+      card_payment_enabled: false,
+    });
+  });
 });

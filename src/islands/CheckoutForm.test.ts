@@ -467,6 +467,96 @@ describe('CheckoutForm', () => {
     );
   });
 
+  // --- Payment method selector (maib card) ------------------------------ //
+
+  it('hides the card payment option when cardPaymentEnabled is false (default)', async () => {
+    quote.mockResolvedValue(QUOTE);
+    const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    // No card radio, and no card-method label rendered.
+    expect(wrapper.find('input[value="card"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toContain('Картой онлайн');
+  });
+
+  it('shows the COD + card radios when cardPaymentEnabled is true', async () => {
+    quote.mockResolvedValue(QUOTE);
+    const wrapper = mount(CheckoutForm, {
+      props: { lang: 'ru', cardPaymentEnabled: true },
+    });
+    await flushPromises();
+
+    expect(wrapper.find('input[value="cod"]').exists()).toBe(true);
+    expect(wrapper.find('input[value="card"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Наличными при получении (COD)');
+    expect(wrapper.text()).toContain('Картой онлайн');
+  });
+
+  it('redirects the browser to pay_url on a card checkout', async () => {
+    quote.mockResolvedValue(QUOTE);
+    checkout.mockResolvedValue({
+      number: 'C-1',
+      pay_url: 'https://maib.example/checkout/xyz',
+    });
+    const wrapper = mount(CheckoutForm, {
+      props: { lang: 'ru', cardPaymentEnabled: true },
+    });
+    await flushPromises();
+
+    await wrapper.find('input[value="card"]').setValue();
+    await fillContacts(wrapper);
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(checkout).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_method: 'card' }),
+      'ru',
+    );
+    // Browser is redirected to the maib pay_url, not the success page.
+    expect(hrefStore).toBe('https://maib.example/checkout/xyz');
+  });
+
+  it('shows an error and does not redirect when a card order has no pay_url', async () => {
+    quote.mockResolvedValue(QUOTE);
+    checkout.mockResolvedValue({ number: 'C-2', pay_url: null });
+    const wrapper = mount(CheckoutForm, {
+      props: { lang: 'ru', cardPaymentEnabled: true },
+    });
+    await flushPromises();
+
+    await wrapper.find('input[value="card"]').setValue();
+    await fillContacts(wrapper);
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Не удалось начать оплату картой');
+    expect(hrefStore).toBe('');
+  });
+
+  it('keeps the COD body unchanged (no payment_method) when card is disabled', async () => {
+    quote.mockResolvedValue(QUOTE);
+    checkout.mockResolvedValue({ number: 'D-1', email: 'buyer@example.com' });
+    const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    await fillContacts(wrapper);
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+
+    expect(checkout).toHaveBeenCalledWith(
+      {
+        email: 'buyer@example.com',
+        phone: '069123456',
+        delivery_type: 'pickup',
+        delivery_address: null,
+        delivery_address_id: null,
+      },
+      'ru',
+    );
+    // COD still redirects to the success page.
+    expect(hrefStore).toBe('/ru/checkout/success?number=D-1');
+  });
+
   it('shows no picker for a guest and keeps the inline courier flow (regression)', async () => {
     quote.mockResolvedValueOnce(QUOTE).mockResolvedValueOnce(null);
     const wrapper = mount(CheckoutForm, {

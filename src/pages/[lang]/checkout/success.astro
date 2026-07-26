@@ -12,12 +12,19 @@ if (!isLang(lang)) return new Response('Not found', { status: 404 });
 const t = checkoutStrings(lang);
 
 const url = new URL(Astro.request.url);
-const number = url.searchParams.get('number') ?? '';
+// `number` is set by the COD checkout redirect; `order` is set by the maib
+// okUrl return (?order=<number>). Accept either as the order number.
+const number =
+  url.searchParams.get('number') ?? url.searchParams.get('order') ?? '';
 // The contact email comes from a short-lived cookie set by the checkout form,
 // not the URL, so it is never left in browser history / logs (LP195/2024).
 const email = Astro.cookies.get('order_email')?.value ?? '';
 const order = number && email ? await getOrder(number, email) : null;
 const loggedIn = Boolean(Astro.cookies.get('access')?.value);
+// A card return may land without the email cookie (e.g. maib opened the return
+// in a fresh context): show a minimal "order placed" confirmation by number so
+// the payer still gets a success state. Server-side callback confirms payment.
+const orderNumber = order?.number ?? number;
 ---
 
 <Layout title={t.successTitle} lang={lang}>
@@ -89,6 +96,31 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
             </div>
           </div>
 
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a
+              href={localePath(lang)}
+              class="rounded-xl bg-primary px-6 py-2.5 font-medium text-white transition hover:bg-primary-hover"
+            >
+              {t.toCatalog}
+            </a>
+            {!loggedIn && (
+              <a
+                href={localePath(lang, 'auth')}
+                class="rounded-xl border-2 border-fill px-6 py-2.5 font-medium text-body transition hover:border-primary hover:text-primary"
+              >
+                {t.createAccount}
+              </a>
+            )}
+          </div>
+        </div>
+      ) : orderNumber ? (
+        <div>
+          <div class="rounded-2xl border-2 border-fill p-8 text-center">
+            <div class="text-4xl text-price">✓</div>
+            <h1 class="mt-3 text-2xl font-bold text-ink">
+              {t.orderPlacedPre} {orderNumber} {t.orderPlacedPost}
+            </h1>
+          </div>
           <div class="mt-6 flex flex-wrap gap-3">
             <a
               href={localePath(lang)}

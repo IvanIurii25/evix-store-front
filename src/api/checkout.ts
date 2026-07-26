@@ -73,12 +73,17 @@ export async function checkout(
     delivery_address?: DeliveryAddressIn | null;
     delivery_address_id?: number | null;
     promo_code?: string | null;
+    // 'cod' (default) or 'card' (maib). Only sent as 'card' when the gateway is
+    // enabled server-side; a card order returns a pay_url to redirect the payer.
+    payment_method?: 'cod' | 'card';
   },
   lang?: string,
 ): Promise<OrderOut> {
   const { data, error, response } = await api.POST('/api/v1/checkout', {
     params: { query: { lang } },
-    body,
+    // The generated CheckoutIn marks payment_method as required (it has a server
+    // default of "cod"); normalize here so callers can omit it and keep COD.
+    body: { payment_method: 'cod', ...body },
     credentials: 'include',
   });
   if (error || !data) {

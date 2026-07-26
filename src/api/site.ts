@@ -15,6 +15,22 @@ const EMPTY_SEO: SeoDefaults = {
   og_image_url: '',
 };
 
+// --- Public runtime config (feature flags) ----------------------------------
+export type SiteConfig = components['schemas']['SiteConfigOut'];
+
+// Card payment is gated server-side by env creds. When the config endpoint is
+// unreachable we fail closed (card hidden) so the storefront never offers an
+// option the backend would reject.
+const CONFIG_DISABLED: SiteConfig = { card_payment_enabled: false };
+
+// Public storefront runtime config. Read at checkout SSR to decide whether to
+// render the card-payment option. Degrades to card-disabled on any failure.
+export async function getSiteConfig(): Promise<SiteConfig> {
+  const { data, error } = await api.GET('/api/v1/site/config');
+  if (error || !data) return CONFIG_DISABLED;
+  return data;
+}
+
 // SEO defaults change rarely (a back-office edit), but Layout reads them on every
 // SSR page render — cache them process-wide with a short TTL so we hit the API at
 // most once per window instead of once per pageview.
