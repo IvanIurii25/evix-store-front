@@ -98,6 +98,20 @@ function valueLabel(value: AttributeValueOut): string {
   return ru?.value || `#${value.id}`;
 }
 
+// Locale + number aware ordering so the attribute/value checkbox lists read
+// cleanly (e.g. 5 < 10 < 100, letters after) instead of raw insertion order.
+const _coll = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
+const sortedAttributes = computed(() =>
+  [...attributes.value].sort((a, b) =>
+    _coll.compare(attributeLabel(a), attributeLabel(b)),
+  ),
+);
+function sortedValues(attr: AttributeOut): AttributeValueOut[] {
+  return [...(attr.values ?? [])].sort((a, b) =>
+    _coll.compare(valueLabel(a), valueLabel(b)),
+  );
+}
+
 function toggleValue(valueId: number) {
   const next = new Set(selectedValueIds.value);
   if (next.has(valueId)) next.delete(valueId);
@@ -785,13 +799,13 @@ const inputCls =
         <h2 class="text-base font-semibold text-ink">Атрибуты</h2>
 
         <div v-if="attributes.length" class="mt-4 space-y-4">
-          <div v-for="attr in attributes" :key="attr.id">
+          <div v-for="attr in sortedAttributes" :key="attr.id">
             <p class="text-sm font-medium text-body">
               {{ attributeLabel(attr) }}
             </p>
             <div class="mt-2 flex flex-wrap gap-4">
               <label
-                v-for="value in attr.values ?? []"
+                v-for="value in sortedValues(attr)"
                 :key="value.id"
                 class="flex items-center gap-2 text-sm text-body"
               >
@@ -828,7 +842,7 @@ const inputCls =
           <p class="text-sm font-medium text-body">Атрибуты вариаций</p>
           <div v-if="attributes.length" class="mt-2 flex flex-wrap gap-4">
             <label
-              v-for="attr in attributes"
+              v-for="attr in sortedAttributes"
               :key="attr.id"
               class="flex items-center gap-2 text-sm text-body"
             >
@@ -945,7 +959,7 @@ const inputCls =
                 >
                   <option :value="undefined" disabled>—</option>
                   <option
-                    v-for="val in attr.values ?? []"
+                    v-for="val in sortedValues(attr)"
                     :key="val.id"
                     :value="val.id"
                   >

@@ -843,4 +843,28 @@ describe('ProductEditor — edit mode', () => {
     // media id 11 is the product()'s first image; bind it to variant 51.
     expect(mBind).toHaveBeenCalledWith(7, 11, 51);
   });
+
+  it('renders attribute values in locale/number order, not insertion order', async () => {
+    mGet.mockResolvedValue(product());
+    mWaiters.mockResolvedValue(0);
+    mListAttrs.mockResolvedValue([
+      attr(1, 'size', [
+        [201, '50'],
+        [202, '5'],
+        [203, '100'],
+        [204, '10'],
+      ]),
+    ]);
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+
+    const section = w
+      .findAll('section')
+      .find((s) => s.text().includes('Атрибуты') && s.text().includes('100'))!;
+    const nums = section
+      .findAll('label')
+      .map((l) => l.text().trim())
+      .filter((t) => ['5', '10', '50', '100'].includes(t));
+    expect(nums).toEqual(['5', '10', '50', '100']);
+  });
 });
