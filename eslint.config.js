@@ -28,4 +28,23 @@ export default [
       'no-undef': 'off',
     },
   },
+  {
+    // Node build/tooling scripts (asset generators, astro config) — declare the
+    // Node globals they use so `no-undef` doesn't flag console/process/Buffer/URL.
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        fetch: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+      },
+    },
+  },
 ];
