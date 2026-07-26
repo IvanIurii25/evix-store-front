@@ -44,7 +44,8 @@ describe('NotFound (decorative network island)', () => {
     stubMatchMedia(false);
     const w = mount(NotFound);
 
-    expect(w.findAll('.nf-net__node')).toHaveLength(12);
+    // 12 nodes total, but node 0 is drawn as the brand mark, not a plain dot.
+    expect(w.findAll('.nf-net__node')).toHaveLength(11);
     expect(w.findAll('.nf-net__edge')).toHaveLength(17);
     expect(w.findAll('.nf-net__pulse')).toHaveLength(17);
     // The broken node is fed by exactly two severed connections.
@@ -53,14 +54,16 @@ describe('NotFound (decorative network island)', () => {
     expect(w.find('.nf-net__broken-core').exists()).toBe(true);
   });
 
-  it('draws the central brand hexagon with six vertices', () => {
+  it('renders the inlined Evix brand mark as the source node', () => {
     stubMatchMedia(false);
     const w = mount(NotFound);
 
-    const hex = w.findAll('.nf-net__hex');
-    expect(hex).toHaveLength(1);
-    const points = hex[0].attributes('points')!.trim().split(/\s+/);
-    expect(points).toHaveLength(6);
+    expect(w.find('.nf-net__mark').exists()).toBe(true);
+    expect(w.find('.nf-net__mark-hex').exists()).toBe(true);
+    // Six hexagon vertices + one central accent node.
+    expect(w.findAll('.nf-net__mark-vtx')).toHaveLength(7);
+    // The "E" is four strokes.
+    expect(w.findAll('.nf-net__mark-e path')).toHaveLength(4);
   });
 
   it('stops the severed line short of the broken node (leaves a visible gap)', () => {

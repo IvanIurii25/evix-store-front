@@ -1,25 +1,27 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue';
 
-// Decorative hexagonal "SEO / data" network behind the 404 card: glowing nodes,
-// animated connection lines, one severed node (the missing page) and a central
-// hexagon accent standing in for the brand core. Purely ornamental, so the SVG
-// is aria-hidden; all copy/CTAs live in the surrounding Astro page. Motion is
-// GPU-cheap (transform/opacity only) and fully disabled under
-// prefers-reduced-motion.
+// Decorative hexagonal "SEO / data" network behind the 404 card. The official
+// Evix mark (brand/evix-mark.svg — a hexagon frame + "E") is inlined as the
+// network's source node at top-centre, with glowing nodes, animated connection
+// lines and one severed node (the missing page) fanning out below/around the
+// card. Purely ornamental, so the SVG is aria-hidden; all copy/CTAs live in the
+// surrounding Astro page. Motion is GPU-cheap (transform/opacity only) and fully
+// disabled under prefers-reduced-motion.
 
 interface NetNode {
   x: number;
   y: number;
   r: number;
   glow?: boolean; // renders a soft halo + pulse
-  hex?: boolean; // the central brand hexagon
+  mark?: boolean; // the Evix brand mark (rendered separately, not as a dot)
 }
 
 // Coordinates live in a 1200×760 viewBox; the SVG is scaled to cover the
-// viewport (preserveAspectRatio slice), so exact placement is not critical.
+// viewport (preserveAspectRatio slice). Node 0 anchors the brand mark and sits
+// high enough to clear the centred content card.
 const nodes: NetNode[] = [
-  { x: 600, y: 300, r: 9, glow: true, hex: true }, // core
+  { x: 600, y: 140, r: 9, glow: true, mark: true }, // brand mark (source)
   { x: 430, y: 220, r: 5, glow: true },
   { x: 760, y: 210, r: 5 },
   { x: 330, y: 380, r: 4 },
@@ -28,10 +30,16 @@ const nodes: NetNode[] = [
   { x: 700, y: 440, r: 5 },
   { x: 240, y: 250, r: 4 },
   { x: 930, y: 230, r: 5, glow: true },
-  { x: 600, y: 150, r: 4 },
+  { x: 600, y: 320, r: 4 }, // central hub (behind the card)
   { x: 390, y: 520, r: 5 },
   { x: 820, y: 520, r: 4 },
 ];
+
+// The brand mark: 128×128 artwork centred on its own (64,64). Anchor it on
+// node 0 so the network's edges wire straight into the logo, and scale it up to
+// read as the focal source. Inlined (not <img>) so it shares the SVG lighting.
+const MARK_SCALE = 1.5;
+const markTransform = `translate(${nodes[0].x - 64 * MARK_SCALE} ${nodes[0].y - 64 * MARK_SCALE}) scale(${MARK_SCALE})`;
 
 // Connected edges (indices into `nodes`).
 const edges: [number, number][] = [
@@ -56,8 +64,8 @@ const edges: [number, number][] = [
 
 // The severed node: sits apart, its links to the network are broken (they stop
 // short with a gap), symbolising the page that no longer connects.
-const broken = { x: 1040, y: 440, r: 6 };
-const severedFrom = [4, 11]; // node indices whose link to `broken` is cut
+const broken = { x: 1060, y: 250, r: 6 };
+const severedFrom = [4, 8]; // node indices whose link to `broken` is cut
 
 function path(a: { x: number; y: number }, b: { x: number; y: number }) {
   return `M${a.x} ${a.y} L${b.x} ${b.y}`;
@@ -71,14 +79,6 @@ function severedPath(a: NetNode, gap = 46) {
   const ex = broken.x - (dx / len) * gap;
   const ey = broken.y - (dy / len) * gap;
   return `M${a.x} ${a.y} L${ex} ${ey}`;
-}
-
-// Regular hexagon points for the brand core node.
-function hexPoints(cx: number, cy: number, size: number) {
-  return Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 3) * i - Math.PI / 2;
-    return `${(cx + size * Math.cos(angle)).toFixed(1)},${(cy + size * Math.sin(angle)).toFixed(1)}`;
-  }).join(' ');
 }
 
 // Deterministic particle field (no Math.random → no SSR/client hydration
@@ -181,6 +181,11 @@ onBeforeUnmount(() => {
             <stop offset="0.5" stop-color="#436bef" stop-opacity="0.35" />
             <stop offset="1" stop-color="#436bef" stop-opacity="0.05" />
           </linearGradient>
+          <!-- Brand hexagon gradient (matches brand/evix-mark.svg). -->
+          <linearGradient id="nf-evix-hex" x1="0.12" y1="0.9" x2="0.9" y2="0.12">
+            <stop offset="0" stop-color="#436bef" />
+            <stop offset="1" stop-color="#06b6d4" />
+          </linearGradient>
         </defs>
 
         <!-- Base connection lines. -->
@@ -227,15 +232,11 @@ onBeforeUnmount(() => {
           />
         </g>
 
-        <!-- Nodes. -->
+        <!-- Nodes (the brand-mark node is drawn separately below). -->
         <g class="nf-net__nodes">
           <template v-for="(n, i) in nodes" :key="`n${i}`">
-            <polygon
-              v-if="n.hex"
-              :points="hexPoints(n.x, n.y, n.r * 2.2)"
-              class="nf-net__hex"
-            />
             <circle
+              v-if="!n.mark"
               :cx="n.x"
               :cy="n.y"
               :r="n.r"
@@ -244,6 +245,33 @@ onBeforeUnmount(() => {
               :style="{ animationDelay: `${(i % 5) * 0.5}s` }"
             />
           </template>
+        </g>
+
+        <!-- Official Evix mark as the network's source node (brand/evix-mark.svg,
+             inlined). Outer group positions it on node 0; the inner group carries
+             a gentle breathing animation without clobbering that transform. -->
+        <g :transform="markTransform">
+          <g class="nf-net__mark">
+            <path
+              class="nf-net__mark-hex"
+              d="M64 16 L105.6 40 L105.6 88 L64 112 L22.4 88 L22.4 40 Z"
+              fill="none"
+              stroke="url(#nf-evix-hex)"
+            />
+            <g class="nf-net__mark-e">
+              <path d="M44 40 V88" />
+              <path d="M44 40 H78" />
+              <path d="M44 64 H70" />
+              <path d="M44 88 H78" />
+            </g>
+            <circle cx="64" cy="16" r="5.5" class="nf-net__mark-vtx nf-net__mark-vtx--c" />
+            <circle cx="105.6" cy="40" r="5.5" class="nf-net__mark-vtx nf-net__mark-vtx--c" />
+            <circle cx="105.6" cy="88" r="5.5" class="nf-net__mark-vtx" />
+            <circle cx="64" cy="112" r="5.5" class="nf-net__mark-vtx" />
+            <circle cx="22.4" cy="88" r="5.5" class="nf-net__mark-vtx" />
+            <circle cx="22.4" cy="40" r="5.5" class="nf-net__mark-vtx" />
+            <circle cx="70" cy="64" r="4.5" class="nf-net__mark-vtx nf-net__mark-vtx--c" />
+          </g>
         </g>
 
         <!-- The broken node: dashed, muted, disconnected. -->
@@ -355,10 +383,31 @@ onBeforeUnmount(() => {
   transform-origin: center;
 }
 
-.nf-net__hex {
-  fill: rgba(67, 107, 239, 0.08);
+/* Brand mark (inlined evix-mark.svg) */
+.nf-net__mark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nf-breathe 6s ease-in-out infinite;
+}
+
+.nf-net__mark-hex {
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.nf-net__mark-e path {
+  fill: none;
   stroke: #436bef;
-  stroke-width: 1.6;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.nf-net__mark-vtx {
+  fill: #436bef;
+}
+
+.nf-net__mark-vtx--c {
+  fill: #06b6d4;
 }
 
 /* Broken node */
@@ -451,11 +500,22 @@ onBeforeUnmount(() => {
   }
 }
 
+@keyframes nf-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
 /* Reduced motion: freeze everything, keep the static composition. */
 .nf-net--still .nf-net__parallax,
 .nf-net--still .nf-net__particle,
 .nf-net--still .nf-net__pulse,
 .nf-net--still .nf-net__node--pulse,
+.nf-net--still .nf-net__mark,
 .nf-net--still .nf-net__broken-ring {
   animation: none;
 }
@@ -474,6 +534,7 @@ onBeforeUnmount(() => {
   .nf-net__particle,
   .nf-net__pulse,
   .nf-net__node--pulse,
+  .nf-net__mark,
   .nf-net__broken-ring {
     animation: none;
   }
