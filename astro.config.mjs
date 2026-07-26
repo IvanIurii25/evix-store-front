@@ -45,9 +45,10 @@ export default defineConfig({
         "frame-src 'none'",
       ],
       scriptDirective: {
-        // Cloudflare auto-injects its Web Analytics beacon at the edge; allow it
-        // alongside Astro's own hashed scripts (still no wildcard/unsafe-inline).
-        resources: ['https://static.cloudflareinsights.com'],
+        // Keep 'self' (island chunks are same-origin) and allow Cloudflare's
+        // auto-injected Web Analytics beacon. Providing resources replaces the
+        // default host list, so 'self' MUST be listed explicitly here.
+        resources: ["'self'", 'https://static.cloudflareinsights.com'],
       },
       styleDirective: {
         // Astro adds hashes for its scoped <style> blocks (style-src). Once a
