@@ -39,11 +39,11 @@ import { productJsonLd, breadcrumbJsonLd } from '../../../lib/seo';
 export const prerender = false;
 
 const { lang, slug } = Astro.params;
-if (!isLang(lang)) return new Response('Not found', { status: 404 });
+if (!isLang(lang)) return Astro.rewrite('/404');
 
 const product = slug ? await getProduct(slug, lang) : null;
 
-if (!product) return new Response('Product not found', { status: 404 });
+if (!product) return Astro.rewrite('/404');
 
 const t = ui(lang);
 const tp = pdpStrings(lang);

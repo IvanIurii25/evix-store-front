@@ -16,7 +16,7 @@ import { breadcrumbJsonLd } from '../../../lib/seo';
 export const prerender = false;
 
 const { lang, slug } = Astro.params;
-if (!isLang(lang)) return new Response('Not found', { status: 404 });
+if (!isLang(lang)) return Astro.rewrite('/404');
 
 const parts = (slug ?? '').split('/').filter(Boolean);
 const catSlug = parts[parts.length - 1];
@@ -33,7 +33,7 @@ try {
     getFacets(catSlug, lang),
   ]);
 } catch {
-  return new Response('Category not found', { status: 404 });
+  return Astro.rewrite('/404');
 }
 
 // Categories resolve by leaf slug (the ancestor path in the URL is decorative),

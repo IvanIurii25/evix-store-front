@@ -899,3 +899,42 @@ const CONSENT_STRINGS: Record<Lang, ConsentStrings> = {
 export function consentStrings(lang: Lang): ConsentStrings {
   return CONSENT_STRINGS[lang];
 }
+
+// --- 404 page (immersive, off-Layout) -------------------------------------- //
+
+export interface NotFoundStrings {
+  pageTitle: string; // <title>
+  eyebrow: string; // small label above the code — "Eroare 404" / "Ошибка 404"
+  headline: string; // hero heading
+  description: string; // supporting paragraph
+  returnHome: string; // primary CTA
+  back: string; // secondary CTA
+  networkAlt: string; // aria-label for the decorative network graphic
+}
+
+const NOT_FOUND: Record<Lang, NotFoundStrings> = {
+  ro: {
+    pageTitle: '404 — pagina nu a fost găsită',
+    eyebrow: 'Eroare 404',
+    headline: 'Ups, această pagină a ieșit de pe hartă.',
+    description:
+      'Pagina pe care o cauți nu mai există sau a fost mutată. Hai să te aducem înapoi pe drumul cel bun.',
+    returnHome: 'Pagina principală',
+    back: 'Înapoi',
+    networkAlt: 'Rețea abstractă de noduri cu o conexiune întreruptă',
+  },
+  ru: {
+    pageTitle: '404 — страница не найдена',
+    eyebrow: 'Ошибка 404',
+    headline: 'Упс, эта страница ушла за пределы карты.',
+    description:
+      'Страница, которую вы ищете, больше не существует или была перемещена. Давайте вернём вас на верный путь.',
+    returnHome: 'На главную',
+    back: 'Назад',
+    networkAlt: 'Абстрактная сеть узлов с одним разорванным соединением',
+  },
+};
+
+export function notFoundStrings(lang: Lang): NotFoundStrings {
+  return NOT_FOUND[lang];
+}

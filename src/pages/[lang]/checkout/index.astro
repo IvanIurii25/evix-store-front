@@ -10,7 +10,7 @@ import { checkoutStrings } from '../../../lib/i18n-strings';
 export const prerender = false;
 
 const { lang } = Astro.params;
-if (!isLang(lang)) return new Response('Not found', { status: 404 });
+if (!isLang(lang)) return Astro.rewrite('/404');
 const t = checkoutStrings(lang);
 
 // Logged-in users get a saved-address picker for courier delivery. The httpOnly
