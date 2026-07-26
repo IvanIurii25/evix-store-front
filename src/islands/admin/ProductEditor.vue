@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import {
+  bindMediaToVariant,
   createProduct,
   createVariant,
   deleteProduct,
@@ -423,6 +424,18 @@ async function onUpload(event: Event) {
   }
 }
 
+// Bind an image to a variant (variable products), or unbind to the shared
+// gallery when variantId is null.
+async function bindMedia(mediaId: number, variantId: number | null) {
+  if (!isEdit.value) return;
+  try {
+    await bindMediaToVariant(props.productId as number, mediaId, variantId);
+    await reloadProduct();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Не удалось привязать фото';
+  }
+}
+
 async function removeMedia(mediaId: number) {
   if (!isEdit.value) return;
   try {
@@ -727,6 +740,25 @@ const inputCls =
                 ↓
               </button>
             </div>
+            <select
+              v-if="variants.length"
+              class="block w-full border-t-2 border-fill bg-white px-2 py-1 text-xs text-body outline-none focus:border-primary"
+              title="Привязать фото к вариации"
+              :value="m.variant_id ?? ''"
+              @change="
+                bindMedia(
+                  m.id,
+                  ($event.target as HTMLSelectElement).value
+                    ? Number(($event.target as HTMLSelectElement).value)
+                    : null,
+                )
+              "
+            >
+              <option value="">Общая галерея</option>
+              <option v-for="v in variants" :key="v.id" :value="v.id">
+                {{ variantLabel(v) }}
+              </option>
+            </select>
           </div>
         </div>
         <p v-else class="mt-4 text-sm text-subtle">Изображений пока нет.</p>
@@ -785,7 +817,10 @@ const inputCls =
         <h2 class="text-base font-semibold text-ink">Вариации</h2>
         <p class="mt-1 text-xs text-subtle">
           Для вариативного товара цена/наличие берутся из вариаций. Отметьте
-          атрибуты-селекторы, затем сгенерируйте или добавьте комбинации.
+          атрибуты-селекторы, затем сгенерируйте или добавьте комбинации. Фото
+          вариаций назначаются в разделе «Изображения» (выпадающий список под
+          картинкой). Порядок для активного товара: сначала снимите «активен»,
+          задайте атрибуты и вариации, затем снова включите «активен».
         </p>
 
         <!-- Which attributes are variation selectors -->

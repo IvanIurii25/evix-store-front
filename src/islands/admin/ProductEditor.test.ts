@@ -4,6 +4,7 @@ import { nextTick } from 'vue';
 
 import ProductEditor from './ProductEditor.vue';
 import {
+  bindMediaToVariant,
   createProduct,
   deleteProduct,
   deleteProductMedia,
@@ -21,6 +22,7 @@ import {
 } from '../../api/admin';
 
 vi.mock('../../api/admin', () => ({
+  bindMediaToVariant: vi.fn(),
   createProduct: vi.fn(),
   createVariant: vi.fn(),
   deleteProduct: vi.fn(),
@@ -54,6 +56,7 @@ const mUpdate = vi.mocked(updateProduct);
 const mUpload = vi.mocked(uploadProductMedia);
 const mGen = vi.mocked(generateVariants);
 const mDelVar = vi.mocked(deleteVariant);
+const mBind = vi.mocked(bindMediaToVariant);
 
 function cat(id: number, name = `Cat ${id}`) {
   return {
@@ -801,5 +804,43 @@ describe('ProductEditor — edit mode', () => {
       .trigger('click');
     await flushPromises();
     expect(mDelVar).toHaveBeenCalledWith(51);
+  });
+
+  it('binds an image to a variant from the media dropdown', async () => {
+    mGet.mockResolvedValue(
+      product({
+        has_variants: true,
+        variation_attribute_ids: [1],
+        variants: [
+          {
+            id: 51,
+            product_id: 7,
+            code: null,
+            price: '10',
+            old_price: null,
+            qty: 1,
+            position: 0,
+            is_active: true,
+            value_ids: [101],
+            image_media_id: null,
+          },
+        ],
+      }),
+    );
+    mWaiters.mockResolvedValue(0);
+    mListAttrs.mockResolvedValue([attr(1, 'color', [[101, 'Красный']])]);
+    mBind.mockResolvedValue(undefined as never);
+
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+
+    // The per-image variant dropdown (only shown when variants exist).
+    const mediaSelect = w
+      .findAll('select')
+      .find((s) => s.text().includes('Общая галерея'))!;
+    await mediaSelect.setValue('51');
+    await flushPromises();
+    // media id 11 is the product()'s first image; bind it to variant 51.
+    expect(mBind).toHaveBeenCalledWith(7, 11, 51);
   });
 });
