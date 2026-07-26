@@ -4,7 +4,7 @@ import { webpSrcset } from '../lib/img';
 import type { components } from '../types/api';
 import type { Lang } from '../lib/i18n';
 import { localePath } from '../lib/i18n';
-import { ui } from '../lib/i18n-strings';
+import { ui, pdpStrings } from '../lib/i18n-strings';
 
 interface Props {
   product: components['schemas']['ProductCardOut'];
@@ -13,6 +13,11 @@ interface Props {
 
 const { product, lang } = Astro.props;
 const t = ui(lang);
+const tp = pdpStrings(lang);
+
+// Variable products: the card shows "from {min}" when the range top differs.
+const showFrom =
+  product.price_max != null && product.price_max !== product.price;
 ---
 
 <a
@@ -54,11 +59,12 @@ const t = ui(lang);
 
   <div class="mt-auto pt-3">
     <div class="flex items-baseline gap-2">
+      {showFrom && <span class="text-xs text-subtle">{tp.priceFrom}</span>}
       <span class="text-xl font-semibold text-price"
         >{price(product.price)}</span
       >
       {
-        product.old_price && (
+        product.old_price && !showFrom && (
           <span class="text-sm text-subtle line-through">
             {price(product.old_price)}
           </span>

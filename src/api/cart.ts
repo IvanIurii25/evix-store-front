@@ -19,10 +19,15 @@ export async function getCart(lang?: string): Promise<CartOut> {
   return data ?? EMPTY;
 }
 
-export async function addToCart(productId: number, qty: number, lang?: string) {
+export async function addToCart(
+  productId: number,
+  qty: number,
+  lang?: string,
+  variantId?: number | null,
+) {
   const { data, error, response } = await api.POST('/api/v1/cart/items', {
     params: { query: { lang } },
-    body: { product_id: productId, qty },
+    body: { product_id: productId, qty, variant_id: variantId ?? null },
     credentials: 'include',
   });
   if (error) throw new Error(`addToCart failed (${response.status})`);

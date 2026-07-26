@@ -3,6 +3,7 @@ import Layout from '../../../layouts/Layout.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import ProductGallery from '../../../islands/ProductGallery.vue';
 import AddToCart from '../../../islands/AddToCart.vue';
+import VariantBox from '../../../islands/VariantBox.vue';
 import QuickBuy from '../../../islands/QuickBuy.vue';
 import RestockNotify from '../../../islands/RestockNotify.vue';
 import ProductReviews from '../../../islands/ProductReviews.vue';
@@ -72,6 +73,13 @@ const attributes = product.attributes ?? [];
 const descriptionHtml = optimizeDescriptionHtml(product.description);
 const hasDescription = Boolean(descriptionHtml);
 const hasAttributes = attributes.length > 0;
+
+// Variable products (variants): the price + stock + buy-box become a reactive
+// island (VariantBox) so selecting options updates price/photo live. Simple
+// products keep the SSR price block + AddToCart/QuickBuy islands unchanged.
+const hasVariants = Boolean(product.has_variants);
+const variants = product.variants ?? [];
+const variationAttributes = product.variation_attributes ?? [];
 
 // Discount badge (-N%): shown only when old_price is set and > current price.
 const salePercent = discountPercent(product.old_price, product.price);
@@ -164,30 +172,32 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
           )
         }
 
-        <div class="mt-5 flex items-baseline gap-3">
-          <span class="text-3xl font-semibold text-price"
-            >{price(product.price)}</span
-          >
-          {
-            product.old_price && (
-              <span class="text-lg text-subtle line-through">
-                {price(product.old_price)}
-              </span>
-            )
-          }
-          {
-            salePercent > 0 && (
-              <span class="rounded-lg bg-badge-sale-bg px-2 py-1 text-sm font-semibold text-badge-sale">
-                -{salePercent}%
-              </span>
-            )
-          }
-        </div>
-        <div
-          class={`mt-2 text-sm ${product.in_stock ? 'text-price' : 'text-subtle'}`}
-        >
-          {product.in_stock ? t.inStock : t.outOfStock}
-        </div>
+        {
+          !hasVariants && (
+            <>
+              <div class="mt-5 flex items-baseline gap-3">
+                <span class="text-3xl font-semibold text-price">
+                  {price(product.price)}
+                </span>
+                {product.old_price && (
+                  <span class="text-lg text-subtle line-through">
+                    {price(product.old_price)}
+                  </span>
+                )}
+                {salePercent > 0 && (
+                  <span class="rounded-lg bg-badge-sale-bg px-2 py-1 text-sm font-semibold text-badge-sale">
+                    -{salePercent}%
+                  </span>
+                )}
+              </div>
+              <div
+                class={`mt-2 text-sm ${product.in_stock ? 'text-price' : 'text-subtle'}`}
+              >
+                {product.in_stock ? t.inStock : t.outOfStock}
+              </div>
+            </>
+          )
+        }
 
         {
           showInCart && (
@@ -224,7 +234,17 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
 
         <div class="mt-6">
           {
-            product.in_stock ? (
+            hasVariants ? (
+              <VariantBox
+                client:load
+                productId={product.id}
+                variants={variants}
+                variationAttributes={variationAttributes}
+                priceMin={product.price_min ?? product.price}
+                priceMax={product.price_max ?? null}
+                lang={lang}
+              />
+            ) : product.in_stock ? (
               <div class="space-y-3">
                 <AddToCart
                   client:visible

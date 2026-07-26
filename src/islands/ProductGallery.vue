@@ -1,10 +1,21 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 import { webpSrcset } from '../lib/img';
+import { VARIANT_IMAGE } from '../lib/variant-events';
 
 const props = defineProps<{ images: { url: string }[]; alt: string }>();
-const active = ref(props.images[0]?.url ?? '');
+const fallback = props.images[0]?.url ?? '';
+const active = ref(fallback);
+
+// Variable products: switch the main image to the chosen variant's photo. A null
+// url (deselected / no variant image) falls back to the first gallery image.
+function onVariantImage(event: Event) {
+  const url = (event as CustomEvent<{ url: string | null }>).detail?.url;
+  active.value = url ?? fallback;
+}
+onMounted(() => window.addEventListener(VARIANT_IMAGE, onVariantImage));
+onUnmounted(() => window.removeEventListener(VARIANT_IMAGE, onVariantImage));
 </script>
 
 <template>

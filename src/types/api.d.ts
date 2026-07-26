@@ -413,6 +413,7 @@ export interface paths {
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
      *         lang: Requested display language for line names (default ``ro``).
+     *         variant_id: Variant id disambiguating the line (variable products).
      *
      *     Returns:
      *         CartOut: The re-rendered cart.
@@ -434,6 +435,7 @@ export interface paths {
      *         user: The authenticated user, or ``None`` for a guest.
      *         session: Injected async DB session.
      *         lang: Requested display language for line names (default ``ro``).
+     *         variant_id: Variant id disambiguating the line (variable products).
      *
      *     Returns:
      *         CartOut: The re-rendered cart.
@@ -1201,6 +1203,117 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/products/{product_id}/media/{media_id}/variant': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Bind Media To Variant
+     * @description Bind one image to a variant (or unbind to the shared gallery).
+     */
+    put: operations['bind_media_to_variant_api_v1_admin_products__product_id__media__media_id__variant_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/products/{product_id}/variants': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Product Variants
+     * @description List a product's variants (including inactive) for the back-office.
+     */
+    get: operations['list_product_variants_api_v1_admin_products__product_id__variants_get'];
+    put?: never;
+    /**
+     * Create Variant
+     * @description Create one variant (a full combination of variation-attribute values).
+     */
+    post: operations['create_variant_api_v1_admin_products__product_id__variants_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/products/{product_id}/variation-attributes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Set Variation Attributes
+     * @description Set (ordered) which attributes are the product's variation selectors.
+     */
+    put: operations['set_variation_attributes_api_v1_admin_products__product_id__variation_attributes_put'];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/products/{product_id}/variants/generate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Generate Product Variants
+     * @description Create the missing cartesian combinations from the assigned values.
+     *
+     *     Returns the variants that were created plus a count of the combinations that
+     *     already existed and were skipped (the operation is idempotent).
+     */
+    post: operations['generate_product_variants_api_v1_admin_products__product_id__variants_generate_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/variants/{variant_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete Variant
+     * @description Delete a variant (its value links + image bindings).
+     */
+    delete: operations['delete_variant_api_v1_admin_variants__variant_id__delete'];
+    options?: never;
+    head?: never;
+    /**
+     * Update Variant
+     * @description Update a variant's price / stock / order / active flag.
+     */
+    patch: operations['update_variant_api_v1_admin_variants__variant_id__patch'];
     trace?: never;
   };
   '/api/v1/admin/attributes': {
@@ -2338,7 +2451,8 @@ export interface paths {
      *         RestockSubscribedOut: ``{subscribed: true}``.
      *
      *     Raises:
-     *         HTTPException: 404 if the product is missing; 400 if it is in stock.
+     *         HTTPException: 404 if the product is missing; 400 if it is in stock or
+     *             variable (restock unsupported for variable products in v1).
      */
     post: operations['subscribe_api_v1_restock_subscriptions_post'];
     delete?: never;
@@ -2623,6 +2737,11 @@ export interface components {
        * @description Catalog product id to add.
        */
       product_id: number;
+      /**
+       * Variant Id
+       * @description Chosen variant id (variable products).
+       */
+      variant_id?: number | null;
       /**
        * Qty
        * @description Quantity to add (increments if present).
@@ -2948,8 +3067,12 @@ export interface components {
     CartItemOut: {
       /** Product Id */
       product_id: number;
+      /** Variant Id */
+      variant_id?: number | null;
       /** Name */
       name: string;
+      /** Variant Label */
+      variant_label?: string | null;
       /** Price */
       price: string;
       /** Qty */
@@ -3686,6 +3809,8 @@ export interface components {
       id: number;
       /** Product Id */
       product_id: number;
+      /** Variant Id */
+      variant_id?: number | null;
       /** Url */
       url: string;
       /** Kind */
@@ -3725,6 +3850,14 @@ export interface components {
     MediaReorderRequest: {
       /** Ordered Ids */
       ordered_ids: number[];
+    };
+    /**
+     * MediaVariantBindRequest
+     * @description Bind a product's media row to a variant (or unbind when ``None``).
+     */
+    MediaVariantBindRequest: {
+      /** Variant Id */
+      variant_id?: number | null;
     };
     /**
      * MessageOut
@@ -3904,6 +4037,8 @@ export interface components {
       price: string;
       /** Old Price */
       old_price?: string | null;
+      /** Price Max */
+      price_max?: string | null;
       /** In Stock */
       in_stock: boolean;
       /** Main Image Url */
@@ -3939,6 +4074,11 @@ export interface components {
        * @default false
        */
       is_featured: boolean;
+      /**
+       * Has Variants
+       * @default false
+       */
+      has_variants: boolean;
       /** Translations */
       translations?: components['schemas']['ProductTranslationIn'][];
     };
@@ -3965,6 +4105,19 @@ export interface components {
       price: string;
       /** Old Price */
       old_price?: string | null;
+      /**
+       * Has Variants
+       * @default false
+       */
+      has_variants: boolean;
+      /** Price Min */
+      price_min?: string | null;
+      /** Price Max */
+      price_max?: string | null;
+      /** Variation Attributes */
+      variation_attributes?: components['schemas']['VariationAttributeOut'][];
+      /** Variants */
+      variants?: components['schemas']['VariantOut'][];
       /** In Stock */
       in_stock: boolean;
       /**
@@ -4027,12 +4180,21 @@ export interface components {
        * @default false
        */
       is_featured: boolean;
+      /**
+       * Has Variants
+       * @default false
+       */
+      has_variants: boolean;
       /** Translations */
       translations?: components['schemas']['ProductTranslationOut'][];
       /** Media */
       media?: components['schemas']['MediaAdminOut'][];
       /** Value Ids */
       value_ids?: number[];
+      /** Variation Attribute Ids */
+      variation_attribute_ids?: number[];
+      /** Variants */
+      variants?: components['schemas']['VariantAdminOut'][];
     };
     /**
      * ProductReviewsOut
@@ -4145,6 +4307,8 @@ export interface components {
       is_active?: boolean | null;
       /** Is Featured */
       is_featured?: boolean | null;
+      /** Has Variants */
+      has_variants?: boolean | null;
     };
     /**
      * PromoCreate
@@ -4297,6 +4461,11 @@ export interface components {
        * @description Product to buy in one click.
        */
       product_id: number;
+      /**
+       * Variant Id
+       * @description Chosen variant id (variable products).
+       */
+      variant_id?: number | null;
       /**
        * Phone
        * @description Contact phone (required).
@@ -4898,6 +5067,154 @@ export interface components {
       /** Context */
       ctx?: Record<string, never>;
     };
+    /**
+     * VariantAdminOut
+     * @description A product variant as returned to the back-office.
+     */
+    VariantAdminOut: {
+      /** Id */
+      id: number;
+      /** Product Id */
+      product_id: number;
+      /** Code */
+      code?: string | null;
+      /** Price */
+      price: string;
+      /** Old Price */
+      old_price?: string | null;
+      /** Qty */
+      qty: number;
+      /** Position */
+      position: number;
+      /** Is Active */
+      is_active: boolean;
+      /** Value Ids */
+      value_ids?: number[];
+      /** Image Media Id */
+      image_media_id?: number | null;
+    };
+    /**
+     * VariantCreate
+     * @description Create one variant — a full combination of attribute values + price/stock.
+     */
+    VariantCreate: {
+      /** Value Ids */
+      value_ids: number[];
+      /** Code */
+      code?: string | null;
+      /** Price */
+      price: number | string;
+      /** Old Price */
+      old_price?: number | string | null;
+      /**
+       * Qty
+       * @default 0
+       */
+      qty: number;
+      /**
+       * Is Active
+       * @default true
+       */
+      is_active: boolean;
+    };
+    /**
+     * VariantGenerateResult
+     * @description Outcome of bulk variant generation: what was created and what was skipped.
+     */
+    VariantGenerateResult: {
+      /** Created */
+      created?: components['schemas']['VariantAdminOut'][];
+      /**
+       * Skipped
+       * @description Combinations skipped because a matching variant already existed.
+       * @default 0
+       */
+      skipped: number;
+    };
+    /**
+     * VariantListOut
+     * @description Envelope for a product's variant list.
+     */
+    VariantListOut: {
+      /** Data */
+      data?: components['schemas']['VariantAdminOut'][];
+    };
+    /**
+     * VariantOut
+     * @description One purchasable variant of a variable product (price/stock/options).
+     */
+    VariantOut: {
+      /** Id */
+      id: number;
+      /** Code */
+      code?: string | null;
+      /** Price */
+      price: string;
+      /** Old Price */
+      old_price?: string | null;
+      /** In Stock */
+      in_stock: boolean;
+      /** Value Ids */
+      value_ids?: number[];
+      /** Image Url */
+      image_url?: string | null;
+    };
+    /**
+     * VariantUpdate
+     * @description Partial update of a variant's price / stock / order / active flag.
+     *
+     *     Identity (the value combination) is immutable — changing it is a delete +
+     *     create. At least one mutable field must be supplied.
+     */
+    VariantUpdate: {
+      /** Code */
+      code?: string | null;
+      /** Price */
+      price?: number | string | null;
+      /** Old Price */
+      old_price?: number | string | null;
+      /** Qty */
+      qty?: number | null;
+      /** Position */
+      position?: number | null;
+      /** Is Active */
+      is_active?: boolean | null;
+    };
+    /**
+     * VariationAttributeOut
+     * @description A variation selector: attribute + its selectable, localized options.
+     *
+     *     The frontend renders one picker per entry and maps a full selection
+     *     (one ``value_id`` per attribute) to a variant via ``VariantOut.value_ids``.
+     */
+    VariationAttributeOut: {
+      /** Attribute Id */
+      attribute_id: number;
+      /** Code */
+      code: string;
+      /** Name */
+      name: string;
+      /** Values */
+      values?: components['schemas']['VariationValueOut'][];
+    };
+    /**
+     * VariationAttributesRequest
+     * @description Replace a product's variation-selector attributes (ordered).
+     */
+    VariationAttributesRequest: {
+      /** Attribute Ids */
+      attribute_ids?: number[];
+    };
+    /**
+     * VariationValueOut
+     * @description One selectable option of a variation-defining attribute (with its id).
+     */
+    VariationValueOut: {
+      /** Value Id */
+      value_id: number;
+      /** Value */
+      value: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -5328,6 +5645,8 @@ export interface operations {
       query?: {
         /** @description Display language (ru|ro). */
         lang?: string;
+        /** @description Variant id identifying the line (variable products). */
+        variant_id?: number | null;
       };
       header?: never;
       path: {
@@ -5362,6 +5681,8 @@ export interface operations {
       query?: {
         /** @description Display language (ru|ro). */
         lang?: string;
+        /** @description Variant id identifying the line (variable products). */
+        variant_id?: number | null;
       };
       header?: never;
       path: {
@@ -6633,6 +6954,238 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  bind_media_to_variant_api_v1_admin_products__product_id__media__media_id__variant_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+        media_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MediaVariantBindRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['MediaAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_product_variants_api_v1_admin_products__product_id__variants_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VariantListOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_variant_api_v1_admin_products__product_id__variants_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VariantCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VariantAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  set_variation_attributes_api_v1_admin_products__product_id__variation_attributes_put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VariationAttributesRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  generate_product_variants_api_v1_admin_products__product_id__variants_generate_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        product_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VariantGenerateResult'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_variant_api_v1_admin_variants__variant_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        variant_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_variant_api_v1_admin_variants__variant_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        variant_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VariantUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['VariantAdminOut'];
+        };
       };
       /** @description Validation Error */
       422: {

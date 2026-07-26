@@ -599,6 +599,11 @@ export interface PdpStrings {
   installmentSuffix: string;
   installmentNote: string; // small honesty note ("orientativ" / "оценочно")
   installmentDetails: string; // optional "Detalii" / "Подробнее" link label
+  // Variable products: "from" price prefix, per-attribute picker prompt, and the
+  // hint shown until a full combination is chosen.
+  priceFrom: string;
+  chooseOption: string; // "Alegeți" / "Выберите" — followed by the attribute name
+  selectToBuy: string; // "Alegeți opțiunile" / "Выберите характеристики"
 }
 
 const PDP: Record<Lang, PdpStrings> = {
@@ -614,6 +619,9 @@ const PDP: Record<Lang, PdpStrings> = {
     installmentSuffix: 'lei/lună',
     installmentNote: 'orientativ',
     installmentDetails: 'Detalii',
+    priceFrom: 'de la',
+    chooseOption: 'Alegeți',
+    selectToBuy: 'Alegeți opțiunile',
   },
   ru: {
     code: 'Код:',
@@ -627,6 +635,9 @@ const PDP: Record<Lang, PdpStrings> = {
     installmentSuffix: 'лей/мес',
     installmentNote: 'оценочно',
     installmentDetails: 'Подробнее',
+    priceFrom: 'от',
+    chooseOption: 'Выберите',
+    selectToBuy: 'Выберите характеристики',
   },
 };
 

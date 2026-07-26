@@ -61,7 +61,7 @@ describe('cart api', () => {
     });
   });
 
-  it('addToCart POSTs product_id + qty and returns data', async () => {
+  it('addToCart POSTs product_id + qty (variant_id null) and returns data', async () => {
     stubOnce(jsonResponse({ items: [{ product_id: 5, qty: 2 }] }));
     const { addToCart } = await load();
     const res = await addToCart(5, 2, 'ru');
@@ -69,7 +69,16 @@ describe('cart api', () => {
     const r = req();
     expect(r.method).toBe('POST');
     expect(r.url).toContain('/api/v1/cart/items');
-    expect(await r.text()).toBe('{"product_id":5,"qty":2}');
+    expect(await r.text()).toBe('{"product_id":5,"qty":2,"variant_id":null}');
+  });
+
+  it('addToCart forwards a chosen variant_id', async () => {
+    stubOnce(jsonResponse({ items: [] }));
+    const { addToCart } = await load();
+    await addToCart(5, 1, 'ru', 42);
+    expect(await req().text()).toBe(
+      '{"product_id":5,"qty":1,"variant_id":42}',
+    );
   });
 
   it('addToCart throws with the status code on error', async () => {
