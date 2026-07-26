@@ -114,8 +114,10 @@ async function save() {
     discount_value: form.discount_value,
     active_from: localInputToIso(form.active_from),
     active_to: localInputToIso(form.active_to),
-    min_order_total: form.min_order_total.trim() || null,
-    usage_limit: form.usage_limit.trim() ? Number(form.usage_limit) : null,
+    // <input type="number"> makes Vue cast the model to a number, so these can be
+    // number | string | '' at runtime — coerce to string before trimming.
+    min_order_total: String(form.min_order_total).trim() || null,
+    usage_limit: String(form.usage_limit).trim() ? Number(form.usage_limit) : null,
     is_active: form.is_active,
   };
   try {
