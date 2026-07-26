@@ -57,6 +57,7 @@ describe('resolveSeoMeta', () => {
     const meta = resolveSeoMeta(EMPTY, { lang: 'ru' });
     expect(meta.title).toBe('evix-store');
     expect(meta.description).toBe('evix-store storefront');
-    expect(meta.ogImage).toBe('');
+    // Ultimate fallback is the bundled default social card.
+    expect(meta.ogImage).toBe('/og-default.png');
   });
 });

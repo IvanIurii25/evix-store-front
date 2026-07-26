@@ -63,6 +63,9 @@ const preloadFonts = [400, 700].map(
 
 const site = Astro.site ?? new URL('http://localhost:4321');
 const canonicalURL = new URL(canonical ?? Astro.url.pathname, site).href;
+// OG/Twitter images must be absolute; resolve relative fallbacks against `site`
+// (an already-absolute back-office URL passes through unchanged).
+const ogImageAbs = ogImageUrl ? new URL(ogImageUrl, site).href : undefined;
 // Pre-launch: keep the store out of search indexes. Runtime flag so launch is
 // just `SITE_NOINDEX=false` + restart (no rebuild). Also drives robots.txt.
 const noindex = import.meta.env.SSR && process.env.SITE_NOINDEX === 'true';
@@ -79,6 +82,10 @@ const alternateLinks = alternates.map((a) => ({
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0F172A" />
     <meta name="generator" content={Astro.generator} />
     {
       preloadFonts.map((href) => (
@@ -101,12 +108,12 @@ const alternateLinks = alternates.map((a) => ({
     <meta property="og:url" content={canonicalURL} />
     <meta
       name="twitter:card"
-      content={ogImageUrl ? 'summary_large_image' : 'summary'}
+      content={ogImageAbs ? 'summary_large_image' : 'summary'}
     />
     <meta name="twitter:title" content={metaTitle} />
     <meta name="twitter:description" content={metaDescription} />
-    {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
-    {ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
+    {ogImageAbs && <meta property="og:image" content={ogImageAbs} />}
+    {ogImageAbs && <meta name="twitter:image" content={ogImageAbs} />}
     {
       alternateLinks.map((a) => (
         <link rel="alternate" hreflang={a.hreflang} href={a.href} />

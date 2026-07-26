@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="evix">
+  <rect width="128" height="128" rx="24" fill="#0F172A"/>
+  <g stroke="#3B82F6" stroke-width="16" stroke-linecap="round" fill="none">
+    <path d="M42 34 V94"/>
+    <path d="M42 34 H90"/>
+    <path d="M42 64 H80"/>
+    <path d="M42 94 H90"/>
+  </g>
+</svg>

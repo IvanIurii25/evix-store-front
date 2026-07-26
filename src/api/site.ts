@@ -122,6 +122,6 @@ export function resolveSeoMeta(
   return {
     title: input.title ? `${input.title}${seo.title_suffix}` : siteTitle,
     description: input.description || siteDescription,
-    ogImage: input.ogImage || seo.og_image_url,
+    ogImage: input.ogImage || seo.og_image_url || '/og-default.png',
   };
 }
