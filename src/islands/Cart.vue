@@ -18,12 +18,12 @@ async function load() {
   loading.value = false;
 }
 
-async function setQty(pid: number, qty: number) {
+async function setQty(pid: number, variantId: number | null, qty: number) {
   if (busy.value) return;
   busy.value = true;
   try {
-    if (qty < 1) await removeItem(pid);
-    else await updateItem(pid, qty);
+    if (qty < 1) await removeItem(pid, props.lang, variantId);
+    else await updateItem(pid, qty, props.lang, variantId);
     await load();
     notifyCartChanged();
   } finally {
@@ -31,11 +31,11 @@ async function setQty(pid: number, qty: number) {
   }
 }
 
-async function remove(pid: number) {
+async function remove(pid: number, variantId: number | null) {
   if (busy.value) return;
   busy.value = true;
   try {
-    await removeItem(pid);
+    await removeItem(pid, props.lang, variantId);
     await load();
     notifyCartChanged();
   } finally {
@@ -60,11 +60,14 @@ onMounted(load);
     <div class="flex-1 space-y-3">
       <div
         v-for="it in cart.items"
-        :key="it.product_id"
+        :key="`${it.product_id}:${it.variant_id ?? ''}`"
         class="flex items-center gap-4 rounded-2xl border-2 border-fill p-4"
       >
         <div class="min-w-0 flex-1">
           <div class="truncate font-medium text-ink">{{ it.name }}</div>
+          <div v-if="it.variant_label" class="truncate text-xs text-subtle">
+            {{ it.variant_label }}
+          </div>
           <div class="text-sm text-subtle">
             {{ price(it.price) }} {{ t.perUnit }}
           </div>
@@ -75,7 +78,7 @@ onMounted(load);
           <button
             type="button"
             class="px-3 text-lg text-subtle"
-            @click="setQty(it.product_id, it.qty - 1)"
+            @click="setQty(it.product_id, it.variant_id ?? null, it.qty - 1)"
           >
             −
           </button>
@@ -83,7 +86,7 @@ onMounted(load);
           <button
             type="button"
             class="px-3 text-lg text-subtle"
-            @click="setQty(it.product_id, it.qty + 1)"
+            @click="setQty(it.product_id, it.variant_id ?? null, it.qty + 1)"
           >
             +
           </button>
@@ -95,7 +98,7 @@ onMounted(load);
           type="button"
           class="shrink-0 text-subtle transition hover:text-danger"
           :aria-label="t.remove"
-          @click="remove(it.product_id)"
+          @click="remove(it.product_id, it.variant_id ?? null)"
         >
           ✕
         </button>

@@ -38,17 +38,28 @@ export async function updateItem(
   productId: number,
   qty: number,
   lang?: string,
+  variantId?: number | null,
 ) {
   await api.PATCH('/api/v1/cart/items/{product_id}', {
-    params: { path: { product_id: productId }, query: { lang } },
+    params: {
+      path: { product_id: productId },
+      query: { lang, variant_id: variantId ?? null },
+    },
     body: { qty },
     credentials: 'include',
   });
 }
 
-export async function removeItem(productId: number, lang?: string) {
+export async function removeItem(
+  productId: number,
+  lang?: string,
+  variantId?: number | null,
+) {
   await api.DELETE('/api/v1/cart/items/{product_id}', {
-    params: { path: { product_id: productId }, query: { lang } },
+    params: {
+      path: { product_id: productId },
+      query: { lang, variant_id: variantId ?? null },
+    },
     credentials: 'include',
   });
 }

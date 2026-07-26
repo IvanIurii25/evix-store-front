@@ -74,4 +74,15 @@ describe('ProductCard', () => {
   it('shows out-of-stock label when in_stock is false', () => {
     expect(make({ in_stock: false }).text()).toContain('Нет в наличии');
   });
+
+  it('shows "from" prefix for a variable product with a price range', () => {
+    const w = make({ price: '179', price_max: '249' } as Partial<Card>);
+    expect(w.text()).toContain('от');
+    expect(w.text()).toContain('179');
+  });
+
+  it('no "from" prefix when price_max equals price (uniform/simple)', () => {
+    const w = make({ price: '179', price_max: '179' } as Partial<Card>);
+    expect(w.text()).not.toContain('от 179');
+  });
 });

@@ -2,11 +2,17 @@
 import { price } from '../lib/format';
 import type { ProductCard } from '../api/catalog';
 import { localePath, type Lang } from '../lib/i18n';
-import { ui } from '../lib/i18n-strings';
+import { ui, pdpStrings } from '../lib/i18n-strings';
 import { webpSrcset } from '../lib/img';
 
 const props = defineProps<{ product: ProductCard; lang: Lang }>();
 const t = ui(props.lang);
+const tp = pdpStrings(props.lang);
+
+// Variable products: show "from {min}" when the range top differs.
+const showFrom =
+  props.product.price_max != null &&
+  props.product.price_max !== props.product.price;
 </script>
 
 <template>
@@ -42,11 +48,14 @@ const t = ui(props.lang);
 
     <div class="mt-auto pt-3">
       <div class="flex items-baseline gap-2">
+        <span v-if="showFrom" class="text-xs text-subtle">{{
+          tp.priceFrom
+        }}</span>
         <span class="text-xl font-semibold text-price">{{
           price(product.price)
         }}</span>
         <span
-          v-if="product.old_price"
+          v-if="product.old_price && !showFrom"
           class="text-sm text-subtle line-through"
           >{{ price(product.old_price) }}</span
         >

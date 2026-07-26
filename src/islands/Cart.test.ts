@@ -79,7 +79,7 @@ describe('Cart', () => {
     await plus.trigger('click');
     await flushPromises();
 
-    expect(updateItem).toHaveBeenCalledWith(7, 3);
+    expect(updateItem).toHaveBeenCalledWith(7, 3, 'ru', null);
     expect(removeItem).not.toHaveBeenCalled();
     expect(notifyCartChanged).toHaveBeenCalledTimes(1);
   });
@@ -101,7 +101,7 @@ describe('Cart', () => {
     await minus.trigger('click');
     await flushPromises();
 
-    expect(removeItem).toHaveBeenCalledWith(7);
+    expect(removeItem).toHaveBeenCalledWith(7, 'ru', null);
     expect(updateItem).not.toHaveBeenCalled();
     expect(notifyCartChanged).toHaveBeenCalled();
   });
@@ -116,8 +116,39 @@ describe('Cart', () => {
     await del.trigger('click');
     await flushPromises();
 
-    expect(removeItem).toHaveBeenCalledWith(7);
+    expect(removeItem).toHaveBeenCalledWith(7, 'ru', null);
     expect(notifyCartChanged).toHaveBeenCalled();
+  });
+
+  it('threads variant_id + shows the variant label for a variable line', async () => {
+    const variantCart = {
+      items: [
+        {
+          product_id: 7,
+          variant_id: 42,
+          name: 'Коврик',
+          variant_label: 'Чёрный, 50×80',
+          price: '249',
+          qty: 1,
+          line_total: '249',
+        },
+      ],
+      subtotal: '249',
+      item_count: 1,
+    };
+    getCart.mockResolvedValueOnce(variantCart).mockResolvedValueOnce(EMPTY);
+    removeItem.mockResolvedValue(undefined);
+    const wrapper = mount(Cart, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    // Variant label rendered so two variants aren't indistinguishable.
+    expect(wrapper.text()).toContain('Чёрный, 50×80');
+
+    const del = wrapper.findAll('button').find((b) => b.text() === '✕')!;
+    await del.trigger('click');
+    await flushPromises();
+    // The chosen variant is passed through so the right line is removed.
+    expect(removeItem).toHaveBeenCalledWith(7, 'ru', 42);
   });
 
   it('ignores a second action while busy (guard)', async () => {
