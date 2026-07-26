@@ -18,10 +18,12 @@ interface NetNode {
 }
 
 // Coordinates live in a 1200×760 viewBox; the SVG is scaled to cover the
-// viewport (preserveAspectRatio slice). Node 0 anchors the brand mark and sits
-// high enough to clear the centred content card.
+// viewport (preserveAspectRatio slice, anchored to the TOP — xMidYMin — so the
+// overflow is cropped from the bottom and the brand mark up top is never
+// clipped on wide/short viewports). Node 0 anchors the brand mark; its y leaves
+// comfortable headroom from the top edge across device aspect ratios.
 const nodes: NetNode[] = [
-  { x: 600, y: 140, r: 9, glow: true, mark: true }, // brand mark (source)
+  { x: 600, y: 100, r: 9, glow: true, mark: true }, // brand mark (source)
   { x: 430, y: 220, r: 5, glow: true },
   { x: 760, y: 210, r: 5 },
   { x: 330, y: 380, r: 4 },
@@ -38,7 +40,7 @@ const nodes: NetNode[] = [
 // The brand mark: 128×128 artwork centred on its own (64,64). Anchor it on
 // node 0 so the network's edges wire straight into the logo, and scale it up to
 // read as the focal source. Inlined (not <img>) so it shares the SVG lighting.
-const MARK_SCALE = 1.5;
+const MARK_SCALE = 1.4;
 const markTransform = `translate(${nodes[0].x - 64 * MARK_SCALE} ${nodes[0].y - 64 * MARK_SCALE}) scale(${MARK_SCALE})`;
 
 // Connected edges (indices into `nodes`).
@@ -169,7 +171,7 @@ onBeforeUnmount(() => {
       <svg
         class="nf-net__svg"
         viewBox="0 0 1200 760"
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="xMidYMin slice"
         role="presentation"
       >
         <defs>
