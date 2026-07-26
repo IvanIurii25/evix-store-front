@@ -35,7 +35,8 @@ export default defineConfig({
     csp: {
       directives: [
         "default-src 'self'",
-        `connect-src 'self' ${apiOrigin}`,
+        // Cloudflare Web Analytics beacon POSTs its telemetry to cloudflareinsights.com.
+        `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com`,
         "img-src 'self' data: https://media.evix.md",
         "font-src 'self'",
         "object-src 'none'",
@@ -43,6 +44,11 @@ export default defineConfig({
         "form-action 'self'",
         "frame-src 'none'",
       ],
+      scriptDirective: {
+        // Cloudflare auto-injects its Web Analytics beacon at the edge; allow it
+        // alongside Astro's own hashed scripts (still no wildcard/unsafe-inline).
+        resources: ['https://static.cloudflareinsights.com'],
+      },
       styleDirective: {
         // Astro adds hashes for its scoped <style> blocks (style-src). Once a
         // hash is present, the browser ignores 'unsafe-inline' in that same
