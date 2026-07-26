@@ -16,7 +16,7 @@ import { organizationJsonLd, websiteJsonLd } from '../../lib/seo';
 export const prerender = false;
 
 const { lang } = Astro.params;
-if (!isLang(lang)) return new Response('Not found', { status: 404 });
+if (!isLang(lang)) return Astro.rewrite('/404');
 
 const t = homeStrings(lang);
 

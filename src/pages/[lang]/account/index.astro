@@ -11,7 +11,7 @@ import { accountStrings } from '../../../lib/i18n-strings';
 export const prerender = false;
 
 const { lang } = Astro.params;
-if (!isLang(lang)) return new Response('Not found', { status: 404 });
+if (!isLang(lang)) return Astro.rewrite('/404');
 
 // SSR-guard: the access cookie is httpOnly but readable server-side.
 const loginUrl = localePath(

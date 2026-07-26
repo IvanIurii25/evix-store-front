@@ -1,0 +1,342 @@
+---
+// Immersive, off-Layout 404 in the store's own light palette. The white
+// Header/Footer chrome would break the full-screen composition, so this page
+// renders its own minimal shell (still noindex + localized) with the animated
+// hexagonal network island behind static, no-JS-safe content: code, copy, CTAs.
+//
+// Reached two ways: (1) any unmatched route (Astro serves it as the 404), and
+// (2) an explicit Astro.rewrite('/404') from pages that can't resolve a
+// resource (missing product/category/info). In both cases Astro.url keeps the
+// visitor's ORIGINAL path, so the first segment still yields their locale.
+import '../styles/global.css';
+import { langFromPath, localePath } from '../lib/i18n';
+import { notFoundStrings } from '../lib/i18n-strings';
+import NotFound from '../islands/NotFound.vue';
+
+// SSR (not prerendered): the project runs on the Node adapter and its analytics
+// middleware reads clientAddress on every request, which is unavailable to a
+// prerendered route. Matches `export const prerender = false` on all pages.
+export const prerender = false;
+
+// Ensure a 404 status on both entry paths (a rewrite would otherwise render as
+// 200 — a soft 404 that search engines dislike).
+Astro.response.status = 404;
+
+// Locale from the (original) first path segment: ru → ru, everything else → ro.
+const lang = langFromPath(Astro.url.pathname);
+const t = notFoundStrings(lang);
+const home = localePath(lang);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- An error page must never be indexed, regardless of the site-wide flag. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <link
+      rel="preload"
+      href={`/fonts/onest-400-${lang === 'ru' ? 'cyrillic' : 'latin'}.woff2`}
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href={`/fonts/onest-700-${lang === 'ru' ? 'cyrillic' : 'latin'}.woff2`}
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <title>{t.pageTitle}</title>
+    <meta name="description" content={t.description} />
+  </head>
+
+  <body class="nf-body">
+    <main class="nf-root" aria-labelledby="nf-headline">
+      <!-- Ambient lighting: soft brand-tinted radial gradients on a light
+           canvas (store palette). Decorative, GPU-cheap, motion added later. -->
+      <div class="nf-ambient" aria-hidden="true"></div>
+      <!-- Animated hexagonal network centerpiece (client island). -->
+      <div class="nf-network-slot">
+        <NotFound client:load />
+      </div>
+
+      <!-- Glass content card. -->
+      <section class="nf-card">
+        <p class="nf-eyebrow">
+          <span class="nf-eyebrow-dot" aria-hidden="true"></span>
+          {t.eyebrow}
+        </p>
+
+        <p class="nf-code" aria-hidden="true">404</p>
+
+        <h1 id="nf-headline" class="nf-headline">{t.headline}</h1>
+        <p class="nf-desc">{t.description}</p>
+
+        <div class="nf-actions">
+          <a href={home} class="nf-btn nf-btn--primary">
+            <span class="nf-btn-label">{t.returnHome}</span>
+          </a>
+          <!-- Progressive enhancement: a real link to home (works with no JS);
+               the inline script upgrades it to history.back() when there is a
+               same-origin history entry to return to. -->
+          <a href={home} class="nf-btn nf-btn--ghost" data-nf-back>
+            <span class="nf-btn-label">{t.back}</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script is:inline>
+      // Upgrade the "Back" link into a genuine history-back when it makes sense
+      // (there is history to go back to and we didn't arrive from an external
+      // site). Otherwise it stays a normal link to the localized home.
+      (function () {
+        const back = document.querySelector('[data-nf-back]');
+        if (!back) return;
+        back.addEventListener('click', function (event) {
+          const sameOrigin =
+            document.referrer &&
+            new URL(document.referrer).origin === location.origin;
+          if (window.history.length > 1 && sameOrigin) {
+            event.preventDefault();
+            window.history.back();
+          }
+        });
+      })();
+    </script>
+
+    <style>
+      /* Light theme — matches the store (white canvas, brand #436bef accent,
+         ink/body/subtle tokens, Onest). Premium composition kept, colours
+         inverted to the site's own palette. */
+      .nf-body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: #ffffff;
+        color: #292929;
+        font-family: var(--font-sans);
+        letter-spacing: -0.02em;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .nf-root {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 6vw 1.5rem;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      /* Soft premium lighting — faint brand-tinted pools over the white canvas
+         (blue accent, a whisper of the signature price-green, cool violet). */
+      .nf-ambient {
+        position: absolute;
+        inset: -20%;
+        z-index: -2;
+        background:
+          radial-gradient(
+            44rem 44rem at 70% 18%,
+            rgba(67, 107, 239, 0.14),
+            transparent 60%
+          ),
+          radial-gradient(
+            34rem 34rem at 20% 84%,
+            rgba(120, 90, 240, 0.1),
+            transparent 62%
+          ),
+          radial-gradient(
+            60rem 60rem at 50% 118%,
+            rgba(49, 167, 47, 0.06),
+            transparent 60%
+          );
+      }
+
+      /* Placeholder for the network island so the layout reserves its space. */
+      .nf-network-slot {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+      }
+
+      .nf-card {
+        position: relative;
+        max-width: 40rem;
+        width: 100%;
+        padding: clamp(2rem, 5vw, 3.5rem);
+        text-align: center;
+        border-radius: 1.75rem;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(16, 16, 16, 0.07);
+        box-shadow:
+          0 1px 0 0 rgba(255, 255, 255, 0.8) inset,
+          0 30px 70px -34px rgba(67, 107, 239, 0.35),
+          0 10px 30px -18px rgba(16, 16, 16, 0.15);
+        backdrop-filter: blur(16px) saturate(1.15);
+        -webkit-backdrop-filter: blur(16px) saturate(1.15);
+        animation: nf-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+
+      .nf-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 0 1.25rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #436bef;
+        background: rgba(67, 107, 239, 0.08);
+        border: 1px solid rgba(67, 107, 239, 0.2);
+      }
+
+      .nf-eyebrow-dot {
+        width: 0.42rem;
+        height: 0.42rem;
+        border-radius: 999px;
+        background: #436bef;
+        box-shadow: 0 0 0.55rem 0.03rem rgba(67, 107, 239, 0.7);
+        animation: nf-pulse 2.6s ease-in-out infinite;
+      }
+
+      .nf-code {
+        margin: 0;
+        font-size: clamp(5rem, 18vw, 9.5rem);
+        font-weight: 700;
+        line-height: 0.9;
+        letter-spacing: -0.05em;
+        background: linear-gradient(
+          180deg,
+          #101010 0%,
+          #2f4bb0 55%,
+          #436bef 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .nf-headline {
+        margin: 1rem 0 0.75rem;
+        font-size: clamp(1.35rem, 3.4vw, 2rem);
+        font-weight: 700;
+        line-height: 1.15;
+        color: #101010;
+      }
+
+      .nf-desc {
+        margin: 0 auto;
+        max-width: 32rem;
+        font-size: clamp(0.95rem, 1.6vw, 1.075rem);
+        line-height: 1.6;
+        color: #7f7f7f;
+      }
+
+      .nf-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.85rem;
+        margin-top: 2.25rem;
+      }
+
+      .nf-btn {
+        --nf-btn-y: 0;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 10rem;
+        padding: 0.85rem 1.6rem;
+        border-radius: 0.9rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        transform: translateY(var(--nf-btn-y));
+        transition:
+          transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+          box-shadow 0.35s ease,
+          background-color 0.35s ease,
+          border-color 0.35s ease;
+      }
+
+      .nf-btn--primary {
+        color: #ffffff;
+        background: #436bef;
+        box-shadow: 0 12px 28px -12px rgba(67, 107, 239, 0.7);
+      }
+
+      .nf-btn--ghost {
+        color: #292929;
+        background: #ffffff;
+        border: 1px solid rgba(16, 16, 16, 0.14);
+      }
+
+      @media (hover: hover) {
+        .nf-btn:hover {
+          --nf-btn-y: -2px;
+        }
+        .nf-btn--primary:hover {
+          background: #3656bf;
+          box-shadow: 0 18px 36px -12px rgba(67, 107, 239, 0.8);
+        }
+        .nf-btn--ghost:hover {
+          background: #f2f2f2;
+          border-color: rgba(16, 16, 16, 0.24);
+        }
+      }
+
+      .nf-btn:focus-visible {
+        outline: 2px solid #436bef;
+        outline-offset: 3px;
+      }
+
+      @keyframes nf-rise {
+        from {
+          opacity: 0;
+          transform: translateY(18px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes nf-pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.55;
+          transform: scale(0.82);
+        }
+      }
+
+      /* Respect users who asked for less motion: no rise, no pulse. */
+      @media (prefers-reduced-motion: reduce) {
+        .nf-card {
+          animation: none;
+        }
+        .nf-eyebrow-dot {
+          animation: none;
+        }
+        .nf-btn {
+          transition: none;
+        }
+      }
+    </style>
+  </body>
+</html>

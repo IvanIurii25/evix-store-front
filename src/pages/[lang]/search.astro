@@ -11,7 +11,7 @@ import { productCount } from '../../lib/format';
 export const prerender = false;
 
 const { lang } = Astro.params;
-if (!isLang(lang)) return new Response('Not found', { status: 404 });
+if (!isLang(lang)) return Astro.rewrite('/404');
 
 const url = new URL(Astro.request.url);
 const q = (url.searchParams.get('q') ?? '').trim();

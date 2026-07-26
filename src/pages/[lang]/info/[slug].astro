@@ -13,10 +13,10 @@ import {
 export const prerender = false;
 
 const { lang, slug } = Astro.params;
-if (!isLang(lang)) return new Response('Not found', { status: 404 });
+if (!isLang(lang)) return Astro.rewrite('/404');
 
 const page = slug ? await getContentPage(slug, lang) : null;
-if (!page) return new Response('Not found', { status: 404 });
+if (!page) return Astro.rewrite('/404');
 
 const bodyHtml = renderMarkdown(page.body);
 
