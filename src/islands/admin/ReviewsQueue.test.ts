@@ -137,4 +137,110 @@ describe('ReviewsQueue', () => {
     await flushPromises();
     expect(w.text()).toContain('down');
   });
+
+  it('surfaces a moderation error (non-Error fallback)', async () => {
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    mockModerate.mockRejectedValue('boom');
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Одобрить')!
+      .trigger('click');
+    await flushPromises();
+    expect(w.text()).toContain('Не удалось обновить');
+  });
+
+  it('does not delete when the confirm is dismissed', async () => {
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!
+      .trigger('click');
+    await flushPromises();
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(w.text()).toContain('Title 1');
+  });
+
+  it('surfaces a delete error (non-Error fallback)', async () => {
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    mockDelete.mockRejectedValue('boom');
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!
+      .trigger('click');
+    await flushPromises();
+    expect(w.text()).toContain('Не удалось удалить');
+  });
+
+  it('keeps a moderated row under the "all" filter', async () => {
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Все')!
+      .trigger('click');
+    await flushPromises();
+    mockModerate.mockResolvedValue({ ...row(1, 'approved') });
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Одобрить')!
+      .trigger('click');
+    await flushPromises();
+    expect(w.text()).toContain('Title 1'); // not dropped under "all"
+  });
+
+  it('ignores clicking the already-active filter', async () => {
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    const calls = mockList.mock.calls.length;
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'На модерации')!
+      .trigger('click');
+    await flushPromises();
+    expect(mockList.mock.calls.length).toBe(calls); // same filter → no re-query
+  });
+
+  it('renders a dash for an invalid moderation date', async () => {
+    mockList.mockResolvedValue({
+      data: [{ ...row(1), created_at: 'not-a-date' }],
+      next_cursor: null,
+    });
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    expect(w.text()).toContain('—');
+  });
+
+  it('renders diverse row states (statuses, unverified, low rating, empty text)', async () => {
+    mockList.mockResolvedValue({
+      data: [
+        {
+          ...row(1, 'approved'),
+          is_verified: false,
+          rating: 2,
+          title: '',
+          body: '',
+        },
+        { ...row(2, 'rejected') },
+      ],
+      next_cursor: null,
+    });
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    expect(w.text()).toContain('одобрен'); // approved status label
+    expect(w.text()).toContain('отклонён'); // rejected status label
+    // approved row hides "Одобрить"; rejected row hides "Отклонить"
+    expect(w.text()).toContain('Одобрить'); // shown for the rejected row
+    expect(w.text()).toContain('Отклонить'); // shown for the approved row
+  });
 });
