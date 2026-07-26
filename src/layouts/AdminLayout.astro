@@ -12,8 +12,14 @@ interface Props {
 
 const { title = 'Админка', email, active = '' } = Astro.props;
 
+// `email` is passed only on authenticated staff pages (omitted on the login
+// page). Use it to gate the chrome: the sidebar leaks the module list, so it
+// must not render before sign-in.
+const authed = Boolean(email);
+
 // Reviews-queue badge: number awaiting moderation (SSR, best-effort → 0).
-const reviewsPending = await pendingReviewsCount(Astro.cookies);
+// Skip the fetch entirely on the unauthenticated login page.
+const reviewsPending = authed ? await pendingReviewsCount(Astro.cookies) : 0;
 
 const NAV: { key: string; href: string; label: string; badge?: number }[] = [
   { key: 'dashboard', href: '/admin', label: 'Дашборд' },
@@ -51,59 +57,60 @@ const NAV: { key: string; href: string; label: string; badge?: number }[] = [
   </head>
   <body class="min-h-screen bg-fill text-body antialiased">
     <div class="flex min-h-screen">
-      <!-- Sidebar -->
-      <aside
-        class="flex w-56 shrink-0 flex-col border-r-2 border-fill bg-white"
-      >
-        <a
-          href="/admin"
-          class="flex h-16 items-center px-6 text-lg font-bold text-ink"
-        >
-          evix<span class="text-primary">admin</span>
-        </a>
-        <nav class="flex-1 px-3 py-2">
-          {
-            NAV.map((item) => (
-              <a
-                href={item.href}
-                class:list={[
-                  'mb-1 flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                  active === item.key
-                    ? 'bg-primary text-white'
-                    : 'text-body hover:bg-fill',
-                ]}
-              >
-                <span>{item.label}</span>
-                {item.key === 'reviews' ? (
-                  <span
-                    id="reviews-badge"
-                    hidden={!item.badge}
-                    class:list={[
-                      'ml-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-semibold',
-                      active === item.key
-                        ? 'bg-white text-primary'
-                        : 'bg-danger text-white',
-                    ]}
-                  >
-                    {item.badge}
-                  </span>
-                ) : item.badge ? (
-                  <span
-                    class:list={[
-                      'ml-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-semibold',
-                      active === item.key
-                        ? 'bg-white text-primary'
-                        : 'bg-danger text-white',
-                    ]}
-                  >
-                    {item.badge}
-                  </span>
-                ) : null}
-              </a>
-            ))
-          }
-        </nav>
-      </aside>
+      <!-- Sidebar — only for authenticated staff; hidden pre-login so the
+           module list isn't exposed publicly. -->
+      {
+        authed && (
+          <aside class="flex w-56 shrink-0 flex-col border-r-2 border-fill bg-white">
+            <a
+              href="/admin"
+              class="flex h-16 items-center px-6 text-lg font-bold text-ink"
+            >
+              evix<span class="text-primary">admin</span>
+            </a>
+            <nav class="flex-1 px-3 py-2">
+              {NAV.map((item) => (
+                <a
+                  href={item.href}
+                  class:list={[
+                    'mb-1 flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                    active === item.key
+                      ? 'bg-primary text-white'
+                      : 'text-body hover:bg-fill',
+                  ]}
+                >
+                  <span>{item.label}</span>
+                  {item.key === 'reviews' ? (
+                    <span
+                      id="reviews-badge"
+                      hidden={!item.badge}
+                      class:list={[
+                        'ml-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-semibold',
+                        active === item.key
+                          ? 'bg-white text-primary'
+                          : 'bg-danger text-white',
+                      ]}
+                    >
+                      {item.badge}
+                    </span>
+                  ) : item.badge ? (
+                    <span
+                      class:list={[
+                        'ml-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-semibold',
+                        active === item.key
+                          ? 'bg-white text-primary'
+                          : 'bg-danger text-white',
+                      ]}
+                    >
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </a>
+              ))}
+            </nav>
+          </aside>
+        )
+      }
 
       <!-- Main column -->
       <div class="flex min-w-0 flex-1 flex-col">
