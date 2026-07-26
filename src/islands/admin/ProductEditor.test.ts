@@ -7,6 +7,8 @@ import {
   createProduct,
   deleteProduct,
   deleteProductMedia,
+  deleteVariant,
+  generateVariants,
   getProduct,
   getRestockWaiters,
   listAttributes,
@@ -20,8 +22,11 @@ import {
 
 vi.mock('../../api/admin', () => ({
   createProduct: vi.fn(),
+  createVariant: vi.fn(),
   deleteProduct: vi.fn(),
   deleteProductMedia: vi.fn(),
+  deleteVariant: vi.fn(),
+  generateVariants: vi.fn(),
   getProduct: vi.fn(),
   getRestockWaiters: vi.fn(),
   listAttributes: vi.fn(),
@@ -29,7 +34,9 @@ vi.mock('../../api/admin', () => ({
   reorderProductMedia: vi.fn(),
   setProductAttributes: vi.fn(),
   setProductTranslation: vi.fn(),
+  setVariationAttributes: vi.fn(),
   updateProduct: vi.fn(),
+  updateVariant: vi.fn(),
   uploadProductMedia: vi.fn(),
 }));
 
@@ -45,6 +52,8 @@ const mSetAttrs = vi.mocked(setProductAttributes);
 const mSetTr = vi.mocked(setProductTranslation);
 const mUpdate = vi.mocked(updateProduct);
 const mUpload = vi.mocked(uploadProductMedia);
+const mGen = vi.mocked(generateVariants);
+const mDelVar = vi.mocked(deleteVariant);
 
 function cat(id: number, name = `Cat ${id}`) {
   return {
@@ -666,9 +675,10 @@ describe('ProductEditor — edit mode', () => {
     expect(w.text()).toContain('Атрибуты');
     expect(w.text()).toContain('Красный');
     expect(w.text()).toContain('Синий');
-    const boxes = w.findAll(
-      'section:last-of-type input[type="checkbox"]',
-    ) as ReturnType<typeof w.findAll>;
+    const attrSection = w
+      .findAll('section')
+      .find((s) => s.text().includes('Красный'))!;
+    const boxes = attrSection.findAll('input[type="checkbox"]');
     // value 101 preselected, 102 not
     expect((boxes[0].element as HTMLInputElement).checked).toBe(true);
     expect((boxes[1].element as HTMLInputElement).checked).toBe(false);
@@ -708,7 +718,10 @@ describe('ProductEditor — edit mode', () => {
     ]);
     const w = mount(ProductEditor, { props: { productId: 7 } });
     await flushPromises();
-    const boxes = w.findAll('section:last-of-type input[type="checkbox"]');
+    const attrSection = w
+      .findAll('section')
+      .find((s) => s.text().includes('Красный'))!;
+    const boxes = attrSection.findAll('input[type="checkbox"]');
     // toggle 101 off, 102 on
     await boxes[0].trigger('change');
     await boxes[1].trigger('change');
@@ -716,5 +729,77 @@ describe('ProductEditor — edit mode', () => {
     await flushPromises();
     expect(mSetAttrs).toHaveBeenCalledTimes(1);
     expect(mSetAttrs).toHaveBeenCalledWith(7, [102]);
+  });
+
+  it('renders variant combinations and wires generate + delete', async () => {
+    mGet.mockResolvedValue(
+      product({
+        has_variants: true,
+        value_ids: [101, 102],
+        variation_attribute_ids: [1],
+        variants: [
+          {
+            id: 51,
+            product_id: 7,
+            code: 'V-1',
+            price: '179',
+            old_price: null,
+            qty: 5,
+            position: 0,
+            is_active: true,
+            value_ids: [101],
+            image_media_id: null,
+          },
+          {
+            id: 52,
+            product_id: 7,
+            code: 'V-2',
+            price: '249',
+            old_price: null,
+            qty: 0,
+            position: 1,
+            is_active: true,
+            value_ids: [102],
+            image_media_id: null,
+          },
+        ],
+      }),
+    );
+    mWaiters.mockResolvedValue(0);
+    mListAttrs.mockResolvedValue([
+      attr(1, 'color', [
+        [101, 'Красный'],
+        [102, 'Синий'],
+      ]),
+    ]);
+    mGen.mockResolvedValue([]);
+    mDelVar.mockResolvedValue(undefined);
+
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+
+    // Both combinations rendered with their localized option labels.
+    expect(w.text()).toContain('Комбинации (2)');
+    expect(w.text()).toContain('Красный');
+    expect(w.text()).toContain('Синий');
+
+    // "Generate all" calls the API for this product.
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Сгенерировать все')!
+      .trigger('click');
+    await flushPromises();
+    expect(mGen).toHaveBeenCalledWith(7);
+
+    // The row delete (×), scoped to the variations section, removes that variant.
+    const varSection = w
+      .findAll('section')
+      .find((s) => s.text().includes('Комбинации'))!;
+    await varSection
+      .findAll('button')
+      .find((b) => b.text() === '×')!
+      .trigger('click');
+    await flushPromises();
+    expect(mDelVar).toHaveBeenCalledWith(51);
   });
 });

@@ -21,6 +21,9 @@ export type CategoryUpdate = Schemas['CategoryUpdate'];
 export type CategoryTranslationIn = Schemas['CategoryTranslationIn'];
 export type AttributeOut = Schemas['AttributeOut'];
 export type AttributeValueOut = Schemas['AttributeValueOut'];
+export type VariantAdminOut = Schemas['VariantAdminOut'];
+export type VariantCreate = Schemas['VariantCreate'];
+export type VariantUpdate = Schemas['VariantUpdate'];
 export type OrderOut = Schemas['OrderOut'];
 export type CustomerListItem = Schemas['CustomerListItem'];
 export type CustomerDetail = Schemas['CustomerDetail'];
@@ -182,6 +185,92 @@ export async function setProductAttributes(
     },
   );
   if (error) fail(error, 'Не удалось сохранить атрибуты');
+  return data;
+}
+
+// --------------------------------------------------------------------------- //
+// Variants (variable products)
+// --------------------------------------------------------------------------- //
+export async function listVariants(id: number): Promise<VariantAdminOut[]> {
+  const { data, error } = await api.GET(
+    '/api/v1/admin/products/{product_id}/variants',
+    { params: { path: { product_id: id } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось загрузить вариации');
+  return data?.data ?? [];
+}
+
+export async function setVariationAttributes(
+  id: number,
+  attribute_ids: number[],
+): Promise<ProductOut> {
+  const { data, error } = await api.PUT(
+    '/api/v1/admin/products/{product_id}/variation-attributes',
+    { params: { path: { product_id: id } }, body: { attribute_ids }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось сохранить атрибуты вариаций');
+  return data;
+}
+
+export async function createVariant(
+  id: number,
+  body: VariantCreate,
+): Promise<VariantAdminOut> {
+  const { data, error } = await api.POST(
+    '/api/v1/admin/products/{product_id}/variants',
+    { params: { path: { product_id: id } }, body, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось создать вариацию');
+  return data;
+}
+
+export async function generateVariants(id: number): Promise<VariantAdminOut[]> {
+  const { data, error } = await api.POST(
+    '/api/v1/admin/products/{product_id}/variants/generate',
+    { params: { path: { product_id: id } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось сгенерировать вариации');
+  return data?.created ?? [];
+}
+
+export async function updateVariant(
+  variantId: number,
+  body: VariantUpdate,
+): Promise<VariantAdminOut> {
+  const { data, error } = await api.PATCH(
+    '/api/v1/admin/variants/{variant_id}',
+    {
+      params: { path: { variant_id: variantId } },
+      body,
+      ...CREDS,
+    },
+  );
+  if (error) fail(error, 'Не удалось обновить вариацию');
+  return data;
+}
+
+export async function deleteVariant(variantId: number): Promise<void> {
+  const { error } = await api.DELETE('/api/v1/admin/variants/{variant_id}', {
+    params: { path: { variant_id: variantId } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось удалить вариацию');
+}
+
+export async function bindMediaToVariant(
+  id: number,
+  mediaId: number,
+  variantId: number | null,
+): Promise<MediaAdminOut> {
+  const { data, error } = await api.PUT(
+    '/api/v1/admin/products/{product_id}/media/{media_id}/variant',
+    {
+      params: { path: { product_id: id, media_id: mediaId } },
+      body: { variant_id: variantId },
+      ...CREDS,
+    },
+  );
+  if (error) fail(error, 'Не удалось привязать фото к вариации');
   return data;
 }
 

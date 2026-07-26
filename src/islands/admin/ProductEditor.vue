@@ -3,8 +3,11 @@ import { computed, onMounted, reactive, ref } from 'vue';
 
 import {
   createProduct,
+  createVariant,
   deleteProduct,
   deleteProductMedia,
+  deleteVariant,
+  generateVariants,
   getProduct,
   getRestockWaiters,
   listAttributes,
@@ -12,12 +15,15 @@ import {
   reorderProductMedia,
   setProductAttributes,
   setProductTranslation,
+  setVariationAttributes,
   updateProduct,
+  updateVariant,
   uploadProductMedia,
   type AttributeOut,
   type AttributeValueOut,
   type CategoryOut,
   type ProductOut,
+  type VariantAdminOut,
 } from '../../api/admin';
 
 const props = defineProps<{ productId?: number }>();
@@ -98,6 +104,157 @@ function toggleValue(valueId: number) {
   selectedValueIds.value = next;
 }
 
+// ---- variations (edit mode) ------------------------------------------------
+const variationAttributeIds = ref<number[]>([]);
+const variants = ref<VariantAdminOut[]>([]);
+const variantBusy = ref(false);
+const newVariant = reactive<{
+  values: Record<number, number | null>;
+  code: string;
+  price: string;
+  old_price: string;
+  qty: number;
+}>({ values: {}, code: '', price: '', old_price: '', qty: 0 });
+
+function attributeById(id: number): AttributeOut | undefined {
+  return attributes.value.find((a) => a.id === id);
+}
+
+// Selector attributes resolved in their stored (display) order.
+const variationAttrs = computed(() =>
+  variationAttributeIds.value
+    .map(attributeById)
+    .filter((a): a is AttributeOut => a != null),
+);
+
+// Ru label of an attribute value by id (searches every loaded attribute).
+function valueLabelById(id: number): string {
+  for (const attr of attributes.value) {
+    const value = attr.values?.find((v) => v.id === id);
+    if (value) return valueLabel(value);
+  }
+  return `#${id}`;
+}
+
+// Human label for a variant row: its chosen option values joined.
+function variantLabel(v: VariantAdminOut): string {
+  return (v.value_ids ?? []).map(valueLabelById).join(' · ');
+}
+
+function toggleVariationAttribute(id: number) {
+  const arr = [...variationAttributeIds.value];
+  const at = arr.indexOf(id);
+  if (at >= 0) arr.splice(at, 1);
+  else arr.push(id);
+  variationAttributeIds.value = arr;
+}
+
+async function applyVariationAttributes() {
+  if (!isEdit.value) return;
+  variantBusy.value = true;
+  error.value = '';
+  try {
+    await setVariationAttributes(
+      props.productId as number,
+      variationAttributeIds.value,
+    );
+    await reloadProduct();
+    success.value = 'Атрибуты вариаций сохранены';
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка';
+  } finally {
+    variantBusy.value = false;
+  }
+}
+
+async function generate() {
+  if (!isEdit.value) return;
+  variantBusy.value = true;
+  error.value = '';
+  try {
+    await generateVariants(props.productId as number);
+    await reloadProduct();
+    success.value = 'Вариации сгенерированы';
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка';
+  } finally {
+    variantBusy.value = false;
+  }
+}
+
+async function addVariant() {
+  if (!isEdit.value) return;
+  const value_ids = variationAttrs.value
+    .map((a) => newVariant.values[a.id])
+    .filter((v): v is number => v != null);
+  if (value_ids.length !== variationAttrs.value.length) {
+    error.value = 'Выберите значение для каждого атрибута вариации';
+    return;
+  }
+  if (!newVariant.price.trim() || Number.isNaN(Number(newVariant.price))) {
+    error.value = 'Укажите цену вариации';
+    return;
+  }
+  variantBusy.value = true;
+  error.value = '';
+  try {
+    await createVariant(props.productId as number, {
+      value_ids,
+      code: newVariant.code.trim() || null,
+      price: newVariant.price.trim(),
+      old_price: newVariant.old_price.trim()
+        ? newVariant.old_price.trim()
+        : null,
+      qty: Number(newVariant.qty) || 0,
+    });
+    newVariant.values = {};
+    newVariant.code = '';
+    newVariant.price = '';
+    newVariant.old_price = '';
+    newVariant.qty = 0;
+    await reloadProduct();
+    success.value = 'Вариация добавлена';
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка';
+  } finally {
+    variantBusy.value = false;
+  }
+}
+
+async function saveVariant(v: VariantAdminOut) {
+  variantBusy.value = true;
+  error.value = '';
+  try {
+    await updateVariant(v.id, {
+      code: v.code ?? null,
+      price: v.price,
+      old_price: v.old_price ?? null,
+      qty: v.qty,
+      is_active: v.is_active,
+    });
+    await reloadProduct();
+    success.value = 'Вариация сохранена';
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка';
+  } finally {
+    variantBusy.value = false;
+  }
+}
+
+async function removeVariant(id: number) {
+  if (!confirm('Удалить вариацию?')) return;
+  variantBusy.value = true;
+  error.value = '';
+  try {
+    await deleteVariant(id);
+    await reloadProduct();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Ошибка';
+  } finally {
+    variantBusy.value = false;
+  }
+}
+
 // ---- slug validation -------------------------------------------------------
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 function slugValid(slug: string): boolean {
@@ -124,6 +281,10 @@ function fillFromProduct(p: ProductOut) {
   form.is_active = p.is_active;
   media.value = [...p.media].sort((a, b) => a.position - b.position);
   selectedValueIds.value = new Set(p.value_ids ?? []);
+  variationAttributeIds.value = [...(p.variation_attribute_ids ?? [])];
+  variants.value = [...(p.variants ?? [])].sort(
+    (a, b) => a.position - b.position,
+  );
   for (const lang of ['ru', 'ro'] as Lang[]) {
     const t = p.translations.find((tr) => tr.lang === lang);
     translations[lang] = t
@@ -614,6 +775,181 @@ const inputCls =
           </div>
         </div>
         <p v-else class="mt-4 text-sm text-subtle">Атрибутов пока нет.</p>
+      </section>
+
+      <!-- Variations (edit only) -->
+      <section
+        v-if="isEdit"
+        class="rounded-2xl border-2 border-fill bg-white p-6"
+      >
+        <h2 class="text-base font-semibold text-ink">Вариации</h2>
+        <p class="mt-1 text-xs text-subtle">
+          Для вариативного товара цена/наличие берутся из вариаций. Отметьте
+          атрибуты-селекторы, затем сгенерируйте или добавьте комбинации.
+        </p>
+
+        <!-- Which attributes are variation selectors -->
+        <div class="mt-4">
+          <p class="text-sm font-medium text-body">Атрибуты вариаций</p>
+          <div v-if="attributes.length" class="mt-2 flex flex-wrap gap-4">
+            <label
+              v-for="attr in attributes"
+              :key="attr.id"
+              class="flex items-center gap-2 text-sm text-body"
+            >
+              <input
+                type="checkbox"
+                class="h-4 w-4 rounded border-2 border-fill accent-primary"
+                :checked="variationAttributeIds.includes(attr.id)"
+                @change="toggleVariationAttribute(attr.id)"
+              />
+              {{ attributeLabel(attr) }}
+            </label>
+          </div>
+          <p v-else class="mt-2 text-sm text-subtle">
+            Сначала создайте атрибуты.
+          </p>
+          <button
+            type="button"
+            :disabled="variantBusy"
+            class="mt-3 rounded-xl border-2 border-fill px-3 py-1.5 text-sm font-medium hover:border-primary disabled:opacity-60"
+            @click="applyVariationAttributes"
+          >
+            Применить атрибуты вариаций
+          </button>
+        </div>
+
+        <template v-if="variationAttrs.length">
+          <!-- Existing combinations (inline edit) -->
+          <div class="mt-6">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-medium text-body">
+                Комбинации ({{ variants.length }})
+              </p>
+              <button
+                type="button"
+                :disabled="variantBusy"
+                class="rounded-xl border-2 border-fill px-3 py-1.5 text-sm hover:border-primary disabled:opacity-60"
+                @click="generate"
+              >
+                Сгенерировать все
+              </button>
+            </div>
+
+            <div v-if="variants.length" class="mt-3 space-y-2">
+              <div
+                v-for="v in variants"
+                :key="v.id"
+                class="grid grid-cols-12 items-center gap-2 rounded-xl border-2 border-fill px-3 py-2 text-sm"
+              >
+                <div class="col-span-3 font-medium text-ink">
+                  {{ variantLabel(v) }}
+                </div>
+                <input
+                  v-model="v.code"
+                  placeholder="SKU"
+                  class="col-span-2 rounded-lg border-2 border-fill px-2 py-1"
+                />
+                <input
+                  v-model="v.price"
+                  placeholder="Цена"
+                  class="col-span-2 rounded-lg border-2 border-fill px-2 py-1"
+                />
+                <input
+                  v-model="v.old_price"
+                  placeholder="Старая"
+                  class="col-span-2 rounded-lg border-2 border-fill px-2 py-1"
+                />
+                <input
+                  v-model.number="v.qty"
+                  type="number"
+                  placeholder="Кол-во"
+                  class="col-span-1 rounded-lg border-2 border-fill px-2 py-1"
+                />
+                <label class="col-span-1 flex items-center gap-1 text-xs">
+                  <input
+                    v-model="v.is_active"
+                    type="checkbox"
+                    class="h-4 w-4 accent-primary"
+                  />вкл
+                </label>
+                <div class="col-span-1 flex justify-end gap-1">
+                  <button
+                    type="button"
+                    :disabled="variantBusy"
+                    class="rounded-lg bg-primary px-2 py-1 text-white disabled:opacity-60"
+                    @click="saveVariant(v)"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="variantBusy"
+                    class="rounded-lg border-2 border-fill px-2 py-1 text-danger disabled:opacity-60"
+                    @click="removeVariant(v.id)"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p v-else class="mt-3 text-sm text-subtle">Вариаций пока нет.</p>
+          </div>
+
+          <!-- Manual add -->
+          <div class="mt-5 rounded-xl border-2 border-dashed border-fill p-3">
+            <p class="text-sm font-medium text-body">Добавить вариацию</p>
+            <div class="mt-2 flex flex-wrap items-end gap-2">
+              <div v-for="attr in variationAttrs" :key="attr.id">
+                <label class="block text-xs text-subtle">{{
+                  attributeLabel(attr)
+                }}</label>
+                <select
+                  v-model.number="newVariant.values[attr.id]"
+                  class="rounded-lg border-2 border-fill px-2 py-1 text-sm"
+                >
+                  <option :value="undefined" disabled>—</option>
+                  <option
+                    v-for="val in attr.values ?? []"
+                    :key="val.id"
+                    :value="val.id"
+                  >
+                    {{ valueLabel(val) }}
+                  </option>
+                </select>
+              </div>
+              <input
+                v-model="newVariant.code"
+                placeholder="SKU"
+                class="w-24 rounded-lg border-2 border-fill px-2 py-1 text-sm"
+              />
+              <input
+                v-model="newVariant.price"
+                placeholder="Цена"
+                class="w-24 rounded-lg border-2 border-fill px-2 py-1 text-sm"
+              />
+              <input
+                v-model="newVariant.old_price"
+                placeholder="Старая"
+                class="w-24 rounded-lg border-2 border-fill px-2 py-1 text-sm"
+              />
+              <input
+                v-model.number="newVariant.qty"
+                type="number"
+                placeholder="Кол-во"
+                class="w-20 rounded-lg border-2 border-fill px-2 py-1 text-sm"
+              />
+              <button
+                type="button"
+                :disabled="variantBusy"
+                class="rounded-lg bg-primary px-3 py-1.5 text-sm text-white disabled:opacity-60"
+                @click="addVariant"
+              >
+                Добавить
+              </button>
+            </div>
+          </div>
+        </template>
       </section>
 
       <!-- Actions -->
