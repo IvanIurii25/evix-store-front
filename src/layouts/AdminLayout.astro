@@ -71,7 +71,20 @@ const NAV: { key: string; href: string; label: string; badge?: number }[] = [
                 ]}
               >
                 <span>{item.label}</span>
-                {item.badge ? (
+                {item.key === 'reviews' ? (
+                  <span
+                    id="reviews-badge"
+                    hidden={!item.badge}
+                    class:list={[
+                      'ml-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-semibold',
+                      active === item.key
+                        ? 'bg-white text-primary'
+                        : 'bg-danger text-white',
+                    ]}
+                  >
+                    {item.badge}
+                  </span>
+                ) : item.badge ? (
                   <span
                     class:list={[
                       'ml-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-semibold',
@@ -114,5 +127,19 @@ const NAV: { key: string; href: string; label: string; badge?: number }[] = [
         </main>
       </div>
     </div>
+
+    <!-- Keep the reviews-queue badge in sync after in-page moderation: the
+         ReviewsQueue island fires `reviews:moderated` with the fresh pending
+         count in event.detail; we just render it (no fetch → no API-origin
+         concerns here). -->
+    <script>
+      window.addEventListener('reviews:moderated', (e) => {
+        const badge = document.getElementById('reviews-badge');
+        if (!badge) return;
+        const count = (e as CustomEvent<{ count: number }>).detail?.count ?? 0;
+        badge.textContent = String(count);
+        (badge as HTMLElement).hidden = !count;
+      });
+    </script>
   </body>
 </html>

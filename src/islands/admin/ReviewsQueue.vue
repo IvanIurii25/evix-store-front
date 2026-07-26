@@ -5,8 +5,16 @@ import {
   listAdminReviews,
   moderateReview,
   deleteAdminReview,
+  getPendingReviewsCount,
   type AdminReview,
 } from '../../api/admin';
+import { notifyReviewsModerated } from '../../lib/review-events';
+
+// Re-read the authoritative pending count and broadcast it so the AdminLayout
+// nav badge stays in sync after an in-page moderation action.
+async function refreshPendingBadge() {
+  notifyReviewsModerated(await getPendingReviewsCount());
+}
 
 type StatusFilter = 'pending' | 'approved' | 'rejected' | 'all';
 
@@ -77,10 +85,13 @@ function dropIfFiltered(r: AdminReview) {
 async function moderate(r: AdminReview, to: 'approved' | 'rejected') {
   busyId.value = r.id;
   try {
+    const wasPending = r.status === 'pending';
     const updated = await moderateReview(r.id, to);
     r.status = updated.status;
     r.moderated_at = updated.moderated_at;
     dropIfFiltered(r);
+    // A pending review just left the queue → refresh the nav badge.
+    if (wasPending) await refreshPendingBadge();
   } catch (e) {
     loadError.value = e instanceof Error ? e.message : 'Не удалось обновить';
   } finally {
@@ -91,9 +102,12 @@ async function moderate(r: AdminReview, to: 'approved' | 'rejected') {
 async function remove(r: AdminReview) {
   if (!confirm('Удалить отзыв?')) return;
   busyId.value = r.id;
+  const wasPending = r.status === 'pending';
   try {
     await deleteAdminReview(r.id);
     items.value = items.value.filter((x) => x.id !== r.id);
+    // Deleting a pending review shrinks the moderation queue → refresh the badge.
+    if (wasPending) await refreshPendingBadge();
   } catch (e) {
     loadError.value = e instanceof Error ? e.message : 'Не удалось удалить';
   } finally {

@@ -56,6 +56,11 @@ const ratingAvg = product.rating_avg ?? null;
 const showRating = ratingCount > 0 && ratingAvg != null;
 const ratingStars = ratingAvg != null ? Math.round(ratingAvg) : 0;
 
+// SSR auth (mirrors the /account SSR-guard): the httpOnly `access` cookie is
+// readable server-side. Passed to ProductReviews so guests never hit
+// /reviews/mine (which would 401 and log an error in the browser console).
+const isLoggedIn = Boolean(Astro.cookies.get('access')?.value);
+
 const related = await getRelatedProducts(product.slug, lang, 8);
 
 const media = product.media ?? [];
@@ -298,6 +303,7 @@ const showInstallment = Number(product.price) >= INSTALLMENT_THRESHOLD;
           slug={product.slug}
           lang={lang}
           productPath={canonical}
+          isLoggedIn={isLoggedIn}
           initialAggregate={{
             average: ratingAvg,
             count: ratingCount,

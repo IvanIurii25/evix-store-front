@@ -83,6 +83,9 @@ const props = {
   productPath: '/ru/p/cam',
 };
 
+// Logged-in variant: only these viewers fetch /reviews/mine.
+const authedProps = { ...props, isLoggedIn: true };
+
 beforeEach(() => {
   mockList.mockReset();
   mockSubmit.mockReset();
@@ -148,6 +151,17 @@ describe('ProductReviews', () => {
     );
   });
 
+  it('never calls getMyReview for a guest (no isLoggedIn) → no 401 in console', async () => {
+    mockList.mockResolvedValue(reviewsPage());
+    const w = mount(ProductReviews, { props }); // no isLoggedIn → guest
+    await flushPromises();
+    expect(mockMine).not.toHaveBeenCalled();
+    // Guest still sees the CTA (routes to login on click).
+    expect(w.findAll('button').some((b) => b.text() === 'Оставить отзыв')).toBe(
+      true,
+    );
+  });
+
   it('submits a review through the star picker and shows the moderation notice', async () => {
     mockList.mockResolvedValue(reviewsPage());
     mockMine.mockResolvedValue({ authed: true, review: null });
@@ -167,7 +181,7 @@ describe('ProductReviews', () => {
         updated_at: '',
       },
     });
-    const w = mount(ProductReviews, { props });
+    const w = mount(ProductReviews, { props: authedProps });
     await flushPromises();
     // Open the form (authed, no existing review).
     await w
@@ -188,7 +202,7 @@ describe('ProductReviews', () => {
   it('blocks submit until a rating is chosen', async () => {
     mockList.mockResolvedValue(reviewsPage());
     mockMine.mockResolvedValue({ authed: true, review: null });
-    const w = mount(ProductReviews, { props });
+    const w = mount(ProductReviews, { props: authedProps });
     await flushPromises();
     await w
       .findAll('button')
@@ -220,7 +234,7 @@ describe('ProductReviews', () => {
     });
     mockDelete.mockResolvedValue(undefined);
     vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
-    const w = mount(ProductReviews, { props });
+    const w = mount(ProductReviews, { props: authedProps });
     await flushPromises();
     expect(w.text()).toContain('Ваш отзыв');
     expect(w.text()).toContain('на проверке');
@@ -236,7 +250,7 @@ describe('ProductReviews', () => {
     setUrl('https://shop.evix.md/ru/p/cam?review=1');
     mockList.mockResolvedValue(reviewsPage());
     mockMine.mockResolvedValue({ authed: true, review: null });
-    const w = mount(ProductReviews, { props });
+    const w = mount(ProductReviews, { props: authedProps });
     await flushPromises();
     expect(replaceState).toHaveBeenCalled();
     expect(w.find('form').exists()).toBe(true); // form auto-opened

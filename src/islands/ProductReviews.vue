@@ -25,6 +25,9 @@ const props = defineProps<{
   initialAggregate?: RatingAggregate;
   // The product's own path (e.g. /ru/p/slug) — carried through login as `next`.
   productPath: string;
+  // SSR-resolved auth (from the `access` cookie on the PDP). Guests never call
+  // /reviews/mine, so no 401 is logged in the console.
+  isLoggedIn?: boolean;
 }>();
 
 const t = reviewStrings(props.lang);
@@ -199,12 +202,18 @@ onMounted(async () => {
     history.replaceState({}, '', url);
   }
   await loadList(true);
-  const mine = await getMyReview(props.productId);
-  if (!mine.authed) {
+  // A guest is known from SSR — skip /reviews/mine entirely (it would 401 and
+  // log an error in the console). Only logged-in viewers fetch their own review.
+  if (!props.isLoggedIn) {
     authed.value = false;
   } else {
-    authed.value = true;
-    myReview.value = mine.review;
+    const mine = await getMyReview(props.productId);
+    if (!mine.authed) {
+      authed.value = false;
+    } else {
+      authed.value = true;
+      myReview.value = mine.review;
+    }
   }
   // Auto-open the form after a login redirect (only if they have no review yet).
   if (wantsForm && authed.value && !myReview.value) openForm();

@@ -6,17 +6,20 @@ import {
   listAdminReviews,
   moderateReview,
   deleteAdminReview,
+  getPendingReviewsCount,
 } from '../../api/admin';
 
 vi.mock('../../api/admin', () => ({
   listAdminReviews: vi.fn(),
   moderateReview: vi.fn(),
   deleteAdminReview: vi.fn(),
+  getPendingReviewsCount: vi.fn(),
 }));
 
 const mockList = vi.mocked(listAdminReviews);
 const mockModerate = vi.mocked(moderateReview);
 const mockDelete = vi.mocked(deleteAdminReview);
+const mockPendingCount = vi.mocked(getPendingReviewsCount);
 
 function row(id: number, status = 'pending') {
   return {
@@ -39,6 +42,8 @@ beforeEach(() => {
   mockList.mockReset();
   mockModerate.mockReset();
   mockDelete.mockReset();
+  mockPendingCount.mockReset();
+  mockPendingCount.mockResolvedValue(0);
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -83,6 +88,74 @@ describe('ReviewsQueue', () => {
     // Row 1 approved → no longer matches the pending filter → removed.
     expect(w.text()).not.toContain('Title 1');
     expect(w.text()).toContain('Title 2');
+  });
+
+  it('dispatches reviews:moderated with the fresh count after approving a pending row', async () => {
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    mockModerate.mockResolvedValue({ ...row(1, 'approved') });
+    mockPendingCount.mockResolvedValue(4);
+    const onModerated = vi.fn();
+    window.addEventListener('reviews:moderated', onModerated);
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Одобрить')!
+      .trigger('click');
+    await flushPromises();
+    window.removeEventListener('reviews:moderated', onModerated);
+    expect(mockPendingCount).toHaveBeenCalled();
+    expect(onModerated).toHaveBeenCalledTimes(1);
+    const evt = onModerated.mock.calls[0][0] as CustomEvent<{ count: number }>;
+    expect(evt.detail.count).toBe(4);
+  });
+
+  it('does not dispatch reviews:moderated when moderating an already-approved row', async () => {
+    // Under the "all" filter an approved row stays; re-rejecting it must NOT
+    // touch the pending badge (it was never pending).
+    mockList.mockResolvedValue({
+      data: [row(1, 'approved')],
+      next_cursor: null,
+    });
+    mockModerate.mockResolvedValue({ ...row(1, 'rejected') });
+    const onModerated = vi.fn();
+    window.addEventListener('reviews:moderated', onModerated);
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    // switch to "all" so an approved row is visible with a Reject action
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Все')!
+      .trigger('click');
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Отклонить')!
+      .trigger('click');
+    await flushPromises();
+    window.removeEventListener('reviews:moderated', onModerated);
+    expect(onModerated).not.toHaveBeenCalled();
+    expect(mockPendingCount).not.toHaveBeenCalled();
+  });
+
+  it('dispatches reviews:moderated after deleting a pending row', async () => {
+    mockList.mockResolvedValue({ data: [row(1)], next_cursor: null });
+    mockDelete.mockResolvedValue(undefined);
+    mockPendingCount.mockResolvedValue(2);
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
+    const onModerated = vi.fn();
+    window.addEventListener('reviews:moderated', onModerated);
+    const w = mount(ReviewsQueue);
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Удалить')!
+      .trigger('click');
+    await flushPromises();
+    window.removeEventListener('reviews:moderated', onModerated);
+    expect(onModerated).toHaveBeenCalledTimes(1);
+    const evt = onModerated.mock.calls[0][0] as CustomEvent<{ count: number }>;
+    expect(evt.detail.count).toBe(2);
   });
 
   it('rejects a row via the reject action', async () => {
