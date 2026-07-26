@@ -123,8 +123,10 @@ const analytics: MiddlewareHandler = async (context, next) => {
 
 // Conservative security headers on every storefront response (the API sets its
 // own; this covers the HTML surface). nosniff + SAMEORIGIN framing +
-// strict-origin referrer + HSTS. No CSP yet — a strict policy needs per-page
-// tuning against the islands' inline styles/scripts and is tracked separately.
+// strict-origin referrer + HSTS. The Content-Security-Policy is emitted by Astro
+// itself as a <meta http-equiv> (security.csp in astro.config, which hashes the
+// islands' inline scripts); X-Frame-Options stays here because frame-ancestors
+// isn't valid in a meta CSP.
 const securityHeaders: MiddlewareHandler = async (_context, next) => {
   const response = await next();
   const h = response.headers;
