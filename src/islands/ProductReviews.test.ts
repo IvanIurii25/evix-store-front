@@ -121,6 +121,25 @@ describe('ProductReviews', () => {
     expect(w.text()).toContain('Покупатель');
   });
 
+  it('shows an error with retry when the list fails, then recovers', async () => {
+    mockMine.mockResolvedValue({ authed: false });
+    mockList
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce(reviewsPage());
+    const w = mount(ProductReviews, { props });
+    await flushPromises();
+
+    expect(w.text()).toContain('Не удалось загрузить отзывы.');
+    const retry = w.findAll('button').find((b) => b.text() === 'Повторить')!;
+    expect(retry).toBeTruthy();
+
+    await retry.trigger('click');
+    await flushPromises();
+
+    expect(w.text()).not.toContain('Не удалось загрузить отзывы.');
+    expect(w.text()).toContain('Great product');
+  });
+
   it('re-fetches with the chosen sort order', async () => {
     mockList.mockResolvedValue(reviewsPage());
     mockMine.mockResolvedValue({ authed: false });

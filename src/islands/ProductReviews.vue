@@ -40,6 +40,7 @@ const nextCursor = ref<string | null>(null);
 const sort = ref<ReviewSort>('newest');
 const listLoading = ref(true);
 const loadingMore = ref(false);
+const listError = ref('');
 
 // The current viewer's own review (any status) + whether they are logged in.
 const authed = ref<boolean | null>(null);
@@ -102,16 +103,24 @@ async function loadList(reset = true) {
   } else {
     loadingMore.value = true;
   }
-  const res = await getProductReviews(props.slug, {
-    lang: props.lang,
-    sort: sort.value,
-    cursor: reset ? undefined : (nextCursor.value ?? undefined),
-  });
-  aggregate.value = res.aggregate;
-  reviews.value = reset ? res.data : [...reviews.value, ...res.data];
-  nextCursor.value = res.next_cursor ?? null;
-  listLoading.value = false;
-  loadingMore.value = false;
+  listError.value = '';
+  try {
+    const res = await getProductReviews(props.slug, {
+      lang: props.lang,
+      sort: sort.value,
+      cursor: reset ? undefined : (nextCursor.value ?? undefined),
+    });
+    aggregate.value = res.aggregate;
+    reviews.value = reset ? res.data : [...reviews.value, ...res.data];
+    nextCursor.value = res.next_cursor ?? null;
+  } catch {
+    // A failed "load more" keeps the already-shown reviews (the button
+    // re-enables); only a failed initial/reset load blocks with an error.
+    if (reset) listError.value = t.loadError;
+  } finally {
+    listLoading.value = false;
+    loadingMore.value = false;
+  }
 }
 
 function changeSort(next: ReviewSort) {
@@ -409,7 +418,21 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-if="listLoading" class="text-sm text-subtle">…</div>
+      <div
+        v-if="listError"
+        class="rounded-2xl border-2 border-fill p-6 text-center"
+      >
+        <p class="mb-2 text-sm text-danger">{{ listError }}</p>
+        <button
+          type="button"
+          :disabled="listLoading"
+          class="rounded-lg border-2 border-fill px-4 py-2 text-sm font-medium hover:bg-fill"
+          @click="loadList(true)"
+        >
+          {{ t.retry }}
+        </button>
+      </div>
+      <div v-else-if="listLoading" class="text-sm text-subtle">…</div>
       <p
         v-else-if="reviews.length === 0"
         class="rounded-2xl border-2 border-fill p-6 text-sm text-subtle"

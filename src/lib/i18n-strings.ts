@@ -656,6 +656,8 @@ export function pdpStrings(lang: Lang): PdpStrings {
 export interface ReviewStrings {
   sectionTitle: string; // "Отзывы" / "Recenzii" (count appended by caller)
   noReviews: string; // empty state under the aggregate
+  loadError: string; // list fetch failed
+  retry: string; // retry button
   verifiedBadge: string; // "✓ Проверенная покупка" / "✓ Achiziție verificată"
   anonymous: string; // author fallback — "Покупатель" / "Client"
   // Sort control
@@ -691,6 +693,8 @@ const REVIEWS: Record<Lang, ReviewStrings> = {
   ro: {
     sectionTitle: 'Recenzii',
     noReviews: 'Încă nu există recenzii. Fii primul care lasă una.',
+    loadError: 'Nu s-au putut încărca recenziile.',
+    retry: 'Reîncearcă',
     verifiedBadge: '✓ Achiziție verificată',
     anonymous: 'Client',
     sortLabel: 'Sortează',
@@ -721,6 +725,8 @@ const REVIEWS: Record<Lang, ReviewStrings> = {
   ru: {
     sectionTitle: 'Отзывы',
     noReviews: 'Отзывов пока нет. Будьте первым, кто оставит отзыв.',
+    loadError: 'Не удалось загрузить отзывы.',
+    retry: 'Повторить',
     verifiedBadge: '✓ Проверенная покупка',
     anonymous: 'Покупатель',
     sortLabel: 'Сортировка',
