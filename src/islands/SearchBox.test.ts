@@ -85,6 +85,18 @@ describe('SearchBox', () => {
     expect(w.findAll('a')).toHaveLength(6);
   });
 
+  it('shows an error in the dropdown when the search fails', async () => {
+    mockSearch.mockRejectedValue(new Error('network'));
+    const w = mount(SearchBox, { props });
+    await w.find('input').setValue('reg');
+    await w.find('input').trigger('input');
+    vi.advanceTimersByTime(250);
+    await flushPromises();
+
+    expect(w.text()).toContain('Ошибка поиска.');
+    expect(w.findAll('a')).toHaveLength(0);
+  });
+
   it('collapses the debounce when typing quickly (only one query)', async () => {
     mockSearch.mockResolvedValue(response([hit()]));
     const w = mount(SearchBox, { props });

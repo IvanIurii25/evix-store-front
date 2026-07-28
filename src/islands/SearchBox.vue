@@ -13,6 +13,7 @@ const q = ref('');
 const results = ref<SearchHit[]>([]);
 const open = ref(false);
 const loading = ref(false);
+const error = ref(false);
 const root = ref<HTMLElement | null>(null);
 let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -21,6 +22,7 @@ function onInput() {
   const query = q.value.trim();
   if (query.length < 2) {
     results.value = [];
+    error.value = false;
     open.value = false;
     return;
   }
@@ -30,6 +32,13 @@ function onInput() {
     try {
       const res = await search(query, props.lang, 1);
       results.value = (res.data ?? []).slice(0, 6);
+      error.value = false;
+      open.value = true;
+    } catch {
+      // Surface a failed search instead of an empty dropdown that reads as
+      // "no results".
+      results.value = [];
+      error.value = true;
       open.value = true;
     } finally {
       loading.value = false;
@@ -113,6 +122,13 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
       >
         {{ t.searchAllResults }}
       </button>
+    </div>
+
+    <div
+      v-else-if="open && error"
+      class="absolute left-0 top-14 z-20 w-full rounded-xl border-2 border-fill bg-white p-3 text-sm text-danger shadow-lg"
+    >
+      {{ t.searchError }}
     </div>
   </form>
 </template>

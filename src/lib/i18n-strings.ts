@@ -61,6 +61,7 @@ export interface UiStrings {
   language: string;
   searchPlaceholder: string;
   searchAllResults: string;
+  searchError: string;
   inStock: string;
   outOfStock: string;
   addToCart: string;
@@ -77,6 +78,7 @@ const UI: Record<Lang, UiStrings> = {
     language: 'Limbă',
     searchPlaceholder: 'Caută produse…',
     searchAllResults: 'Toate rezultatele →',
+    searchError: 'Eroare la căutare.',
     inStock: 'În stoc',
     outOfStock: 'Stoc epuizat',
     addToCart: 'Adaugă în coș',
@@ -91,6 +93,7 @@ const UI: Record<Lang, UiStrings> = {
     language: 'Язык',
     searchPlaceholder: 'Поиск товаров…',
     searchAllResults: 'Все результаты →',
+    searchError: 'Ошибка поиска.',
     inStock: 'В наличии',
     outOfStock: 'Нет в наличии',
     addToCart: 'В корзину',
