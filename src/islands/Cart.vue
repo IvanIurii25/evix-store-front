@@ -12,10 +12,18 @@ const t = cartStrings(props.lang);
 const cart = ref<CartOut>({ items: [], subtotal: '0', item_count: 0 });
 const loading = ref(true);
 const busy = ref(false);
+const error = ref('');
 
 async function load() {
-  cart.value = await getCart(props.lang);
-  loading.value = false;
+  loading.value = true;
+  error.value = '';
+  try {
+    cart.value = await getCart(props.lang);
+  } catch {
+    error.value = t.loadError;
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function setQty(pid: number, variantId: number | null, qty: number) {
@@ -47,7 +55,19 @@ onMounted(load);
 </script>
 
 <template>
-  <div v-if="loading" class="text-subtle">{{ t.loading }}</div>
+  <div v-if="error" class="text-center">
+    <p class="mb-2 text-sm text-danger">{{ error }}</p>
+    <button
+      type="button"
+      class="rounded-lg border-2 border-fill px-4 py-2 text-sm font-medium hover:bg-fill"
+      :disabled="loading"
+      @click="load"
+    >
+      {{ loading ? t.loading : t.retry }}
+    </button>
+  </div>
+
+  <div v-else-if="loading" class="text-subtle">{{ t.loading }}</div>
 
   <div v-else-if="!cart.items || cart.items.length === 0" class="text-subtle">
     {{ t.empty }}

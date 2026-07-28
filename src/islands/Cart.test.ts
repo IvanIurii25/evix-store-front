@@ -55,6 +55,25 @@ describe('Cart', () => {
     expect(wrapper.find('a').attributes('href')).toBe('/ru');
   });
 
+  it('shows an error with retry when the fetch fails, then recovers', async () => {
+    getCart
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce(EMPTY);
+    const wrapper = mount(Cart, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    // Failed load surfaces an error + a retry button (not a stuck spinner).
+    expect(wrapper.text()).toContain('Не удалось загрузить корзину.');
+    expect(wrapper.text()).not.toContain('Загрузка…');
+
+    await wrapper.find('button').trigger('click');
+    await flushPromises();
+
+    // Retry re-fetches and clears the error.
+    expect(wrapper.text()).not.toContain('Не удалось загрузить корзину.');
+    expect(wrapper.text()).toContain('Корзина пуста.');
+  });
+
   it('renders line items with formatted prices when the cart is populated', async () => {
     getCart.mockResolvedValue(POPULATED);
     const wrapper = mount(Cart, { props: { lang: 'ro' } });

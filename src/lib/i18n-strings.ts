@@ -114,6 +114,8 @@ export interface CartStrings {
   remove: string;
   total: string;
   checkout: string;
+  loadError: string;
+  retry: string;
 }
 
 const CART: Record<Lang, CartStrings> = {
@@ -126,6 +128,8 @@ const CART: Record<Lang, CartStrings> = {
     remove: 'Elimină',
     total: 'Total',
     checkout: 'Finalizează comanda',
+    loadError: 'Nu s-a putut încărca coșul.',
+    retry: 'Reîncearcă',
   },
   ru: {
     title: 'Корзина',
@@ -136,6 +140,8 @@ const CART: Record<Lang, CartStrings> = {
     remove: 'Удалить',
     total: 'Итого',
     checkout: 'Оформить заказ',
+    loadError: 'Не удалось загрузить корзину.',
+    retry: 'Повторить',
   },
 };
 
