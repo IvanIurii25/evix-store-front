@@ -68,7 +68,9 @@ onMounted(() => {
               class="max-h-full object-contain"
             />
           </picture>
-          <span v-else class="text-xs text-subtle">нет фото</span>
+          <span v-else class="text-xs text-subtle">{{
+            lang === 'ru' ? 'нет фото' : 'fără imagine'
+          }}</span>
         </div>
         <h3 class="mt-2 line-clamp-2 text-xs font-medium text-ink">
           {{ c.name }}

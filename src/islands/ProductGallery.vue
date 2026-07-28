@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 
+import { type Lang } from '../lib/i18n';
 import { webpSrcset } from '../lib/img';
 import { VARIANT_IMAGE } from '../lib/variant-events';
 
-const props = defineProps<{ images: { url: string }[]; alt: string }>();
+const props = defineProps<{
+  images: { url: string }[];
+  alt: string;
+  lang?: Lang;
+}>();
 const fallback = props.images[0]?.url ?? '';
 const active = ref(fallback);
 
@@ -37,7 +42,9 @@ onUnmounted(() => window.removeEventListener(VARIANT_IMAGE, onVariantImage));
           class="max-h-full object-contain"
         />
       </picture>
-      <span v-else class="text-subtle">нет фото</span>
+      <span v-else class="text-subtle">{{
+        lang === 'ru' ? 'нет фото' : 'fără imagine'
+      }}</span>
     </div>
 
     <div v-if="images.length > 1" class="mt-4 flex gap-3">

@@ -40,9 +40,18 @@ describe('ProductGallery', () => {
     expect(w.findAll('button')).toHaveLength(0);
   });
 
-  it('shows the no-photo placeholder when images is empty', () => {
-    const w = mount(ProductGallery, { props: { images: [], alt: 'Alt' } });
+  it('shows the ru no-photo placeholder when images is empty', () => {
+    const w = mount(ProductGallery, {
+      props: { images: [], alt: 'Alt', lang: 'ru' },
+    });
     expect(w.find('picture').exists()).toBe(false);
     expect(w.text()).toContain('нет фото');
+  });
+
+  it('localizes the no-photo placeholder to ro', () => {
+    const w = mount(ProductGallery, {
+      props: { images: [], alt: 'Alt', lang: 'ro' },
+    });
+    expect(w.text()).toContain('fără imagine');
   });
 });

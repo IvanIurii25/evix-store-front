@@ -74,6 +74,12 @@ describe('RecentlyViewed', () => {
     expect(w.text()).toContain('нет фото');
   });
 
+  it('localizes the no-photo placeholder to ro', async () => {
+    localStorage.setItem(KEY, JSON.stringify([noImg]));
+    const w = await make('ro');
+    expect(w.text()).toContain('fără imagine');
+  });
+
   it('dedupes by slug so a re-viewed product is not duplicated', async () => {
     localStorage.setItem(KEY, JSON.stringify([current, other]));
     const w = await make();
