@@ -276,6 +276,8 @@ async function submit() {
         <div class="mt-3 space-y-3">
           <input
             v-model="email"
+            type="email"
+            required
             placeholder="Email"
             class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
           />
