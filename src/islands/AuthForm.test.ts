@@ -50,6 +50,13 @@ describe('AuthForm', () => {
     expect(wrapper.find('button[type="submit"]').text()).toBe('Войти');
   });
 
+  it('gives every input an accessible name (aria-label)', () => {
+    const wrapper = mount(AuthForm, { props: { lang: 'ru' } });
+    for (const input of wrapper.findAll('input')) {
+      expect(input.attributes('aria-label')).toBeTruthy();
+    }
+  });
+
   it('switches to register mode, revealing the phone field, and back to login', async () => {
     const wrapper = mount(AuthForm, { props: { lang: 'ru' } });
     const registerTab = wrapper

@@ -79,18 +79,21 @@ async function submit() {
       <input
         v-model="email"
         :placeholder="mode === 'login' ? t.emailOrPhone : 'Email'"
+        :aria-label="mode === 'login' ? t.emailOrPhone : 'Email'"
         class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
       />
       <input
         v-if="mode === 'register'"
         v-model="phone"
         :placeholder="t.phoneOptional"
+        :aria-label="t.phoneOptional"
         class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
       />
       <input
         v-model="password"
         type="password"
         :placeholder="t.password"
+        :aria-label="t.password"
         class="w-full rounded-lg bg-fill px-3 py-2 outline-none"
       />
       <p v-if="error" class="text-sm text-danger">{{ error }}</p>

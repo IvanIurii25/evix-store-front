@@ -78,6 +78,7 @@ onMounted(load);
           <button
             type="button"
             class="px-3 text-lg text-subtle"
+            :aria-label="lang === 'ru' ? 'Уменьшить количество' : 'Micșorează cantitatea'"
             @click="setQty(it.product_id, it.variant_id ?? null, it.qty - 1)"
           >
             −
@@ -86,6 +87,7 @@ onMounted(load);
           <button
             type="button"
             class="px-3 text-lg text-subtle"
+            :aria-label="lang === 'ru' ? 'Увеличить количество' : 'Mărește cantitatea'"
             @click="setQty(it.product_id, it.variant_id ?? null, it.qty + 1)"
           >
             +

@@ -37,12 +37,18 @@ async function add() {
         <button
           type="button"
           class="px-3 text-lg text-subtle"
+          :aria-label="lang === 'ru' ? 'Уменьшить количество' : 'Micșorează cantitatea'"
           @click="qty = Math.max(1, qty - 1)"
         >
           −
         </button>
         <span class="w-8 text-center">{{ qty }}</span>
-        <button type="button" class="px-3 text-lg text-subtle" @click="qty++">
+        <button
+          type="button"
+          class="px-3 text-lg text-subtle"
+          :aria-label="lang === 'ru' ? 'Увеличить количество' : 'Mărește cantitatea'"
+          @click="qty++"
+        >
           +
         </button>
       </div>

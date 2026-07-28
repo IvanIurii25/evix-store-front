@@ -41,6 +41,24 @@ describe('AddToCart', () => {
     expect(w.find('.w-8').text()).toBe('1');
   });
 
+  it('labels the quantity spinner buttons for screen readers (ru)', () => {
+    const w = mount(AddToCart, {
+      props: { productId: 7, inStock: true, lang: 'ru' },
+    });
+    const labels = w.findAll('button').map((b) => b.attributes('aria-label'));
+    expect(labels).toContain('Уменьшить количество');
+    expect(labels).toContain('Увеличить количество');
+  });
+
+  it('localizes the quantity spinner labels to ro', () => {
+    const w = mount(AddToCart, {
+      props: { productId: 7, inStock: true, lang: 'ro' },
+    });
+    const labels = w.findAll('button').map((b) => b.attributes('aria-label'));
+    expect(labels).toContain('Micșorează cantitatea');
+    expect(labels).toContain('Mărește cantitatea');
+  });
+
   it('adds to cart, notifies, shows done, then resets to idle', async () => {
     vi.useFakeTimers();
     mockAdd.mockResolvedValue(undefined as never);
