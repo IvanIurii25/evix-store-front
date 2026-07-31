@@ -25,6 +25,17 @@ const STATUS: Record<string, string> = {
   canceled: t.statusCanceled,
 };
 
+/** One-line destination for a carrier order: pickup point, or street address. */
+function carrierDestination(np: NonNullable<OrderOut['novapost']>): string {
+  if (np.division_number) {
+    return [`№ ${np.division_number}`, np.division_address, np.settlement_name]
+      .filter(Boolean)
+      .join(', ');
+  }
+  const parts = (np.address_parts ?? {}) as Record<string, string>;
+  return [parts.street, parts.building, parts.city].filter(Boolean).join(', ');
+}
+
 function fmtDate(s: string): string {
   const d = new Date(s);
   return Number.isNaN(d.getTime()) ? s : d.toLocaleDateString('ro-MD');
@@ -52,6 +63,17 @@ onMounted(async () => {
           </div>
           <div class="text-subtle">
             {{ fmtDate(o.created_at) }} · {{ STATUS[o.status] ?? o.status }}
+          </div>
+          <!-- Carrier orders: where the parcel is going, and its waybill once
+               the shipment exists. Own-logistics orders keep the old row. -->
+          <div v-if="o.novapost" class="text-xs text-subtle">
+            {{ carrierDestination(o.novapost) }}
+            <span v-if="o.novapost.awb_number" class="font-medium">
+              · {{ o.novapost.awb_number }}
+            </span>
+            <span v-if="o.novapost.status_text">
+              · {{ o.novapost.status_text }}
+            </span>
           </div>
           <a
             v-if="orderSupportUrl(o.number)"

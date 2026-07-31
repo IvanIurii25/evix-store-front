@@ -10,6 +10,20 @@ vi.mock('../api/checkout', () => ({
   checkout: (...a: unknown[]) => checkout(...a),
 }));
 
+// The island asks the server which methods to offer on mount. Default: carrier
+// off, which is what every pre-existing expectation here assumes.
+const listDeliveryMethods = vi.fn(async () => ({
+  methods: [],
+  novapost_enabled: false,
+}));
+const searchSettlements = vi.fn(async () => []);
+const listDivisions = vi.fn(async () => []);
+vi.mock('../api/delivery', () => ({
+  listDeliveryMethods: (...a: unknown[]) => listDeliveryMethods(...a),
+  searchSettlements: (...a: unknown[]) => searchSettlements(...a),
+  listDivisions: (...a: unknown[]) => listDivisions(...a),
+}));
+
 import CheckoutForm from './CheckoutForm.vue';
 
 const QUOTE = {
@@ -89,14 +103,14 @@ describe('CheckoutForm', () => {
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
-    const courierRadio = wrapper.find('input[value="courier"]');
+    const courierRadio = wrapper.find('input[value="own:courier"]');
     await courierRadio.setValue();
     await flushPromises();
 
     expect(quote).toHaveBeenLastCalledWith('courier', null, 'ru', null);
     expect(wrapper.text()).toContain('Укажите адрес доставки');
 
-    const pickupRadio = wrapper.find('input[value="pickup"]');
+    const pickupRadio = wrapper.find('input[value="own:pickup"]');
     await pickupRadio.setValue();
     await flushPromises();
     expect(quote).toHaveBeenLastCalledWith('pickup', null, 'ru', null);
@@ -110,7 +124,7 @@ describe('CheckoutForm', () => {
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
-    await wrapper.find('input[value="courier"]').setValue();
+    await wrapper.find('input[value="own:courier"]').setValue();
     await flushPromises();
 
     // Courier address inputs are the ones after email(0)/phone(1).
@@ -383,7 +397,7 @@ describe('CheckoutForm', () => {
     });
     await flushPromises();
 
-    await wrapper.find('input[value="courier"]').setValue();
+    await wrapper.find('input[value="own:courier"]').setValue();
     await flushPromises();
 
     // Picker rendered with both saved addresses.
@@ -407,7 +421,7 @@ describe('CheckoutForm', () => {
     });
     await flushPromises();
 
-    await wrapper.find('input[value="courier"]').setValue();
+    await wrapper.find('input[value="own:courier"]').setValue();
     await flushPromises();
     await fillContacts(wrapper);
     await wrapper.find('form').trigger('submit');
@@ -436,7 +450,7 @@ describe('CheckoutForm', () => {
     });
     await flushPromises();
 
-    await wrapper.find('input[value="courier"]').setValue();
+    await wrapper.find('input[value="own:courier"]').setValue();
     await flushPromises();
 
     // Pick the "enter another address" radio (value null).
@@ -564,7 +578,7 @@ describe('CheckoutForm', () => {
     });
     await flushPromises();
 
-    await wrapper.find('input[value="courier"]').setValue();
+    await wrapper.find('input[value="own:courier"]').setValue();
     await flushPromises();
 
     expect(wrapper.text()).not.toContain('Сохранённые адреса');
@@ -572,5 +586,229 @@ describe('CheckoutForm', () => {
       .findAll('input')
       .map((i) => i.attributes('placeholder'));
     expect(placeholders).toContain('Имя получателя');
+  });
+});
+
+describe('CheckoutForm — Nova Post', () => {
+  const CARRIER_METHODS = {
+    novapost_enabled: true,
+    methods: [
+      {
+        service: 'own',
+        type: 'pickup',
+        flat_cost: '0',
+        free_from: null,
+        address_fields: [],
+      },
+      {
+        service: 'own',
+        type: 'courier',
+        flat_cost: '50',
+        free_from: null,
+        address_fields: [],
+      },
+      {
+        service: 'novapost',
+        type: 'branch',
+        flat_cost: null,
+        free_from: null,
+        address_fields: [],
+      },
+      {
+        service: 'novapost',
+        type: 'postomat',
+        flat_cost: null,
+        free_from: null,
+        address_fields: [],
+      },
+      {
+        service: 'novapost',
+        type: 'courier',
+        flat_cost: null,
+        free_from: null,
+        address_fields: [
+          {
+            name: 'city',
+            required: true,
+            max_length: 100,
+            label_ru: 'Город',
+            label_ro: 'Oraș',
+          },
+          {
+            name: 'street',
+            required: true,
+            max_length: 100,
+            label_ru: 'Улица',
+            label_ro: 'Stradă',
+          },
+          {
+            name: 'building',
+            required: true,
+            max_length: 100,
+            label_ru: 'Дом',
+            label_ro: 'Casă',
+          },
+          {
+            name: 'postCode',
+            required: true,
+            max_length: 10,
+            label_ru: 'Индекс',
+            label_ro: 'Cod',
+          },
+          {
+            name: 'flat',
+            required: false,
+            max_length: 10,
+            label_ru: 'Кв.',
+            label_ro: 'Ap.',
+          },
+        ],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    listDeliveryMethods.mockResolvedValue(CARRIER_METHODS);
+    searchSettlements.mockResolvedValue([{ id: 's-1', name: 'Chișinău' }]);
+    listDivisions.mockResolvedValue([
+      {
+        id: 'd-1',
+        number: '1',
+        address: 'str. Ștefan cel Mare 12',
+        settlement_name: 'Chișinău',
+      },
+    ]);
+  });
+
+  it('offers only the carrier categories the server enabled', async () => {
+    listDeliveryMethods.mockResolvedValue({
+      novapost_enabled: true,
+      methods: [
+        {
+          service: 'novapost',
+          type: 'branch',
+          flat_cost: null,
+          free_from: null,
+          address_fields: [],
+        },
+      ],
+    });
+    const w = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    expect(w.find('input[value="novapost:branch"]').exists()).toBe(true);
+    expect(w.find('input[value="novapost:postomat"]').exists()).toBe(false);
+  });
+
+  it('hides every carrier option when the integration is off', async () => {
+    listDeliveryMethods.mockResolvedValue({
+      novapost_enabled: false,
+      methods: [],
+    });
+    const w = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+
+    expect(w.find('input[value="novapost:branch"]').exists()).toBe(false);
+    expect(w.find('input[value="own:pickup"]').exists()).toBe(true);
+  });
+
+  it('does not quote a pickup point until one is chosen', async () => {
+    const w = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+    quote.mockClear();
+
+    await w.find('input[value="novapost:branch"]').setValue();
+    await flushPromises();
+
+    // Nothing to price yet — the server would only reject it.
+    expect(quote).not.toHaveBeenCalled();
+  });
+
+  it('quotes with the chosen city and pickup point', async () => {
+    vi.useFakeTimers();
+    const w = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+    await w.find('input[value="novapost:branch"]').setValue();
+    await flushPromises();
+
+    const cityInput = w
+      .findAll('input[type="text"]')
+      .find((i) => i.attributes('placeholder')?.includes('город'))!;
+    await cityInput.setValue('chi');
+    await vi.advanceTimersByTimeAsync(400);
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Chișinău')!
+      .trigger('click');
+    await vi.advanceTimersByTimeAsync(400);
+    await flushPromises();
+    quote.mockClear();
+    // The pickup-point radios render after the city is chosen; the last one is
+    // the single stubbed branch.
+    const pointRadios = w.findAll('input[type="radio"]');
+    await pointRadios[pointRadios.length - 1].setValue();
+    await flushPromises();
+    vi.useRealTimers();
+
+    const carrier = quote.mock.calls.at(-1)?.[5];
+    expect(carrier).toMatchObject({
+      delivery_service: 'novapost',
+      np_settlement_id: 's-1',
+      np_division_id: 'd-1',
+    });
+  });
+
+  it('builds the carrier address from the server field contract', async () => {
+    const w = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+    await w.find('input[value="novapost:courier"]').setValue();
+    await flushPromises();
+
+    const placeholders = w
+      .findAll('input[type="text"]')
+      .map((i) => i.attributes('placeholder'))
+      .filter(Boolean);
+
+    // Required fields are marked, optional ones are not.
+    expect(placeholders).toContain('Улица *');
+    expect(placeholders).toContain('Кв.');
+  });
+
+  it('reports a carrier outage instead of blaming the address', async () => {
+    vi.useFakeTimers();
+    quote.mockResolvedValue(null);
+    const w = mount(CheckoutForm, { props: { lang: 'ru' } });
+    await flushPromises();
+    await w.find('input[value="novapost:courier"]').setValue();
+    await flushPromises();
+
+    const inputs = w.findAll('input[type="text"]');
+    const cityInput = inputs.find((i) =>
+      i.attributes('placeholder')?.includes('город'),
+    )!;
+    await cityInput.setValue('chi');
+    await vi.advanceTimersByTimeAsync(400);
+    await flushPromises();
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Chișinău')!
+      .trigger('click');
+    await flushPromises();
+    for (const [placeholder, value] of [
+      ['Город *', 'Chișinău'],
+      ['Улица *', 'str. Testului'],
+      ['Дом *', '10'],
+      ['Индекс *', 'MD2000'],
+    ]) {
+      const field = w
+        .findAll('input[type="text"]')
+        .find((i) => i.attributes('placeholder') === placeholder);
+      if (field) await field.setValue(value);
+    }
+    await flushPromises();
+    vi.useRealTimers();
+
+    expect(w.text()).toContain('Служба доставки не отвечает');
   });
 });

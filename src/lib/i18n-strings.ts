@@ -159,6 +159,20 @@ export interface CheckoutStrings {
   delivery: string;
   pickup: string;
   courier: string;
+  // Nova Post
+  npBranch: string;
+  npPostomat: string;
+  npCourier: string;
+  npCity: string;
+  npCityPlaceholder: string;
+  npCityEmpty: string;
+  npPoint: string;
+  npPointPlaceholder: string;
+  npPointEmpty: string;
+  npPickCityFirst: string;
+  npSearching: string;
+  npErrLookup: string;
+  npErrDestination: string;
   recipientName: string;
   city: string;
   street: string;
@@ -228,6 +242,19 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     delivery: 'Livrare',
     pickup: 'Ridicare personală (gratuit)',
     courier: 'Curier',
+    npBranch: 'Nova Post — oficiu',
+    npPostomat: 'Nova Post — automat poștal',
+    npCourier: 'Nova Post — curier la adresă',
+    npCity: 'Oraș',
+    npCityPlaceholder: 'Începeți să scrieți orașul…',
+    npCityEmpty: 'Nu am găsit orașul',
+    npPoint: 'Punct de ridicare',
+    npPointPlaceholder: 'Căutare după adresă sau număr…',
+    npPointEmpty: 'Nu am găsit puncte în acest oraș',
+    npPickCityFirst: 'Alegeți mai întâi orașul',
+    npSearching: 'Se caută…',
+    npErrLookup: 'Serviciul de livrare nu răspunde. Încercați din nou.',
+    npErrDestination: 'Alegeți punctul de ridicare sau completați adresa.',
     recipientName: 'Numele destinatarului',
     city: 'Oraș',
     street: 'Strada, casa, apartament',
@@ -294,6 +321,19 @@ const CHECKOUT: Record<Lang, CheckoutStrings> = {
     delivery: 'Доставка',
     pickup: 'Самовывоз (бесплатно)',
     courier: 'Курьер',
+    npBranch: 'Nova Post — отделение',
+    npPostomat: 'Nova Post — почтомат',
+    npCourier: 'Nova Post — курьер по адресу',
+    npCity: 'Город',
+    npCityPlaceholder: 'Начните вводить город…',
+    npCityEmpty: 'Город не найден',
+    npPoint: 'Пункт выдачи',
+    npPointPlaceholder: 'Поиск по адресу или номеру…',
+    npPointEmpty: 'В этом городе пунктов не найдено',
+    npPickCityFirst: 'Сначала выберите город',
+    npSearching: 'Ищем…',
+    npErrLookup: 'Служба доставки не отвечает. Попробуйте ещё раз.',
+    npErrDestination: 'Выберите пункт выдачи или заполните адрес.',
     recipientName: 'Имя получателя',
     city: 'Город',
     street: 'Улица, дом, квартира',

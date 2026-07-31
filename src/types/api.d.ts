@@ -2469,6 +2469,94 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/delivery/methods': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Methods
+     * @description Return the delivery methods the storefront may offer.
+     *
+     *     Args:
+     *         redis: Injected Redis client (carrier token / cache).
+     *
+     *     Returns:
+     *         DeliveryMethodsOut: Own methods always, carrier methods when enabled.
+     */
+    get: operations['list_methods_api_v1_delivery_methods_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/delivery/novapost/settlements': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Search Settlements
+     * @description Search carrier settlements (cities) for the checkout picker.
+     *
+     *     Args:
+     *         payload: The typed query.
+     *         lang: Resolved request language (localizes the names).
+     *         redis: Injected Redis client.
+     *
+     *     Returns:
+     *         SettlementListOut: Matching settlements.
+     *
+     *     Raises:
+     *         HTTPException: 404 when the carrier is off, 502 when it is unreachable.
+     */
+    post: operations['search_settlements_api_v1_delivery_novapost_settlements_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/delivery/novapost/divisions': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Search Divisions
+     * @description List branches or postomats inside a settlement.
+     *
+     *     Args:
+     *         payload: Settlement id, category and optional free text.
+     *         lang: Resolved request language.
+     *         redis: Injected Redis client.
+     *
+     *     Returns:
+     *         DivisionListOut: Matching pickup points.
+     *
+     *     Raises:
+     *         HTTPException: 404 when the carrier is off, 502 when it is unreachable.
+     */
+    post: operations['search_divisions_api_v1_delivery_novapost_divisions_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/restock/subscriptions': {
     parameters: {
       query?: never;
@@ -3326,6 +3414,24 @@ export interface components {
      */
     CheckoutRequest: {
       /**
+       * Delivery Service
+       * @description Who delivers: own | novapost.
+       * @default own
+       */
+      delivery_service: string;
+      /**
+       * Np Settlement Id
+       * @description Carrier city id (Nova Post courier).
+       */
+      np_settlement_id?: string | null;
+      /**
+       * Np Division Id
+       * @description Carrier pickup-point id (Nova Post branch / postomat).
+       */
+      np_division_id?: string | null;
+      /** @description Carrier courier address. */
+      np_address?: components['schemas']['NovaPostAddressIn'] | null;
+      /**
        * Email
        * @description Contact email (guest + user).
        */
@@ -3337,7 +3443,7 @@ export interface components {
       phone: string;
       /**
        * Delivery Type
-       * @description Delivery method (pickup | courier).
+       * @description Delivery method (pickup | courier | branch | postomat).
        */
       delivery_type: string;
       /**
@@ -3698,6 +3804,37 @@ export interface components {
       zip?: string | null;
     };
     /**
+     * DeliveryMethodOut
+     * @description One delivery option the storefront may offer.
+     */
+    DeliveryMethodOut: {
+      /** Service */
+      service: string;
+      /** Type */
+      type: string;
+      /** Flat Cost */
+      flat_cost?: string | null;
+      /** Free From */
+      free_from?: string | null;
+      /** Address Fields */
+      address_fields?: {
+        [key: string]: unknown;
+      }[];
+    };
+    /**
+     * DeliveryMethodsOut
+     * @description Envelope for the storefront's delivery-options call.
+     */
+    DeliveryMethodsOut: {
+      /** Methods */
+      methods?: components['schemas']['DeliveryMethodOut'][];
+      /**
+       * Novapost Enabled
+       * @default false
+       */
+      novapost_enabled: boolean;
+    };
+    /**
      * DemandItem
      * @description One product in the admin restock-demand overview (§9).
      *
@@ -3729,6 +3866,55 @@ export interface components {
       waiters: number;
       /** Waiters 7D */
       waiters_7d: number;
+    };
+    /**
+     * DivisionListOut
+     * @description Envelope for the pickup-point lookup.
+     */
+    DivisionListOut: {
+      /** Data */
+      data?: components['schemas']['DivisionOut'][];
+    };
+    /**
+     * DivisionOut
+     * @description A pickup point as shown in the branch/postomat list.
+     */
+    DivisionOut: {
+      /** Id */
+      id: string;
+      /**
+       * Number
+       * @default
+       */
+      number: string;
+      /**
+       * Address
+       * @default
+       */
+      address: string;
+      /**
+       * Settlement Name
+       * @default
+       */
+      settlement_name: string;
+    };
+    /**
+     * DivisionQuery
+     * @description Body of the pickup-point lookup inside a settlement.
+     */
+    DivisionQuery: {
+      /** Settlement Id */
+      settlement_id: string;
+      /**
+       * Category
+       * @default branch
+       */
+      category: string;
+      /**
+       * Query
+       * @default
+       */
+      query: string;
     };
     /**
      * FacetAttribute
@@ -3955,6 +4141,71 @@ export interface components {
       count: number;
     };
     /**
+     * NovaPostAddressIn
+     * @description Courier-to-the-door address in the carrier's own field layout.
+     *
+     *     Mirrors ``ADDRESS_FIELDS`` in :mod:`app.schemas.delivery`, which the
+     *     storefront builds its form from — the two must stay in step, so the required
+     *     fields here are the ones advertised there.
+     */
+    NovaPostAddressIn: {
+      /** City */
+      city: string;
+      /** Street */
+      street: string;
+      /** Building */
+      building: string;
+      /** Postcode */
+      postCode: string;
+      /** Flat */
+      flat?: string | null;
+      /** Block */
+      block?: string | null;
+      /** Note */
+      note?: string | null;
+    };
+    /**
+     * NovaPostOrderOut
+     * @description Carrier-side view of an order: where it goes and how it is travelling.
+     *
+     *     Everything here is the snapshot taken at checkout, so an order stays
+     *     readable without calling the carrier. ``awb_number`` is withheld from the
+     *     guest lookup — it is a tracking key to someone else's parcel.
+     */
+    NovaPostOrderOut: {
+      /**
+       * Settlement Name
+       * @default
+       */
+      settlement_name: string;
+      /**
+       * Division Number
+       * @default
+       */
+      division_number: string;
+      /**
+       * Division Address
+       * @default
+       */
+      division_address: string;
+      /** Address Parts */
+      address_parts?: {
+        [key: string]: unknown;
+      } | null;
+      /** Awb Number */
+      awb_number?: string | null;
+      /**
+       * Status Code
+       * @default
+       */
+      status_code: string;
+      /**
+       * Status Text
+       * @default
+       */
+      status_text: string;
+    };
+    /**
      * OrderItemOut
      * @description One persisted order line with its name/price snapshot (§2.4).
      */
@@ -4007,6 +4258,11 @@ export interface components {
       total: string;
       /** Delivery Type */
       delivery_type: string;
+      /**
+       * Delivery Service
+       * @default own
+       */
+      delivery_service: string;
       /** Delivery Address Id */
       delivery_address_id: number | null;
       /** Delivery Name */
@@ -4026,6 +4282,7 @@ export interface components {
       created_at: string;
       /** Items */
       items?: components['schemas']['OrderItemOut'][];
+      novapost?: components['schemas']['NovaPostOrderOut'] | null;
       /** Pay Url */
       pay_url?: string | null;
     };
@@ -4568,6 +4825,11 @@ export interface components {
       total: string;
       /** Delivery Type */
       delivery_type: string;
+      /**
+       * Delivery Service
+       * @default own
+       */
+      delivery_service: string;
       /** Item Count */
       item_count: number;
     };
@@ -4577,8 +4839,26 @@ export interface components {
      */
     QuoteRequest: {
       /**
+       * Delivery Service
+       * @description Who delivers: own | novapost.
+       * @default own
+       */
+      delivery_service: string;
+      /**
+       * Np Settlement Id
+       * @description Carrier city id (Nova Post courier).
+       */
+      np_settlement_id?: string | null;
+      /**
+       * Np Division Id
+       * @description Carrier pickup-point id (Nova Post branch / postomat).
+       */
+      np_division_id?: string | null;
+      /** @description Carrier courier address. */
+      np_address?: components['schemas']['NovaPostAddressIn'] | null;
+      /**
        * Delivery Type
-       * @description Delivery method (pickup | courier).
+       * @description Delivery method (pickup | courier | branch | postomat).
        */
       delivery_type: string;
       /**
@@ -4844,6 +5124,35 @@ export interface components {
        * @default
        */
       og_image_url: string;
+    };
+    /**
+     * SettlementListOut
+     * @description Envelope for the settlement lookup.
+     */
+    SettlementListOut: {
+      /** Data */
+      data?: components['schemas']['SettlementOut'][];
+    };
+    /**
+     * SettlementOut
+     * @description A settlement as shown in the city typeahead.
+     */
+    SettlementOut: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+    };
+    /**
+     * SettlementQuery
+     * @description Body of the settlement (city) lookup.
+     */
+    SettlementQuery: {
+      /**
+       * Query
+       * @default
+       */
+      query: string;
     };
     /**
      * SiteConfigOut
@@ -8888,6 +9197,98 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ConsentAck'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  list_methods_api_v1_delivery_methods_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DeliveryMethodsOut'];
+        };
+      };
+    };
+  };
+  search_settlements_api_v1_delivery_novapost_settlements_post: {
+    parameters: {
+      query?: {
+        /** @description Language code (ru|ro). */
+        lang?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SettlementQuery'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SettlementListOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  search_divisions_api_v1_delivery_novapost_divisions_post: {
+    parameters: {
+      query?: {
+        /** @description Language code (ru|ro). */
+        lang?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DivisionQuery'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DivisionListOut'];
         };
       };
       /** @description Validation Error */

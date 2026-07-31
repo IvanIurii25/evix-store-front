@@ -47,7 +47,7 @@ describe('checkout api', () => {
     expect(r.url).toContain('/api/v1/checkout/quote');
     expect(r.url).toContain('lang=ru');
     expect(await r.text()).toBe(
-      '{"delivery_type":"courier","delivery_address":{"city":"Chisinau"},"delivery_address_id":null}',
+      '{"delivery_type":"courier","delivery_address":{"city":"Chisinau"},"delivery_address_id":null,"delivery_service":"own"}',
     );
   });
 
@@ -56,7 +56,7 @@ describe('checkout api', () => {
     const { quote } = await load();
     await quote('pickup');
     expect(await req().text()).toBe(
-      '{"delivery_type":"pickup","delivery_address":null,"delivery_address_id":null}',
+      '{"delivery_type":"pickup","delivery_address":null,"delivery_address_id":null,"delivery_service":"own"}',
     );
   });
 
@@ -65,7 +65,7 @@ describe('checkout api', () => {
     const { quote } = await load();
     await quote('courier', null, 'ru', 7);
     expect(await req().text()).toBe(
-      '{"delivery_type":"courier","delivery_address":null,"delivery_address_id":7}',
+      '{"delivery_type":"courier","delivery_address":null,"delivery_address_id":7,"delivery_service":"own"}',
     );
   });
 
@@ -80,7 +80,7 @@ describe('checkout api', () => {
     const { quote } = await load();
     await quote('pickup', null, 'ru', null, '  SALE10 ');
     expect(await req().text()).toBe(
-      '{"delivery_type":"pickup","delivery_address":null,"delivery_address_id":null,"promo_code":"SALE10"}',
+      '{"delivery_type":"pickup","delivery_address":null,"delivery_address_id":null,"promo_code":"SALE10","delivery_service":"own"}',
     );
   });
 
@@ -115,6 +115,7 @@ describe('checkout api', () => {
     // payment_method defaults to "cod" (the generated CheckoutIn requires it).
     expect(JSON.parse(await req().text())).toEqual({
       payment_method: 'cod',
+      delivery_service: 'own',
       email: 'a@b.c',
       phone: '1',
       delivery_type: 'pickup',
@@ -146,6 +147,7 @@ describe('checkout api', () => {
     });
     expect(JSON.parse(await req().text())).toEqual({
       payment_method: 'cod',
+      delivery_service: 'own',
       email: 'a@b.c',
       phone: '123',
       delivery_type: 'courier',
@@ -165,6 +167,7 @@ describe('checkout api', () => {
     expect(res).toEqual({ number: 'ORD-C', pay_url: 'https://maib/x' });
     expect(JSON.parse(await req().text())).toEqual({
       payment_method: 'card',
+      delivery_service: 'own',
       email: 'a@b.c',
       phone: '1',
       delivery_type: 'pickup',

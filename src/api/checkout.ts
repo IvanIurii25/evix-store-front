@@ -21,12 +21,35 @@ type ErrorBody = { error?: { code?: string; message?: string } };
 // Full-result quote: returns the computed totals AND any error code. Used by the
 // checkout island so it can surface a promo-code failure without discarding the
 // quote flow. `promoCode` is only sent when non-empty.
+/**
+ * The carrier half of a delivery choice. Omitted entirely for own logistics, so
+ * pickup / own-courier requests keep exactly the body they had before Nova Post
+ * existed.
+ */
+export interface CarrierSelection {
+  delivery_service?: 'own' | 'novapost';
+  np_settlement_id?: string | null;
+  np_division_id?: string | null;
+  np_address?: NovaPostAddressIn | null;
+}
+
+export interface NovaPostAddressIn {
+  city: string;
+  street: string;
+  building: string;
+  postCode: string;
+  flat?: string | null;
+  block?: string | null;
+  note?: string | null;
+}
+
 export async function quoteResult(
   deliveryType: string,
   deliveryAddress?: DeliveryAddressIn | null,
   lang?: string,
   deliveryAddressId?: number | null,
   promoCode?: string | null,
+  carrier?: CarrierSelection | null,
 ): Promise<QuoteResult> {
   const code = promoCode?.trim() ? promoCode.trim() : null;
   const { data, error } = await api.POST('/api/v1/checkout/quote', {
@@ -38,6 +61,11 @@ export async function quoteResult(
       // Only sent when a coupon is entered, so promo-free quotes keep their
       // exact prior request body.
       ...(code ? { promo_code: code } : {}),
+      // The generated schema marks delivery_service required (it has a server
+      // default); send the own-logistics value explicitly unless a carrier
+      // selection overrides it.
+      delivery_service: 'own',
+      ...(carrier ?? {}),
     },
     credentials: 'include',
   });
@@ -54,6 +82,7 @@ export async function quote(
   lang?: string,
   deliveryAddressId?: number | null,
   promoCode?: string | null,
+  carrier?: CarrierSelection | null,
 ): Promise<QuoteOut | null> {
   const { data } = await quoteResult(
     deliveryType,
@@ -61,6 +90,7 @@ export async function quote(
     lang,
     deliveryAddressId,
     promoCode,
+    carrier,
   );
   return data;
 }
@@ -76,6 +106,10 @@ export async function checkout(
     // 'cod' (default) or 'card' (maib). Only sent as 'card' when the gateway is
     // enabled server-side; a card order returns a pay_url to redirect the payer.
     payment_method?: 'cod' | 'card';
+    delivery_service?: 'own' | 'novapost';
+    np_settlement_id?: string | null;
+    np_division_id?: string | null;
+    np_address?: NovaPostAddressIn | null;
   },
   lang?: string,
 ): Promise<OrderOut> {
@@ -83,7 +117,7 @@ export async function checkout(
     params: { query: { lang } },
     // The generated CheckoutIn marks payment_method as required (it has a server
     // default of "cod"); normalize here so callers can omit it and keep COD.
-    body: { payment_method: 'cod', ...body },
+    body: { payment_method: 'cod', delivery_service: 'own', ...body },
     credentials: 'include',
   });
   if (error || !data) {

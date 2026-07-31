@@ -8,6 +8,16 @@ import {
   type DeliveryAddressIn,
 } from '../api/checkout';
 import type { AddressOut } from '../api/account';
+import type { CarrierSelection } from '../api/checkout';
+import {
+  listDeliveryMethods,
+  listDivisions,
+  searchSettlements,
+  type AddressField,
+  type DeliveryMethod,
+  type Division,
+  type Settlement,
+} from '../api/delivery';
 import { price } from '../lib/format';
 import { localePath, type Lang } from '../lib/i18n';
 import { checkoutStrings } from '../lib/i18n-strings';
@@ -27,7 +37,52 @@ const t = checkoutStrings(props.lang);
 
 const email = ref('');
 const phone = ref('');
-const deliveryType = ref<'pickup' | 'courier'>('pickup');
+// A method is the (service, type) pair the API expects. The radio group binds
+// one composite key so the two halves can never drift out of step.
+type MethodKey =
+  | 'own:pickup'
+  | 'own:courier'
+  | 'novapost:branch'
+  | 'novapost:postomat'
+  | 'novapost:courier';
+
+const methodKey = ref<MethodKey>('own:pickup');
+const deliveryService = computed(
+  () => methodKey.value.split(':')[0] as 'own' | 'novapost',
+);
+const deliveryType = computed(() => methodKey.value.split(':')[1]);
+const isCarrier = computed(() => deliveryService.value === 'novapost');
+const carrierPoint = computed(
+  () => isCarrier.value && deliveryType.value !== 'courier',
+);
+
+// Which carrier methods the server says we may offer (empty = carrier off).
+const carrierMethods = ref<DeliveryMethod[]>([]);
+const carrierTypes = computed(
+  () => new Set(carrierMethods.value.map((m) => m.type)),
+);
+const carrierAddressFields = computed<AddressField[]>(
+  () =>
+    carrierMethods.value.find((m) => m.type === 'courier')?.address_fields ??
+    [],
+);
+
+// City picker (typeahead) shared by every carrier method.
+const cityQuery = ref('');
+const cityOptions = ref<Settlement[]>([]);
+const city = ref<Settlement | null>(null);
+const cityBusy = ref(false);
+let cityTimer: ReturnType<typeof setTimeout> | undefined;
+
+// Pickup-point picker (branch / postomat).
+const pointQuery = ref('');
+const pointOptions = ref<Division[]>([]);
+const point = ref<Division | null>(null);
+const pointBusy = ref(false);
+let pointTimer: ReturnType<typeof setTimeout> | undefined;
+
+// Carrier courier address, keyed by the server-declared field names.
+const npAddress = ref<Record<string, string>>({});
 // Payment method: COD is always the default; 'card' is selectable only when the
 // gateway is enabled server-side (props.cardPaymentEnabled).
 const paymentMethod = ref<'cod' | 'card'>('cod');
@@ -121,36 +176,139 @@ const courierAddressReady = computed(
   () => usingSavedAddress.value || courierAddressComplete.value,
 );
 
+// A carrier method is quotable once its destination is known: a pickup point,
+// or a city plus every field the server marked required.
+const carrierReady = computed(() => {
+  if (!isCarrier.value) return true;
+  if (carrierPoint.value) return point.value !== null;
+  if (!city.value) return false;
+  return carrierAddressFields.value
+    .filter((f) => f.required)
+    .every((f) => (npAddress.value[f.name] ?? '').trim().length > 0);
+});
+
+// The carrier half of the request body; omitted entirely for own logistics so
+// those requests keep the exact shape they had before Nova Post existed.
+const carrierSelection = computed<CarrierSelection | null>(() => {
+  if (!isCarrier.value) return null;
+  if (carrierPoint.value) {
+    return {
+      delivery_service: 'novapost',
+      np_settlement_id: city.value?.id ?? null,
+      np_division_id: point.value?.id ?? null,
+    };
+  }
+  const filled: Record<string, string> = {};
+  for (const field of carrierAddressFields.value) {
+    const value = (npAddress.value[field.name] ?? '').trim();
+    if (value) filled[field.name] = value;
+  }
+  return {
+    delivery_service: 'novapost',
+    np_settlement_id: city.value?.id ?? null,
+    np_address: filled as unknown as CarrierSelection['np_address'],
+  };
+});
+
+// Debounced city lookup. Typing is what makes this expensive, so the request is
+// held back until the customer pauses.
+watch(cityQuery, (term) => {
+  clearTimeout(cityTimer);
+  if (!isCarrier.value || term.trim().length < 2) {
+    cityOptions.value = [];
+    return;
+  }
+  cityBusy.value = true;
+  cityTimer = setTimeout(async () => {
+    cityOptions.value = await searchSettlements(term.trim(), props.lang);
+    cityBusy.value = false;
+  }, 300);
+});
+
+// Pickup points reload when the city, the method or the filter changes.
+watch([city, methodKey, pointQuery], () => {
+  clearTimeout(pointTimer);
+  if (!carrierPoint.value || !city.value) {
+    pointOptions.value = [];
+    return;
+  }
+  pointBusy.value = true;
+  pointTimer = setTimeout(async () => {
+    pointOptions.value = await listDivisions(
+      city.value!.id,
+      deliveryType.value as 'branch' | 'postomat',
+      pointQuery.value.trim(),
+      props.lang,
+    );
+    pointBusy.value = false;
+  }, 300);
+});
+
+function pickCity(option: Settlement) {
+  city.value = option;
+  cityQuery.value = option.name;
+  cityOptions.value = [];
+  // The previously chosen point belongs to the old city.
+  point.value = null;
+}
+
+// Own-logistics quotes keep the exact call (and request body) they had before
+// the carrier existed: the extra arguments are only appended when they carry
+// something. Fewer moving parts on the path that handles most orders.
+async function runQuote(code: string | null) {
+  const carrier = carrierSelection.value;
+  if (carrier) {
+    return quote(
+      deliveryType.value,
+      deliveryAddress.value,
+      props.lang,
+      deliveryAddressId.value,
+      code,
+      carrier,
+    );
+  }
+  if (code) {
+    return quote(
+      deliveryType.value,
+      deliveryAddress.value,
+      props.lang,
+      deliveryAddressId.value,
+      code,
+    );
+  }
+  return quote(
+    deliveryType.value,
+    deliveryAddress.value,
+    props.lang,
+    deliveryAddressId.value,
+  );
+}
+
 async function refreshQuote() {
   quoteError.value = '';
-  q.value = appliedCode.value
-    ? await quote(
-        deliveryType.value,
-        deliveryAddress.value,
-        props.lang,
-        deliveryAddressId.value,
-        appliedCode.value,
-      )
-    : await quote(
-        deliveryType.value,
-        deliveryAddress.value,
-        props.lang,
-        deliveryAddressId.value,
-      );
+  if (isCarrier.value && !carrierReady.value) {
+    // Nothing to price yet: keep the previous total and wait for a destination
+    // instead of firing a request the server will reject.
+    q.value = null;
+    quoteError.value = '';
+    return;
+  }
+  q.value = await runQuote(appliedCode.value || null);
   // A held code that became unusable on re-quote (delivery/address change) must
   // not break the base quote: drop it and re-quote without it.
   if (!q.value && appliedCode.value) {
     promoError.value = t.promoErrGeneric;
     appliedCode.value = '';
-    q.value = await quote(
-      deliveryType.value,
-      deliveryAddress.value,
-      props.lang,
-      deliveryAddressId.value,
-    );
+    q.value = await runQuote(null);
   }
-  if (!q.value && deliveryType.value === 'courier') {
-    quoteError.value = t.errAddress;
+  if (!q.value) {
+    if (isCarrier.value) {
+      // The destination is filled in, so a missing quote means the carrier
+      // itself could not answer (502) — say so rather than blaming the address.
+      quoteError.value = t.npErrLookup;
+    } else if (deliveryType.value === 'courier') {
+      quoteError.value = t.errAddress;
+    }
   }
 }
 
@@ -161,13 +319,22 @@ async function applyPromo() {
   if (!code || promoBusy.value) return;
   promoBusy.value = true;
   promoError.value = '';
-  const res = await quoteResult(
-    deliveryType.value,
-    deliveryAddress.value,
-    props.lang,
-    deliveryAddressId.value,
-    code,
-  );
+  const res = carrierSelection.value
+    ? await quoteResult(
+        deliveryType.value,
+        deliveryAddress.value,
+        props.lang,
+        deliveryAddressId.value,
+        code,
+        carrierSelection.value,
+      )
+    : await quoteResult(
+        deliveryType.value,
+        deliveryAddress.value,
+        props.lang,
+        deliveryAddressId.value,
+        code,
+      );
   if (res.data && Number(res.data.discount_total) > 0) {
     appliedCode.value = code;
     q.value = res.data;
@@ -188,9 +355,28 @@ async function removePromo() {
   await refreshQuote();
 }
 
-onMounted(refreshQuote);
-// Re-quote when the method, the picked address, or the inline address changes.
-watch([deliveryType, courierAddressReady, deliveryAddressId], refreshQuote);
+onMounted(async () => {
+  // The offer list is server-driven: the carrier may be off, or only some of
+  // its categories enabled.
+  const methods = await listDeliveryMethods();
+  carrierMethods.value = methods.methods.filter(
+    (m) => m.service === 'novapost',
+  );
+  await refreshQuote();
+});
+// Re-quote when the method, the picked address, the inline address or the
+// carrier destination changes.
+watch(
+  [
+    methodKey,
+    courierAddressReady,
+    deliveryAddressId,
+    carrierReady,
+    point,
+    city,
+  ],
+  refreshQuote,
+);
 
 function canSubmit() {
   return (
@@ -198,7 +384,9 @@ function canSubmit() {
     email.value.includes('@') &&
     phone.value.trim().length >= 5 &&
     consent.value &&
-    (deliveryType.value === 'pickup' || courierAddressReady.value)
+    (isCarrier.value
+      ? carrierReady.value
+      : deliveryType.value === 'pickup' || courierAddressReady.value)
   );
 }
 
@@ -233,6 +421,7 @@ async function submit() {
         delivery_type: deliveryType.value,
         delivery_address: deliveryAddress.value,
         delivery_address_id: deliveryAddressId.value,
+        ...(carrierSelection.value ?? {}),
         // Only include the code when one is applied, so promo-free orders keep
         // their prior request body.
         ...(appliedCode.value ? { promo_code: appliedCode.value } : {}),
@@ -294,25 +483,161 @@ async function submit() {
         <div class="mt-3 space-y-2">
           <label class="flex items-center gap-2">
             <input
-              v-model="deliveryType"
+              v-model="methodKey"
               type="radio"
-              value="pickup"
+              value="own:pickup"
               class="accent-primary"
             />
             {{ t.pickup }}
           </label>
           <label class="flex items-center gap-2">
             <input
-              v-model="deliveryType"
+              v-model="methodKey"
               type="radio"
-              value="courier"
+              value="own:courier"
               class="accent-primary"
             />
             {{ t.courier }}
           </label>
+          <label
+            v-if="carrierTypes.has('branch')"
+            class="flex items-center gap-2"
+          >
+            <input
+              v-model="methodKey"
+              type="radio"
+              value="novapost:branch"
+              class="accent-primary"
+            />
+            {{ t.npBranch }}
+          </label>
+          <label
+            v-if="carrierTypes.has('postomat')"
+            class="flex items-center gap-2"
+          >
+            <input
+              v-model="methodKey"
+              type="radio"
+              value="novapost:postomat"
+              class="accent-primary"
+            />
+            {{ t.npPostomat }}
+          </label>
+          <label
+            v-if="carrierTypes.has('courier')"
+            class="flex items-center gap-2"
+          >
+            <input
+              v-model="methodKey"
+              type="radio"
+              value="novapost:courier"
+              class="accent-primary"
+            />
+            {{ t.npCourier }}
+          </label>
         </div>
 
-        <div v-if="showPicker" class="mt-3 space-y-2">
+        <!-- Carrier destination: city first, then a pickup point or an address -->
+        <div v-if="isCarrier" class="mt-4 space-y-3">
+          <div class="relative">
+            <label class="block text-sm font-medium text-ink">{{
+              t.npCity
+            }}</label>
+            <input
+              v-model="cityQuery"
+              type="text"
+              :placeholder="t.npCityPlaceholder"
+              class="mt-1 w-full rounded-xl border-2 border-fill px-3 py-2 outline-none focus:border-primary"
+              @input="city = null"
+            />
+            <p v-if="cityBusy" class="mt-1 text-xs text-subtle">
+              {{ t.npSearching }}
+            </p>
+            <ul
+              v-if="cityOptions.length"
+              class="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border-2 border-fill bg-white shadow-lg"
+            >
+              <li v-for="option in cityOptions" :key="option.id">
+                <button
+                  type="button"
+                  class="w-full px-3 py-2 text-left text-sm hover:bg-fill"
+                  @click="pickCity(option)"
+                >
+                  {{ option.name }}
+                </button>
+              </li>
+            </ul>
+            <p
+              v-else-if="!cityBusy && cityQuery.trim().length >= 2 && !city"
+              class="mt-1 text-xs text-subtle"
+            >
+              {{ t.npCityEmpty }}
+            </p>
+          </div>
+
+          <div v-if="carrierPoint">
+            <label class="block text-sm font-medium text-ink">{{
+              t.npPoint
+            }}</label>
+            <p v-if="!city" class="mt-1 text-xs text-subtle">
+              {{ t.npPickCityFirst }}
+            </p>
+            <template v-else>
+              <input
+                v-model="pointQuery"
+                type="text"
+                :placeholder="t.npPointPlaceholder"
+                class="mt-1 w-full rounded-xl border-2 border-fill px-3 py-2 outline-none focus:border-primary"
+              />
+              <p v-if="pointBusy" class="mt-1 text-xs text-subtle">
+                {{ t.npSearching }}
+              </p>
+              <ul v-else-if="pointOptions.length" class="mt-2 space-y-2">
+                <li v-for="option in pointOptions" :key="option.id">
+                  <label
+                    class="flex items-start gap-2 rounded-lg bg-fill px-3 py-2"
+                  >
+                    <input
+                      v-model="point"
+                      type="radio"
+                      :value="option"
+                      class="mt-1 accent-primary"
+                    />
+                    <span class="text-sm">
+                      <span class="font-medium text-ink"
+                        >№ {{ option.number }}</span
+                      >
+                      <span class="block text-subtle">{{
+                        option.address
+                      }}</span>
+                    </span>
+                  </label>
+                </li>
+              </ul>
+              <p v-else class="mt-1 text-xs text-subtle">
+                {{ t.npPointEmpty }}
+              </p>
+            </template>
+          </div>
+
+          <!-- Address form built from the server's field contract -->
+          <div v-else class="space-y-2">
+            <div v-for="field in carrierAddressFields" :key="field.name">
+              <input
+                v-model="npAddress[field.name]"
+                type="text"
+                :maxlength="field.max_length"
+                :placeholder="
+                  (lang === 'ru' ? field.label_ru : field.label_ro) +
+                  (field.required ? ' *' : '')
+                "
+                class="w-full rounded-xl border-2 border-fill px-3 py-2 outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div v-if="showPicker && !isCarrier" class="mt-3 space-y-2">
           <p class="text-sm font-medium text-ink">{{ t.savedAddresses }}</p>
           <label
             v-for="a in savedAddresses"
@@ -344,7 +669,7 @@ async function submit() {
         </div>
 
         <div
-          v-if="deliveryType === 'courier' && !usingSavedAddress"
+          v-if="!isCarrier && deliveryType === 'courier' && !usingSavedAddress"
           class="mt-3 space-y-3"
         >
           <input

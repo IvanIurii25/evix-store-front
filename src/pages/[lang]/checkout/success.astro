@@ -50,11 +50,33 @@ const orderNumber = order?.number ?? number;
             <div class="mt-1 flex justify-between text-sm">
               <span class="text-subtle">{t.delivery}</span>
               <span class="text-ink">
-                {order.delivery_type === 'pickup'
-                  ? t.pickupShort
-                  : t.courierShort}
+                {order.delivery_service === 'novapost'
+                  ? order.delivery_type === 'postomat'
+                    ? t.npPostomat
+                    : order.delivery_type === 'branch'
+                      ? t.npBranch
+                      : t.npCourier
+                  : order.delivery_type === 'pickup'
+                    ? t.pickupShort
+                    : t.courierShort}
               </span>
             </div>
+            {order.novapost && (
+              <div class="mt-1 flex justify-between gap-4 text-sm">
+                <span class="text-subtle">{t.address}</span>
+                <span class="text-right text-ink">
+                  {order.novapost.division_number
+                    ? `№ ${order.novapost.division_number}, ${order.novapost.division_address}, ${order.novapost.settlement_name}`
+                    : [
+                        order.novapost.address_parts?.street,
+                        order.novapost.address_parts?.building,
+                        order.novapost.address_parts?.city,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                </span>
+              </div>
+            )}
             {order.delivery_name && (
               <div class="mt-1 flex justify-between gap-4 text-sm">
                 <span class="text-subtle">{t.address}</span>
