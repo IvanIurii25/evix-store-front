@@ -54,6 +54,8 @@ export interface ProductFilters {
   is_active?: boolean;
   low_stock?: boolean;
   on_sale?: boolean;
+  /** Only products with no shipping weight entered (carrier pricing queue). */
+  no_weight?: boolean;
   limit?: number;
 }
 

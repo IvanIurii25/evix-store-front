@@ -49,6 +49,10 @@ const form = reactive({
   price: '',
   old_price: '' as string,
   qty: 0,
+  // Shipping weight in grams. '' means "not entered" (sent as null), which is
+  // different from 0 and is what the carrier default keys off. Typed as
+  // string | number because Vue casts <input type="number"> bindings.
+  weight_g: '' as string | number,
   is_active: false,
 });
 
@@ -129,7 +133,18 @@ const newVariant = reactive<{
   price: string;
   old_price: string;
   qty: number;
-}>({ values: {}, code: '', price: '', old_price: '', qty: 0 });
+  weight_g: string | number;
+}>({ values: {}, code: '', price: '', old_price: '', qty: 0, weight_g: '' });
+
+// `v-model` on an <input type="number"> is cast to a number by Vue, so these
+// fields hold string | number depending on what was typed. Normalize instead of
+// assuming either — a bare `.trim()` here has bitten us before (promo form).
+function toGrams(value: unknown): number | null {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const grams = Number(raw);
+  return Number.isFinite(grams) ? grams : Number.NaN;
+}
 
 function attributeById(id: number): AttributeOut | undefined {
   return attributes.value.find((a) => a.id === id);
@@ -221,12 +236,14 @@ async function addVariant() {
         ? newVariant.old_price.trim()
         : null,
       qty: Number(newVariant.qty) || 0,
+      weight_g: toGrams(newVariant.weight_g),
     });
     newVariant.values = {};
     newVariant.code = '';
     newVariant.price = '';
     newVariant.old_price = '';
     newVariant.qty = 0;
+    newVariant.weight_g = '';
     await reloadProduct();
     success.value = 'Вариация добавлена';
   } catch (e) {
@@ -245,6 +262,7 @@ async function saveVariant(v: VariantAdminOut) {
       price: v.price,
       old_price: v.old_price ?? null,
       qty: v.qty,
+      weight_g: v.weight_g ?? null,
       is_active: v.is_active,
     });
     await reloadProduct();
@@ -293,6 +311,7 @@ function fillFromProduct(p: ProductOut) {
   form.price = p.price;
   form.old_price = p.old_price ?? '';
   form.qty = p.qty;
+  form.weight_g = p.weight_g ?? '';
   form.is_active = p.is_active;
   media.value = [...p.media].sort((a, b) => a.position - b.position);
   selectedValueIds.value = new Set(p.value_ids ?? []);
@@ -354,6 +373,9 @@ function validate(): string | null {
     return 'Укажите корректную цену';
   if (form.old_price && Number.isNaN(Number(form.old_price)))
     return 'Старая цена указана неверно';
+  const grams = toGrams(form.weight_g);
+  if (grams !== null && (Number.isNaN(grams) || grams < 0))
+    return 'Вес указан неверно (граммы, целое число)';
   return null;
 }
 
@@ -365,6 +387,7 @@ function structuralPayload() {
     price: form.price.trim(),
     old_price: form.old_price.trim() ? form.old_price.trim() : null,
     qty: Number(form.qty) || 0,
+    weight_g: toGrams(form.weight_g),
     is_active: form.is_active,
   };
 }
@@ -580,6 +603,22 @@ const inputCls =
             />
             <p v-if="form.price" class="mt-1 text-xs text-price">
               {{ money(form.price) }}
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-body">Вес, г</label>
+            <input
+              v-model="form.weight_g"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="не задан"
+              :class="['mt-1', inputCls]"
+            />
+            <p class="mt-1 text-xs text-subtle">
+              Вес посылки для расчёта доставки. Пусто — используется значение по
+              умолчанию.
             </p>
           </div>
 
@@ -907,12 +946,20 @@ const inputCls =
                 <input
                   v-model="v.old_price"
                   placeholder="Старая"
-                  class="col-span-2 rounded-lg border-2 border-fill px-2 py-1"
+                  class="col-span-1 rounded-lg border-2 border-fill px-2 py-1"
                 />
                 <input
                   v-model.number="v.qty"
                   type="number"
                   placeholder="Кол-во"
+                  class="col-span-1 rounded-lg border-2 border-fill px-2 py-1"
+                />
+                <input
+                  v-model.number="v.weight_g"
+                  type="number"
+                  min="0"
+                  placeholder="Вес, г"
+                  title="Вес вариации в граммах; пусто — берётся вес товара"
                   class="col-span-1 rounded-lg border-2 border-fill px-2 py-1"
                 />
                 <label class="col-span-1 flex items-center gap-1 text-xs">
@@ -986,6 +1033,13 @@ const inputCls =
                 v-model.number="newVariant.qty"
                 type="number"
                 placeholder="Кол-во"
+                class="w-20 rounded-lg border-2 border-fill px-2 py-1 text-sm"
+              />
+              <input
+                v-model="newVariant.weight_g"
+                type="number"
+                min="0"
+                placeholder="Вес, г"
                 class="w-20 rounded-lg border-2 border-fill px-2 py-1 text-sm"
               />
               <button

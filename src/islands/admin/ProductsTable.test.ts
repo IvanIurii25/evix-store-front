@@ -162,4 +162,33 @@ describe('ProductsTable', () => {
       expect.objectContaining({ search: 'hello' }),
     );
   });
+
+  it('toggles the "no weight" chip into the filters', async () => {
+    mockList.mockResolvedValue([prod()]);
+    const w = mount(ProductsTable);
+    await flushPromises();
+    mockList.mockClear();
+
+    const chips = w.findAll('button');
+    await chips[4].trigger('click'); // без веса
+    await flushPromises();
+
+    const lastCall = mockList.mock.calls.at(-1)![0] as ProductFilters;
+    expect(lastCall.no_weight).toBe(true);
+  });
+
+  it('renders a weight, and marks the products that have none', async () => {
+    mockList.mockResolvedValueOnce([
+      prod({ id: 1, code: 'HEAVY', weight_g: 2500 }),
+      prod({ id: 2, code: 'LIGHT', weight_g: 300 }),
+      prod({ id: 3, code: 'UNKNOWN', weight_g: null }),
+    ]);
+    const w = mount(ProductsTable);
+    await flushPromises();
+
+    const rows = w.findAll('tbody tr');
+    expect(rows[0].text()).toContain('2,5 кг');
+    expect(rows[1].text()).toContain('300 г');
+    expect(rows[2].text()).toContain('не задан');
+  });
 });

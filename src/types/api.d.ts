@@ -25,7 +25,7 @@ export interface paths {
      *     Returns:
      *         dict[str, str]: ``{"status": "ok"}`` when the service and DB respond.
      */
-    get: operations['health_api_v1_health_head'];
+    get: operations['health_api_v1_health_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -44,7 +44,7 @@ export interface paths {
      *     Returns:
      *         dict[str, str]: ``{"status": "ok"}`` when the service and DB respond.
      */
-    head: operations['health_api_v1_health_head'];
+    head: operations['health_api_v1_health_get'];
     patch?: never;
     trace?: never;
   };
@@ -115,7 +115,7 @@ export interface paths {
      *         CategoryDetail: The category detail response.
      *
      *     Raises:
-     *         HTTPException: 404 if the category is not found in the language.
+     *         NotFoundError: 404 if the category is not found in the language.
      */
     get: operations['get_category_api_v1_catalog_categories__slug__get'];
     put?: never;
@@ -150,7 +150,8 @@ export interface paths {
      *         ProductListing: ``{data, next_cursor}`` envelope.
      *
      *     Raises:
-     *         HTTPException: 404 if the category is unknown, 400 for a bad cursor.
+     *         NotFoundError: 404 if the category is unknown in the language.
+     *         InvalidCursorError: 400 for a malformed cursor.
      */
     get: operations['list_category_products_api_v1_catalog_categories__slug__products_get'];
     put?: never;
@@ -190,7 +191,7 @@ export interface paths {
      *         ProductListing: ``{data, next_cursor}`` envelope.
      *
      *     Raises:
-     *         HTTPException: 400 for a bad cursor.
+     *         InvalidCursorError: 400 for a malformed cursor.
      */
     get: operations['list_all_products_api_v1_catalog_products_get'];
     put?: never;
@@ -221,7 +222,7 @@ export interface paths {
      *         ProductDetail: The PDP response.
      *
      *     Raises:
-     *         HTTPException: 404 if the product is not found / inactive.
+     *         NotFoundError: 404 if the product is not found / inactive.
      */
     get: operations['get_product_api_v1_catalog_products__slug__get'];
     put?: never;
@@ -316,7 +317,8 @@ export interface paths {
      *         FacetsResponse: Attribute values + counts + price bounds for the subtree.
      *
      *     Raises:
-     *         HTTPException: 404 if the category is unknown in the language.
+     *         NotFoundError: 404 if the category is unknown in the language (rendered
+     *             by the unified :class:`~app.core.errors.DomainError` handler).
      */
     get: operations['category_facets_api_v1_catalog_categories__slug__facets_get'];
     put?: never;
@@ -384,7 +386,7 @@ export interface paths {
      *         CartOut: The re-rendered cart.
      *
      *     Raises:
-     *         HTTPException: 404 if the product is missing or inactive.
+     *         ProductNotAvailableError: 404 if the product/variant is missing or inactive.
      */
     post: operations['add_item_api_v1_cart_items_post'];
     delete?: never;
@@ -419,7 +421,7 @@ export interface paths {
      *         CartOut: The re-rendered cart.
      *
      *     Raises:
-     *         HTTPException: 404 if the cart or line does not exist.
+     *         ItemNotFoundError: 404 if the cart or line does not exist.
      */
     delete: operations['remove_item_api_v1_cart_items__product_id__delete'];
     options?: never;
@@ -441,7 +443,7 @@ export interface paths {
      *         CartOut: The re-rendered cart.
      *
      *     Raises:
-     *         HTTPException: 404 if the cart or line does not exist.
+     *         ItemNotFoundError: 404 if the cart or line does not exist.
      */
     patch: operations['update_item_api_v1_cart_items__product_id__patch'];
     trace?: never;
@@ -503,8 +505,12 @@ export interface paths {
      *         QuoteOut: The subtotal / discount / delivery / total breakdown.
      *
      *     Raises:
-     *         HTTPException: 400 for an empty cart; 422 for courier without an address;
-     *             403 for a ``delivery_address_id`` the caller does not own.
+     *         EmptyCartError: 400 for an empty cart.
+     *         DeliveryAddressRequiredError: 422 for courier without an address.
+     *         DeliveryAddressForbiddenError: 403 for a ``delivery_address_id`` the
+     *             caller does not own.
+     *         PromoError: 400/404/409 for an unusable ``promo_code`` (rendered per its
+     *             leaf status + code by the registered handler).
      */
     post: operations['quote_api_v1_checkout_quote_post'];
     delete?: never;
@@ -535,12 +541,19 @@ export interface paths {
      *             ``ro``; unsupported values fall back to the default).
      *
      *     Returns:
-     *         OrderOut | JSONResponse: The created order, or a 409 ``out_of_stock``
-     *             envelope when stock is insufficient.
+     *         OrderOut | JSONResponse: The created order, or a 502
+     *             ``payment_gateway_error`` envelope when the card gateway is
+     *             unreachable after the order was persisted.
      *
      *     Raises:
-     *         HTTPException: 400 empty cart; 422 courier without an address; 403 for a
-     *             ``delivery_address_id`` the caller does not own.
+     *         EmptyCartError: 400 for an empty cart.
+     *         DeliveryAddressRequiredError: 422 for courier without an address.
+     *         DeliveryAddressForbiddenError: 403 for a ``delivery_address_id`` the
+     *             caller does not own.
+     *         OutOfStockError: 409 ``out_of_stock`` (with the offending ``product_id``
+     *             in ``details``) when stock is insufficient at commit time.
+     *         PromoError: 400/404/409 for an unusable ``promo_code``. All the above are
+     *             rendered by the registered :class:`DomainError` handler.
      */
     post: operations['checkout_api_v1_checkout_post'];
     delete?: never;
@@ -574,9 +587,14 @@ export interface paths {
      *             ``ro``; unsupported values fall back to the default).
      *
      *     Returns:
-     *         OrderOut | JSONResponse: The created order, a 404 ``product_not_found``
-     *             envelope for a missing/inactive product, or a 409 ``out_of_stock``
-     *             envelope when stock is insufficient.
+     *         OrderOut: The created order.
+     *
+     *     Raises:
+     *         ProductNotFoundError: 404 ``product_not_found`` for a missing/inactive
+     *             product (with the ``product_id`` in ``details``).
+     *         OutOfStockError: 409 ``out_of_stock`` when stock is insufficient (with
+     *             the ``product_id`` in ``details``). Both are rendered by the
+     *             registered :class:`DomainError` handler.
      */
     post: operations['quick_buy_api_v1_checkout_quick_post'];
     delete?: never;
@@ -636,7 +654,8 @@ export interface paths {
      *         OrderOut: The order with its lines.
      *
      *     Raises:
-     *         HTTPException: 404 if the order is absent or not owned by the caller.
+     *         OrderNotFoundError: 404 if the order is absent or not owned by the
+     *             caller (rendered by the unified ``DomainError`` handler).
      */
     get: operations['get_order_api_v1_orders__number__get'];
     put?: never;
@@ -675,7 +694,8 @@ export interface paths {
      *         OrderOut: The order with its lines.
      *
      *     Raises:
-     *         HTTPException: 404 if the order is absent or the email does not match.
+     *         OrderNotFoundError: 404 if the order is absent or the email does not
+     *             match (rendered by the unified ``DomainError`` handler).
      */
     post: operations['lookup_order_api_v1_orders__number__lookup_post'];
     delete?: never;
@@ -1572,6 +1592,10 @@ export interface paths {
     /**
      * Get Customer
      * @description Return one customer's full profile, addresses, orders and stats (§6.2).
+     *
+     *     An unknown ``user_id`` makes the service raise
+     *     :class:`~app.services.admin_customer_service.CustomerNotFoundError`, which the
+     *     registered domain-error handler renders as 404 ``not_found``.
      */
     get: operations['get_customer_api_v1_admin_customers__user_id__get'];
     put?: never;
@@ -1726,6 +1750,11 @@ export interface paths {
     /**
      * Update Staff
      * @description (De)activate a staff user or toggle their staff flag (lockout-guarded).
+     *
+     *     Raises:
+     *         StaffNotFoundError: If the user does not exist (rendered as 404).
+     *         StaffConflictError: If the change would remove the last active staff
+     *             account (rendered as 409).
      */
     patch: operations['update_staff_api_v1_admin_staff__user_id__patch'];
     trace?: never;
@@ -1746,6 +1775,12 @@ export interface paths {
     /**
      * Create Promo
      * @description Create a coupon.
+     *
+     *     Raises:
+     *         PromoValidationError: 422 ``validation_error`` for an inconsistent
+     *             definition.
+     *         PromoConflictError: 409 ``conflict`` when the code already exists. Both
+     *             are rendered by the registered :class:`DomainError` handler.
      */
     post: operations['create_promo_api_v1_admin_promo_post'];
     delete?: never;
@@ -1764,6 +1799,10 @@ export interface paths {
     /**
      * Get Promo
      * @description Return one coupon by id.
+     *
+     *     Raises:
+     *         PromoNotFoundError: 404 ``not_found`` when no such coupon exists
+     *             (rendered by the registered :class:`DomainError` handler).
      */
     get: operations['get_promo_api_v1_admin_promo__promo_id__get'];
     put?: never;
@@ -1771,6 +1810,10 @@ export interface paths {
     /**
      * Delete Promo
      * @description Delete a coupon (order history keeps its code snapshot).
+     *
+     *     Raises:
+     *         PromoNotFoundError: 404 ``not_found`` when the coupon does not exist
+     *             (rendered by the registered :class:`DomainError` handler).
      */
     delete: operations['delete_promo_api_v1_admin_promo__promo_id__delete'];
     options?: never;
@@ -1778,6 +1821,13 @@ export interface paths {
     /**
      * Update Promo
      * @description Apply a partial update to a coupon.
+     *
+     *     Raises:
+     *         PromoNotFoundError: 404 ``not_found`` when the coupon does not exist.
+     *         PromoValidationError: 422 ``validation_error`` for an inconsistent
+     *             resulting definition.
+     *         PromoConflictError: 409 ``conflict`` when a new code collides. All are
+     *             rendered by the registered :class:`DomainError` handler.
      */
     patch: operations['update_promo_api_v1_admin_promo__promo_id__patch'];
     trace?: never;
@@ -1973,7 +2023,7 @@ export interface paths {
      *         redis: Injected async Redis client (live-event publishing).
      *
      *     Raises:
-     *         HTTPException: 404 if the conversation does not exist.
+     *         ConversationNotFoundError: 404 if the conversation does not exist.
      */
     delete: operations['delete_conversation_api_v1_admin_support_conversations__conversation_id__delete'];
     options?: never;
@@ -2043,7 +2093,7 @@ export interface paths {
      *         MessageOut: The persisted outbound message (with its delivery badge).
      *
      *     Raises:
-     *         HTTPException: 404 if the conversation does not exist.
+     *         ConversationNotFoundError: 404 if the conversation does not exist.
      */
     post: operations['reply_api_v1_admin_support_conversations__conversation_id__reply_post'];
     delete?: never;
@@ -2075,7 +2125,7 @@ export interface paths {
      *         ConversationOut: The updated conversation.
      *
      *     Raises:
-     *         HTTPException: 404 if the conversation does not exist.
+     *         ConversationNotFoundError: 404 if the conversation does not exist.
      */
     post: operations['set_status_api_v1_admin_support_conversations__conversation_id__status_post'];
     delete?: never;
@@ -2107,7 +2157,8 @@ export interface paths {
      *         LinkedOrderOut: The linked order's summary.
      *
      *     Raises:
-     *         HTTPException: 404 if the order or the conversation does not exist.
+     *         OrderNotFoundError: 404 if no order matches the number.
+     *         ConversationNotFoundError: 404 if the conversation does not exist.
      */
     post: operations['link_order_api_v1_admin_support_conversations__conversation_id__link_post'];
     /**
@@ -2120,7 +2171,7 @@ export interface paths {
      *         redis: Injected async Redis client (required by the service ctor).
      *
      *     Raises:
-     *         HTTPException: 404 if the conversation does not exist.
+     *         ConversationNotFoundError: 404 if the conversation does not exist.
      */
     delete: operations['unlink_order_api_v1_admin_support_conversations__conversation_id__link_delete'];
     options?: never;
@@ -2185,7 +2236,7 @@ export interface paths {
      *         session: Injected async DB session.
      *
      *     Raises:
-     *         HTTPException: 404 if the template does not exist.
+     *         CannedNotFoundError: 404 if the template does not exist.
      */
     delete: operations['delete_canned_api_v1_admin_support_canned__canned_id__delete'];
     options?: never;
@@ -2203,7 +2254,7 @@ export interface paths {
      *         CannedOut: The updated template.
      *
      *     Raises:
-     *         HTTPException: 404 if the template does not exist.
+     *         CannedNotFoundError: 404 if the template does not exist.
      */
     patch: operations['update_canned_api_v1_admin_support_canned__canned_id__patch'];
     trace?: never;
@@ -2307,7 +2358,8 @@ export interface paths {
      *         ContentPageDetail: The rendered page.
      *
      *     Raises:
-     *         HTTPException: 404 if the page is not published or the language is absent.
+     *         ContentPageNotFoundError: 404 ``not_found`` if the page is not published
+     *             or the language is absent (rendered by the unified handler).
      */
     get: operations['get_content_page_api_v1_site_pages__slug__get'];
     put?: never;
@@ -2451,8 +2503,12 @@ export interface paths {
      *         RestockSubscribedOut: ``{subscribed: true}``.
      *
      *     Raises:
-     *         HTTPException: 404 if the product is missing; 400 if it is in stock or
-     *             variable (restock unsupported for variable products in v1).
+     *         RestockNotFoundError: 404 if the product is missing.
+     *         ProductInStockError: 400 if the product is currently in stock.
+     *         RestockUnsupportedError: 400 if the product is variable (restock
+     *             unsupported for variable products in v1). Each carries its own
+     *             status/code, rendered by the unified
+     *             :class:`~app.core.errors.DomainError` handler.
      */
     post: operations['subscribe_api_v1_restock_subscriptions_post'];
     delete?: never;
@@ -2520,7 +2576,7 @@ export interface paths {
      *         ReviewOut: The persisted, pending review.
      *
      *     Raises:
-     *         HTTPException: 404 if the product does not exist.
+     *         ReviewNotFoundError: 404 if the product does not exist.
      */
     post: operations['submit_review_api_v1_reviews_post'];
     delete?: never;
@@ -2577,8 +2633,8 @@ export interface paths {
      *         service: Injected review service.
      *
      *     Raises:
-     *         HTTPException: 404 if the review is missing; 403 if it is not the
-     *             caller's own review.
+     *         ReviewNotFoundError: 404 if the review is missing.
+     *         ReviewForbiddenError: 403 if it is not the caller's own review.
      */
     delete: operations['delete_my_review_api_v1_reviews__review_id__delete'];
     options?: never;
@@ -2612,7 +2668,8 @@ export interface paths {
      *         ProductReviewsOut: ``{aggregate, data, next_cursor}`` envelope.
      *
      *     Raises:
-     *         HTTPException: 404 if the slug is unknown; 400 for a bad cursor.
+     *         HTTPException: 404 if the slug is unknown.
+     *         InvalidCursorError: 422 for a malformed or sort-mismatched cursor.
      */
     get: operations['list_product_reviews_api_v1_catalog_products__slug__reviews_get'];
     put?: never;
@@ -2644,7 +2701,7 @@ export interface paths {
      *         AdminReviewList: ``{data, next_cursor}`` envelope.
      *
      *     Raises:
-     *         HTTPException: 400 for a malformed cursor.
+     *         InvalidCursorError: 422 for a malformed cursor.
      */
     get: operations['list_reviews_api_v1_admin_reviews_get'];
     put?: never;
@@ -2700,7 +2757,7 @@ export interface paths {
      *         service: Injected review service.
      *
      *     Raises:
-     *         HTTPException: 404 if the review does not exist.
+     *         ReviewNotFoundError: 404 if the review does not exist.
      */
     delete: operations['delete_review_api_v1_admin_reviews__review_id__delete'];
     options?: never;
@@ -2718,7 +2775,7 @@ export interface paths {
      *         AdminReviewOut: The updated review.
      *
      *     Raises:
-     *         HTTPException: 404 if the review does not exist.
+     *         ReviewNotFoundError: 404 if the review does not exist.
      */
     patch: operations['moderate_review_api_v1_admin_reviews__review_id__patch'];
     trace?: never;
@@ -4064,6 +4121,8 @@ export interface components {
        * @default 0
        */
       qty: number;
+      /** Weight G */
+      weight_g?: number | null;
       /**
        * Is Active
        * @default false
@@ -4173,6 +4232,8 @@ export interface components {
       old_price?: string | null;
       /** Qty */
       qty: number;
+      /** Weight G */
+      weight_g?: number | null;
       /** Is Active */
       is_active: boolean;
       /**
@@ -4220,6 +4281,8 @@ export interface components {
       price: string;
       /** Old Price */
       old_price?: string | null;
+      /** Weight G */
+      weight_g?: number | null;
       /** Is Active */
       is_active: boolean;
       /** Name */
@@ -4303,6 +4366,8 @@ export interface components {
       old_price?: number | string | null;
       /** Qty */
       qty?: number | null;
+      /** Weight G */
+      weight_g?: number | null;
       /** Is Active */
       is_active?: boolean | null;
       /** Is Featured */
@@ -5084,6 +5149,8 @@ export interface components {
       old_price?: string | null;
       /** Qty */
       qty: number;
+      /** Weight G */
+      weight_g?: number | null;
       /** Position */
       position: number;
       /** Is Active */
@@ -5111,6 +5178,8 @@ export interface components {
        * @default 0
        */
       qty: number;
+      /** Weight G */
+      weight_g?: number | null;
       /**
        * Is Active
        * @default true
@@ -5175,6 +5244,8 @@ export interface components {
       old_price?: number | string | null;
       /** Qty */
       qty?: number | null;
+      /** Weight G */
+      weight_g?: number | null;
       /** Position */
       position?: number | null;
       /** Is Active */
@@ -5224,7 +5295,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  health_api_v1_health_head: {
+  health_api_v1_health_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -5246,7 +5317,7 @@ export interface operations {
       };
     };
   };
-  health_api_v1_health_head: {
+  health_api_v1_health_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -6545,6 +6616,8 @@ export interface operations {
         low_stock?: boolean;
         /** @description Only products on sale (old_price set and > price). */
         on_sale?: boolean;
+        /** @description Only products with no shipping weight entered. */
+        no_weight?: boolean;
       };
       header?: never;
       path?: never;

@@ -867,4 +867,72 @@ describe('ProductEditor — edit mode', () => {
       .filter((t) => ['5', '10', '50', '100'].includes(t));
     expect(nums).toEqual(['5', '10', '50', '100']);
   });
+
+  it('sends weight_g as null when the field is left blank on create', async () => {
+    mCreate.mockResolvedValue(product({ id: 21 }));
+    const w = mount(ProductEditor, { props: {} });
+    await flushPromises();
+    await w.find('select').setValue('1');
+    const textInputs = w.findAll('input[type="text"]');
+    await textInputs[0].setValue('W-BLANK');
+    await textInputs[1].setValue('10');
+    await saveButton(w).trigger('click');
+    await flushPromises();
+
+    // Blank must stay "not entered" (null), not become 0 — the delivery service
+    // distinguishes the two.
+    expect(mCreate.mock.calls[0][0].weight_g).toBeNull();
+  });
+
+  it('sends a numeric weight_g when the field is filled', async () => {
+    mCreate.mockResolvedValue(product({ id: 22 }));
+    const w = mount(ProductEditor, { props: {} });
+    await flushPromises();
+    await w.find('select').setValue('1');
+    const textInputs = w.findAll('input[type="text"]');
+    await textInputs[0].setValue('W-SET');
+    await textInputs[1].setValue('10');
+    const weightInput = w
+      .findAll('input[type="number"]')
+      .find((i) => i.attributes('placeholder') === 'не задан')!;
+    await weightInput.setValue('1250');
+    await saveButton(w).trigger('click');
+    await flushPromises();
+
+    expect(mCreate.mock.calls[0][0].weight_g).toBe(1250);
+  });
+
+  it('loads an existing weight into the field and keeps it on save', async () => {
+    mGet.mockResolvedValue(product({ weight_g: 640 }));
+    mUpdate.mockResolvedValue(product({ weight_g: 640 }));
+    const w = mount(ProductEditor, { props: { productId: 7 } });
+    await flushPromises();
+
+    const weightInput = w
+      .findAll('input[type="number"]')
+      .find((i) => i.attributes('placeholder') === 'не задан')!;
+    expect((weightInput.element as HTMLInputElement).value).toBe('640');
+
+    await saveButton(w).trigger('click');
+    await flushPromises();
+    expect(mUpdate.mock.calls[0][1].weight_g).toBe(640);
+  });
+
+  it('rejects a negative weight before calling the API', async () => {
+    const w = mount(ProductEditor, { props: {} });
+    await flushPromises();
+    await w.find('select').setValue('1');
+    const textInputs = w.findAll('input[type="text"]');
+    await textInputs[0].setValue('W-NEG');
+    await textInputs[1].setValue('10');
+    const weightInput = w
+      .findAll('input[type="number"]')
+      .find((i) => i.attributes('placeholder') === 'не задан')!;
+    await weightInput.setValue('-5');
+    await saveButton(w).trigger('click');
+    await flushPromises();
+
+    expect(w.text()).toContain('Вес указан неверно');
+    expect(mCreate).not.toHaveBeenCalled();
+  });
 });

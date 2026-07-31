@@ -17,6 +17,8 @@ const search = ref('');
 const activeFilter = ref<boolean | null>(null);
 const lowStock = ref(false);
 const onSale = ref(false);
+// Carrier pricing needs a shipping weight; this surfaces what is still missing.
+const noWeight = ref(false);
 
 function buildFilters(): ProductFilters {
   const filters: ProductFilters = {};
@@ -25,6 +27,7 @@ function buildFilters(): ProductFilters {
   if (activeFilter.value !== null) filters.is_active = activeFilter.value;
   if (lowStock.value) filters.low_stock = true;
   if (onSale.value) filters.on_sale = true;
+  if (noWeight.value) filters.no_weight = true;
   return filters;
 }
 
@@ -43,7 +46,7 @@ async function load() {
 onMounted(load);
 
 // Re-query when any toggle changes immediately.
-watch([activeFilter, lowStock, onSale], load);
+watch([activeFilter, lowStock, onSale, noWeight], load);
 
 // Debounce free-text search so we don't hammer the API per keystroke.
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -62,6 +65,13 @@ function toggleActive(value: boolean) {
 
 function money(x: string): string {
   return `${Number(x).toLocaleString('ru-RU')} L`;
+}
+
+// Grams below a kilo read better as grams; heavier items as kilos.
+function weight(grams: number): string {
+  return grams < 1000
+    ? `${grams} г`
+    : `${(grams / 1000).toLocaleString('ru-RU')} кг`;
 }
 
 function open(id: number) {
@@ -121,6 +131,13 @@ function chip(active: boolean): string {
       <button type="button" :class="chip(onSale)" @click="onSale = !onSale">
         Со скидкой
       </button>
+      <button
+        type="button"
+        :class="chip(noWeight)"
+        @click="noWeight = !noWeight"
+      >
+        Без веса
+      </button>
     </div>
 
     <!-- States -->
@@ -162,6 +179,7 @@ function chip(active: boolean): string {
             <th class="px-4 py-3 font-medium">Код</th>
             <th class="px-4 py-3 font-medium">Название</th>
             <th class="px-4 py-3 font-medium">Цена</th>
+            <th class="px-4 py-3 font-medium">Вес</th>
             <th class="px-4 py-3 font-medium">Статус</th>
           </tr>
         </thead>
@@ -178,6 +196,18 @@ function chip(active: boolean): string {
             </td>
             <td class="px-4 py-3 font-medium text-price">
               {{ money(p.price) }}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span v-if="p.weight_g != null" class="text-body">
+                {{ weight(p.weight_g) }}
+              </span>
+              <span
+                v-else
+                class="text-xs font-medium text-subtle"
+                title="Вес не задан — доставка считается по значению по умолчанию"
+              >
+                не задан
+              </span>
             </td>
             <td class="px-4 py-3">
               <span
