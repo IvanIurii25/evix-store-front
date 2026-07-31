@@ -4,9 +4,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const getOrder = vi.fn();
 const transitionOrder = vi.fn();
 
+const createWaybill = vi.fn();
+const cancelWaybill = vi.fn();
 vi.mock('../../api/admin', () => ({
   getOrder: (...a: unknown[]) => getOrder(...a),
   transitionOrder: (...a: unknown[]) => transitionOrder(...a),
+  createWaybill: (...a: unknown[]) => createWaybill(...a),
+  cancelWaybill: (...a: unknown[]) => cancelWaybill(...a),
 }));
 
 import OrderDetail from './OrderDetail.vue';
@@ -206,5 +210,85 @@ describe('OrderDetail', () => {
     resolve(order({ status: 'confirmed' }));
     await flushPromises();
     expect(transitionOrder).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('OrderDetail — Nova Post waybill', () => {
+  const carrierOrder = (np: Record<string, unknown>) =>
+    order({
+      delivery_service: 'novapost',
+      delivery_type: 'branch',
+      delivery_name: 'Ion Client',
+      novapost: {
+        settlement_name: 'Chișinău',
+        division_number: '1',
+        division_address: 'str. Ștefan cel Mare 12',
+        address_parts: null,
+        awb_number: null,
+        status_code: '',
+        status_text: '',
+        ...np,
+      },
+    });
+
+  beforeEach(() => {
+    createWaybill.mockReset();
+    cancelWaybill.mockReset();
+  });
+
+  it('shows the destination and offers to create a waybill', async () => {
+    getOrder.mockResolvedValue(carrierOrder({}));
+    const w = mount(OrderDetail, { props: { number: 'ORD-1' } });
+    await flushPromises();
+
+    expect(w.text()).toContain('№ 1, str. Ștefan cel Mare 12, Chișinău');
+    expect(w.text()).toContain('не создана');
+    expect(
+      w.findAll('button').some((b) => b.text().includes('Создать накладную')),
+    ).toBe(true);
+  });
+
+  it('creates a waybill and shows its number', async () => {
+    getOrder.mockResolvedValue(carrierOrder({}));
+    createWaybill.mockResolvedValue(carrierOrder({ awb_number: 'STUB0001' }));
+    const w = mount(OrderDetail, { props: { number: 'ORD-1' } });
+    await flushPromises();
+
+    await w
+      .findAll('button')
+      .find((b) => b.text().includes('Создать накладную'))!
+      .trigger('click');
+    await flushPromises();
+
+    expect(createWaybill).toHaveBeenCalledWith('ORD-1');
+    expect(w.text()).toContain('STUB0001');
+  });
+
+  it('offers cancellation once a waybill exists, and surfaces a refusal', async () => {
+    getOrder.mockResolvedValue(carrierOrder({ awb_number: 'STUB0002' }));
+    cancelWaybill.mockRejectedValue(new Error('Перевозчик недоступен'));
+    vi.stubGlobal('confirm', () => true);
+    const w = mount(OrderDetail, { props: { number: 'ORD-1' } });
+    await flushPromises();
+
+    const button = w
+      .findAll('button')
+      .find((b) => b.text().includes('Отменить накладную'))!;
+    await button.trigger('click');
+    await flushPromises();
+
+    // The number stays on screen: our copy must not disappear while the parcel
+    // may still be travelling.
+    expect(w.text()).toContain('Перевозчик недоступен');
+    expect(w.text()).toContain('STUB0002');
+    vi.unstubAllGlobals();
+  });
+
+  it('shows no carrier block for an own-logistics order', async () => {
+    getOrder.mockResolvedValue(order({ delivery_type: 'pickup' }));
+    const w = mount(OrderDetail, { props: { number: 'ORD-1' } });
+    await flushPromises();
+
+    expect(w.text()).not.toContain('Накладная');
   });
 });

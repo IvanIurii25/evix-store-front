@@ -1562,6 +1562,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/orders/{number}/np/shipment': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create Waybill
+     * @description Create the Nova Post waybill for one order (idempotent).
+     *
+     *     Args:
+     *         number: The order number.
+     *         _staff: The authenticated staff user (guards the endpoint).
+     *         session: Injected async DB session.
+     *         redis: Injected Redis client (carrier token).
+     *
+     *     Returns:
+     *         OrderOut: The order with the waybill on its carrier block.
+     *
+     *     Raises:
+     *         WaybillExistsError: 409 if a waybill was already created.
+     *         WaybillMissingError: 404 for a non-carrier order.
+     *         CarrierUnavailableError: 502 if the carrier refuses / is unreachable.
+     */
+    post: operations['create_waybill_api_v1_admin_orders__number__np_shipment_post'];
+    /**
+     * Cancel Waybill
+     * @description Cancel the Nova Post waybill for one order.
+     *
+     *     Args:
+     *         number: The order number.
+     *         _staff: The authenticated staff user (guards the endpoint).
+     *         session: Injected async DB session.
+     *         redis: Injected Redis client (carrier token).
+     *
+     *     Returns:
+     *         OrderOut: The order with the waybill cleared.
+     *
+     *     Raises:
+     *         WaybillMissingError: 404 if there is no waybill to cancel.
+     *         CarrierUnavailableError: 502 if the carrier refuses / is unreachable.
+     */
+    delete: operations['cancel_waybill_api_v1_admin_orders__number__np_shipment_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/customers': {
     parameters: {
       query?: never;
@@ -3432,6 +3483,11 @@ export interface components {
       /** @description Carrier courier address. */
       np_address?: components['schemas']['NovaPostAddressIn'] | null;
       /**
+       * Np Recipient Name
+       * @description Who collects the parcel (required for Nova Post).
+       */
+      np_recipient_name?: string | null;
+      /**
        * Email
        * @description Contact email (guest + user).
        */
@@ -4856,6 +4912,11 @@ export interface components {
       np_division_id?: string | null;
       /** @description Carrier courier address. */
       np_address?: components['schemas']['NovaPostAddressIn'] | null;
+      /**
+       * Np Recipient Name
+       * @description Who collects the parcel (required for Nova Post).
+       */
+      np_recipient_name?: string | null;
       /**
        * Delivery Type
        * @description Delivery method (pickup | courier | branch | postomat).
@@ -7901,6 +7962,68 @@ export interface operations {
     };
   };
   refund_order_api_v1_admin_orders__number__refund_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  create_waybill_api_v1_admin_orders__number__np_shipment_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        number: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['OrderOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  cancel_waybill_api_v1_admin_orders__number__np_shipment_delete: {
     parameters: {
       query?: never;
       header?: never;

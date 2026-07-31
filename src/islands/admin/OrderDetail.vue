@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 
-import { getOrder, transitionOrder, type OrderOut } from '../../api/admin';
+import {
+  cancelWaybill,
+  createWaybill,
+  getOrder,
+  transitionOrder,
+  type OrderOut,
+} from '../../api/admin';
 
 const props = defineProps<{ number: string }>();
 
@@ -148,8 +154,46 @@ function lineTotal(price: string, qty: number): string {
 
 const isCourier = computed(() => {
   const t = order.value?.delivery_type ?? '';
-  return t.toLowerCase() === 'courier';
+  return (
+    t.toLowerCase() === 'courier' &&
+    order.value?.delivery_service !== 'novapost'
+  );
 });
+
+// ---- Nova Post waybill -----------------------------------------------------
+const carrier = computed(() => order.value?.novapost ?? null);
+const waybillBusy = ref(false);
+const waybillError = ref('');
+
+const carrierDestination = computed(() => {
+  const np = carrier.value;
+  if (!np) return '';
+  if (np.division_number) {
+    return [`№ ${np.division_number}`, np.division_address, np.settlement_name]
+      .filter(Boolean)
+      .join(', ');
+  }
+  const parts = (np.address_parts ?? {}) as Record<string, string>;
+  return [parts.street, parts.building, parts.city].filter(Boolean).join(', ');
+});
+
+async function runWaybill(action: 'create' | 'cancel') {
+  if (!order.value || waybillBusy.value) return;
+  if (action === 'cancel' && !confirm('Отменить накладную у перевозчика?'))
+    return;
+  waybillBusy.value = true;
+  waybillError.value = '';
+  try {
+    order.value =
+      action === 'create'
+        ? await createWaybill(order.value.number)
+        : await cancelWaybill(order.value.number);
+  } catch (e) {
+    waybillError.value = e instanceof Error ? e.message : 'Ошибка';
+  } finally {
+    waybillBusy.value = false;
+  }
+}
 </script>
 
 <template>
@@ -221,8 +265,67 @@ const isCourier = computed(() => {
           <dl class="space-y-2 text-sm">
             <div class="flex justify-between gap-4">
               <dt class="text-subtle">Тип доставки</dt>
-              <dd class="text-body">{{ order.delivery_type }}</dd>
+              <dd class="text-body">
+                {{ order.delivery_service === 'novapost' ? 'Nova Post — ' : ''
+                }}{{ order.delivery_type }}
+              </dd>
             </div>
+
+            <!-- Carrier block: where it goes, and the waybill -->
+            <template v-if="carrier">
+              <div class="flex justify-between gap-4">
+                <dt class="text-subtle">Получатель</dt>
+                <dd class="text-body">{{ order.delivery_name }}</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-subtle">Куда</dt>
+                <dd class="text-right text-body">{{ carrierDestination }}</dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-subtle">Накладная</dt>
+                <dd class="text-right text-body">
+                  <span v-if="carrier.awb_number" class="font-mono">
+                    {{ carrier.awb_number }}
+                  </span>
+                  <span v-else class="text-subtle">не создана</span>
+                </dd>
+              </div>
+              <div
+                v-if="carrier.status_text"
+                class="flex justify-between gap-4"
+              >
+                <dt class="text-subtle">Статус у перевозчика</dt>
+                <dd class="text-right text-body">
+                  {{ carrier.status_text }}
+                  <span v-if="carrier.status_code" class="text-subtle">
+                    ({{ carrier.status_code }})
+                  </span>
+                </dd>
+              </div>
+              <div class="pt-2">
+                <button
+                  v-if="!carrier.awb_number"
+                  type="button"
+                  :disabled="waybillBusy"
+                  class="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:opacity-60"
+                  @click="runWaybill('create')"
+                >
+                  {{ waybillBusy ? 'Создаём…' : 'Создать накладную' }}
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  :disabled="waybillBusy"
+                  class="rounded-xl border-2 border-fill px-4 py-2 text-sm font-medium hover:border-danger hover:text-danger disabled:opacity-60"
+                  @click="runWaybill('cancel')"
+                >
+                  {{ waybillBusy ? 'Отменяем…' : 'Отменить накладную' }}
+                </button>
+                <p v-if="waybillError" class="mt-2 text-sm text-danger">
+                  {{ waybillError }}
+                </p>
+              </div>
+            </template>
             <template v-if="isCourier">
               <div
                 v-if="order.delivery_name"

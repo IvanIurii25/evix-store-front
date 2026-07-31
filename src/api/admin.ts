@@ -695,3 +695,26 @@ export async function getPendingReviewsCount(): Promise<number> {
   if (error || !data) return 0;
   return data.count;
 }
+
+// --------------------------------------------------------------------------- //
+// Nova Post waybills
+// --------------------------------------------------------------------------- //
+/** Create the carrier waybill for an order; returns the updated order. */
+export async function createWaybill(number: string): Promise<OrderOut> {
+  const { data, error } = await api.POST(
+    '/api/v1/admin/orders/{number}/np/shipment',
+    { params: { path: { number } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось создать накладную');
+  return data;
+}
+
+/** Cancel the carrier waybill for an order; returns the updated order. */
+export async function cancelWaybill(number: string): Promise<OrderOut> {
+  const { data, error } = await api.DELETE(
+    '/api/v1/admin/orders/{number}/np/shipment',
+    { params: { path: { number } }, ...CREDS },
+  );
+  if (error) fail(error, 'Не удалось отменить накладную');
+  return data;
+}
