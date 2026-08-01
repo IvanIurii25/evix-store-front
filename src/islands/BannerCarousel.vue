@@ -18,7 +18,9 @@ const props = defineProps<{ lang: Lang; banners: Banner[] }>();
 
 const t = bannerStrings(props.lang);
 
-const AUTOPLAY_MS = 6000;
+// Восемь секунд: на слайде есть заголовок, подзаголовок и цена — шести секунд
+// не хватало, чтобы прочитать их и решить, кликать ли.
+const AUTOPLAY_MS = 8000;
 
 const track = ref<HTMLElement | null>(null);
 const current = ref(0);

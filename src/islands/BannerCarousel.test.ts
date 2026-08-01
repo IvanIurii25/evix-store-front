@@ -2,6 +2,10 @@ import { mount } from '@vue/test-utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import BannerCarousel from './BannerCarousel.vue';
+
+// Держим интервал в одном месте: при следующей правке шага тесты не должны
+// молча начать проверять не тот момент времени.
+const AUTOPLAY_MS = 8000;
 import type { Banner } from '../api/site';
 
 function banner(id: number, over: Partial<Banner> = {}): Banner {
@@ -116,11 +120,11 @@ describe('BannerCarousel', () => {
       .parentElement as HTMLElement;
     const scrollTo = track.scrollTo as unknown as ReturnType<typeof vi.fn>;
 
-    vi.advanceTimersByTime(6000);
+    vi.advanceTimersByTime(AUTOPLAY_MS);
     await wrapper.vm.$nextTick();
     expect(scrollTo).toHaveBeenCalledTimes(1);
 
-    vi.advanceTimersByTime(6000);
+    vi.advanceTimersByTime(AUTOPLAY_MS);
     await wrapper.vm.$nextTick();
     // Back to the first slide rather than scrolling past the end.
     expect(scrollTo).toHaveBeenLastCalledWith(
@@ -135,12 +139,12 @@ describe('BannerCarousel', () => {
     const scrollTo = track.scrollTo as unknown as ReturnType<typeof vi.fn>;
 
     await wrapper.get('section').trigger('mouseenter');
-    vi.advanceTimersByTime(18000);
+    vi.advanceTimersByTime(AUTOPLAY_MS * 3);
 
     expect(scrollTo).not.toHaveBeenCalled();
 
     await wrapper.get('section').trigger('mouseleave');
-    vi.advanceTimersByTime(6000);
+    vi.advanceTimersByTime(AUTOPLAY_MS);
     expect(scrollTo).toHaveBeenCalled();
   });
 
@@ -151,7 +155,7 @@ describe('BannerCarousel', () => {
       .parentElement as HTMLElement;
     const scrollTo = track.scrollTo as unknown as ReturnType<typeof vi.fn>;
 
-    vi.advanceTimersByTime(30000);
+    vi.advanceTimersByTime(AUTOPLAY_MS * 4);
 
     expect(scrollTo).not.toHaveBeenCalled();
   });
