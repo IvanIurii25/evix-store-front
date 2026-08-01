@@ -156,10 +156,18 @@ onUnmounted(() => {
         </button>
       </div>
 
+      <!-- Column flow, not a grid: groups differ in height (8 children under
+           «Дом», none under «Спорт»), and grid rows align to the tallest one,
+           leaving holes under the short groups. Columns pack them continuously;
+           break-inside keeps a group whole. -->
       <div
-        class="space-y-6 md:mx-auto md:grid md:max-w-[1360px] md:grid-cols-4 md:gap-x-8 md:gap-y-7 md:space-y-0 md:px-5 md:pb-8"
+        class="md:mx-auto md:max-w-[1360px] md:columns-2 md:gap-8 md:px-5 md:pb-8 lg:columns-3"
       >
-        <section v-for="group in groups" :key="group.cat.id">
+        <section
+          v-for="group in groups"
+          :key="group.cat.id"
+          class="mb-6 break-inside-avoid last:mb-0 md:mb-7"
+        >
           <a
             :href="catHref(group.cat.slug)"
             class="block font-bold text-ink transition hover:text-primary"
