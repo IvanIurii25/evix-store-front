@@ -35,6 +35,10 @@ export type StaffItem = Schemas['StaffItem'];
 export type StaffCreate = Schemas['StaffCreate'];
 export type StaffUpdate = Schemas['StaffUpdate'];
 export type SeoSettings = Schemas['SeoSettings'];
+export type BannerAdminOut = Schemas['BannerAdminOut'];
+export type BannerCreate = Schemas['BannerCreate'];
+export type BannerUpdate = Schemas['BannerUpdate'];
+export type BannerTranslationIn = Schemas['BannerTranslationIn'];
 
 const CREDS = { credentials: 'include' as const };
 
@@ -717,4 +721,69 @@ export async function cancelWaybill(number: string): Promise<OrderOut> {
   );
   if (error) fail(error, 'Не удалось отменить накладную');
   return data;
+}
+
+// --------------------------------------------------------------------------- //
+// Homepage banners
+// --------------------------------------------------------------------------- //
+/** Upload a creative and return its public URL (webp variants are generated). */
+export async function uploadAsset(file: File): Promise<string> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data, error } = await api.POST('/api/v1/admin/assets', {
+    body: form as never,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось загрузить изображение');
+  return data.url;
+}
+
+export async function listBanners(): Promise<BannerAdminOut[]> {
+  const { data, error } = await api.GET('/api/v1/admin/banners', CREDS);
+  if (error) fail(error, 'Не удалось загрузить баннеры');
+  return data ?? [];
+}
+
+export async function createBanner(
+  body: BannerCreate,
+): Promise<BannerAdminOut> {
+  const { data, error } = await api.POST('/api/v1/admin/banners', {
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось создать баннер');
+  return data;
+}
+
+export async function updateBanner(
+  id: number,
+  body: BannerUpdate,
+): Promise<BannerAdminOut> {
+  const { data, error } = await api.PUT('/api/v1/admin/banners/{banner_id}', {
+    params: { path: { banner_id: id } },
+    body,
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось сохранить баннер');
+  return data;
+}
+
+export async function deleteBanner(id: number): Promise<void> {
+  const { error } = await api.DELETE('/api/v1/admin/banners/{banner_id}', {
+    params: { path: { banner_id: id } },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось удалить баннер');
+}
+
+/** Apply a new display order in one write; returns the reordered list. */
+export async function reorderBanners(
+  items: { banner_id: number; position: number }[],
+): Promise<BannerAdminOut[]> {
+  const { data, error } = await api.POST('/api/v1/admin/banners/reorder', {
+    body: { items },
+    ...CREDS,
+  });
+  if (error) fail(error, 'Не удалось изменить порядок');
+  return data ?? [];
 }

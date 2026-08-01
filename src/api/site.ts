@@ -82,10 +82,13 @@ export async function loadFooterPages(
 // --- Homepage banners (carousel) --------------------------------------------
 export type Banner = components['schemas']['BannerOut'];
 
-// Banners are read on every homepage render and change on a back-office edit —
-// cached per-lang like the footer pages. The window is deliberately the same
-// five minutes: a scheduled banner going live is not a to-the-second promise,
-// and the manager sees their edit after one window (or a front restart).
+// Banners are read on every homepage render, so they are cached per-lang — but
+// on a much shorter window than the SEO defaults or footer pages. Those change
+// once a quarter; a banner is swapped during a campaign, by someone who is
+// looking at the homepage to check their work. A minute of staleness is
+// forgivable, five is the manager reloading and concluding it is broken. The
+// cost of the shorter window is one request per minute per language.
+const BANNER_TTL_MS = 60 * 1000;
 const bannerCache = new Map<string, { value: Banner[]; expiresAt: number }>();
 
 // The live carousel for the language. Returns [] on any failure and does not
@@ -101,7 +104,7 @@ export async function loadBanners(
     params: { query: { lang } },
   });
   if (error || !data) return [];
-  bannerCache.set(lang, { value: data, expiresAt: now + TTL_MS });
+  bannerCache.set(lang, { value: data, expiresAt: now + BANNER_TTL_MS });
   return data;
 }
 

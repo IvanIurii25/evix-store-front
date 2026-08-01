@@ -202,12 +202,17 @@ describe('site api (fetch-backed accessors)', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('loadBanners re-fetches once the TTL expires', async () => {
+  it('loadBanners re-fetches after a minute, not after five', async () => {
     stubFactory(() => jsonResponse(BANNERS));
     const { loadBanners } = await load();
 
     await loadBanners('ru', 0);
-    await loadBanners('ru', 6 * 60 * 1000);
+    // Still cached at 59s...
+    await loadBanners('ru', 59_000);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // ...and refreshed just past the minute, so a manager checking their edit
+    // does not conclude the site is broken.
+    await loadBanners('ru', 61_000);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

@@ -1,0 +1,12 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Banners from '../../../islands/admin/Banners.vue';
+import { requireStaff } from '../../../lib/admin-guard';
+export const prerender = false;
+const guard = await requireStaff(Astro.cookies, Astro.url.pathname);
+if (!guard.ok) return Astro.redirect(guard.redirect);
+---
+
+<AdminLayout title="Баннеры" email={guard.user.email} active="banners">
+  <Banners client:load />
+</AdminLayout>
