@@ -5,12 +5,12 @@ import CategoryTile from '../../components/CategoryTile.astro';
 import ProductRail from '../../components/ProductRail.astro';
 import Benefits from '../../components/Benefits.astro';
 import {
-  getCategoryTree,
+  loadCategoryTree,
   listProducts,
   listAllProducts,
 } from '../../api/catalog';
 import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
-import { homeStrings } from '../../lib/i18n-strings';
+import { homeStrings, catalogStrings } from '../../lib/i18n-strings';
 import { organizationJsonLd, websiteJsonLd } from '../../lib/seo';
 
 export const prerender = false;
@@ -20,23 +20,22 @@ if (!isLang(lang)) return Astro.rewrite('/404');
 
 const t = homeStrings(lang);
 
-// Top-level categories power the tiles (cap at 8).
-let categories: Awaited<ReturnType<typeof getCategoryTree>>;
-try {
-  categories = await getCategoryTree(lang);
-} catch {
-  categories = [];
-}
-const topCats = categories.slice(0, 8);
+// Every root category that has products powers the tiles — capping the list hid
+// whole sections of the store (the full tree lives on the /c hub).
+const categories = await loadCategoryTree(lang);
+const topCats = categories.filter((c) => c.product_count > 0);
 
 // Fetch in parallel: a first-page listing per top category (for tile covers)
-// plus the three store-wide rails (featured + newest + on-sale).
+// plus the three store-wide rails (featured + newest + on-sale). Categories that
+// carry their own cover skip the listing — its result would be discarded below.
 const [covers, featured, newest, deals] = await Promise.all([
   Promise.all(
     topCats.map((c) =>
-      listProducts(c.slug, lang, { sort: 'newest' })
-        .then((r) => ({ cat: c, image: r.data[0]?.main_image_url ?? null }))
-        .catch(() => ({ cat: c, image: null })),
+      c.cover_image_url
+        ? Promise.resolve({ cat: c, image: null })
+        : listProducts(c.slug, lang, { sort: 'newest' })
+            .then((r) => ({ cat: c, image: r.data[0]?.main_image_url ?? null }))
+            .catch(() => ({ cat: c, image: null })),
     ),
   ),
   listAllProducts(lang, { featured: true })
@@ -83,7 +82,15 @@ const jsonLd = [organizationJsonLd(origin), websiteJsonLd(origin, lang)];
   {
     tiles.length > 0 && (
       <section id="categories" class="mx-auto max-w-[1360px] px-5 pt-14">
-        <h2 class="text-2xl font-bold text-ink">{t.categoriesTitle}</h2>
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 class="text-2xl font-bold text-ink">{t.categoriesTitle}</h2>
+          <a
+            href={localePath(lang, 'c')}
+            class="font-semibold text-primary hover:underline"
+          >
+            {catalogStrings(lang).allCategories} →
+          </a>
+        </div>
         <div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           {tiles.map((tile) => (
             <CategoryTile

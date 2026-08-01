@@ -1,6 +1,8 @@
 ---
 // Storefront header «по мотивам ecom»: logo · Каталог button · big central
-// live-search island · right icons. Catalog mega-menu remains a later island.
+// live-search island · right icons. The Каталог button is a plain link to the
+// /c hub (icon-only on narrow screens); a mega-menu island can enhance it later
+// without taking the link away.
 import SearchBox from '../islands/SearchBox.vue';
 import CartCount from '../islands/CartCount.vue';
 import {
@@ -37,7 +39,9 @@ function switchHref(target: (typeof LANGS)[number]): string {
 ---
 
 <header class="border-b border-fill">
-  <div class="mx-auto flex h-20 max-w-[1360px] items-center gap-4 px-5">
+  <div
+    class="mx-auto flex h-20 max-w-[1360px] items-center gap-2 px-4 md:gap-4 md:px-5"
+  >
     <a
       href={localePath(lang)}
       class="flex shrink-0 items-center gap-2 text-ink"
@@ -56,7 +60,12 @@ function switchHref(target: (typeof LANGS)[number]): string {
           stroke="url(#evixHdr)"
           stroke-width="5"
           stroke-linejoin="round"></path>
-        <g stroke="#436bef" stroke-width="11" stroke-linecap="round" fill="none">
+        <g
+          stroke="#436bef"
+          stroke-width="11"
+          stroke-linecap="round"
+          fill="none"
+        >
           <path d="M44 40 V88"></path>
           <path d="M44 40 H78"></path>
           <path d="M44 64 H70"></path>
@@ -70,12 +79,17 @@ function switchHref(target: (typeof LANGS)[number]): string {
         <circle cx="22.4" cy="40" r="6.5" fill="#436bef"></circle>
         <circle cx="70" cy="64" r="5.5" fill="#06B6D4"></circle>
       </svg>
-      <span class="text-xl font-bold tracking-tight">evix</span>
+      <!-- Below 360px the row (mark + catalog + search + icons) cannot fit the
+           wordmark too; the hexagon mark still identifies the brand. -->
+      <span class="text-xl font-bold tracking-tight max-[359px]:hidden"
+        >evix</span
+      >
     </a>
 
     <a
-      href={localePath(lang)}
-      class="hidden h-12 shrink-0 items-center gap-2 rounded-[10px] bg-primary px-5 font-semibold text-white transition hover:bg-primary-hover md:flex"
+      href={localePath(lang, 'c')}
+      aria-label={t.catalog}
+      class="flex h-12 shrink-0 items-center gap-2 rounded-[10px] bg-primary px-3 font-semibold text-white transition hover:bg-primary-hover md:px-5"
     >
       <svg
         class="h-5 w-5"
@@ -86,12 +100,12 @@ function switchHref(target: (typeof LANGS)[number]): string {
       >
         <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"></path>
       </svg>
-      {t.catalog}
+      <span class="hidden md:inline">{t.catalog}</span>
     </a>
 
     <SearchBox client:idle lang={lang} />
 
-    <nav class="flex shrink-0 items-center gap-5 text-ink">
+    <nav class="flex shrink-0 items-center gap-4 text-ink md:gap-5">
       <a
         href={loggedIn ? localePath(lang, 'account') : localePath(lang, 'auth')}
         aria-label={loggedIn ? t.account : t.login}

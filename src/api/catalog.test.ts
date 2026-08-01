@@ -215,4 +215,63 @@ describe('catalog api', () => {
     const { getSitemap } = await load();
     await expect(getSitemap()).rejects.toThrow('getSitemap failed');
   });
+
+  // --- loadCategoryTree (per-lang TTL cache) -------------------------------- //
+
+  const TREE = [{ id: 1, slug: 'kuhnya', name: 'Кухня', product_count: 5 }];
+
+  // A Response body can only be consumed once, so multi-call tests need a fresh
+  // one per fetch.
+  function stubEach(factory: () => Response) {
+    fetchMock = vi.fn(async () => factory());
+    vi.stubGlobal('fetch', fetchMock);
+  }
+
+  it('loadCategoryTree serves a second call inside the TTL from cache', async () => {
+    stubEach(() => jsonResponse(TREE));
+    const { loadCategoryTree } = await load();
+
+    await expect(loadCategoryTree('ru', 1000)).resolves.toEqual(TREE);
+    await expect(loadCategoryTree('ru', 2000)).resolves.toEqual(TREE);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('loadCategoryTree caches per language', async () => {
+    stubEach(() => jsonResponse(TREE));
+    const { loadCategoryTree } = await load();
+
+    await loadCategoryTree('ru', 1000);
+    // A different locale is a different tree — it must not read ru's entry.
+    await loadCategoryTree('ro', 1000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('loadCategoryTree re-fetches once the TTL expires', async () => {
+    stubEach(() => jsonResponse(TREE));
+    const { loadCategoryTree } = await load();
+
+    await loadCategoryTree('ru', 0);
+    await loadCategoryTree('ru', 6 * 60 * 1000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('loadCategoryTree does not cache an empty tree', async () => {
+    stubEach(() => jsonResponse([]));
+    const { loadCategoryTree } = await load();
+
+    await expect(loadCategoryTree('ru', 0)).resolves.toEqual([]);
+    await loadCategoryTree('ru', 1);
+    // A backend hiccup must not stick for the whole window.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('loadCategoryTree degrades to [] when the request throws', async () => {
+    fetchMock = vi.fn(async () => {
+      throw new Error('network down');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const { loadCategoryTree } = await load();
+
+    await expect(loadCategoryTree('ru', 0)).resolves.toEqual([]);
+  });
 });

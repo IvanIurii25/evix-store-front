@@ -79,16 +79,21 @@ export const GET: APIRoute = async ({ params, site, request }) => {
   const data = await getSitemap();
   const pages = await loadFooterPages(lang);
 
-  // Home: present in every locale, alternates to each locale's home.
-  const homeAlternates = [
-    ...LANGS.map(
-      (l) =>
-        `    <xhtml:link rel="alternate" hreflang="${l}" href="${abs(base, localePath(l))}"/>`,
-    ),
-    `    <xhtml:link rel="alternate" hreflang="x-default" href="${abs(base, localePath(DEFAULT_LOCALE))}"/>`,
-  ].join('\n');
+  // Static pages present in every locale (home, catalog hub): each alternates
+  // to the same path under every locale + x-default.
+  const staticBlock = (path: string): string => {
+    const links = [
+      ...LANGS.map(
+        (l) =>
+          `    <xhtml:link rel="alternate" hreflang="${l}" href="${abs(base, localePath(l, path))}"/>`,
+      ),
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${abs(base, localePath(DEFAULT_LOCALE, path))}"/>`,
+    ].join('\n');
+    return `  <url>\n    <loc>${abs(base, localePath(lang, path))}</loc>\n${links}\n  </url>`;
+  };
   const blocks: string[] = [
-    `  <url>\n    <loc>${abs(base, localePath(lang))}</loc>\n${homeAlternates}\n  </url>`,
+    staticBlock(''),
+    staticBlock('c'),
     ...(data.categories ?? []).map((c) => urlBlock(base, lang, 'c', c)),
     ...(data.products ?? []).map((p) => urlBlock(base, lang, 'p', p)),
     ...pages.map((p) => infoBlock(base, lang, p.slug)),

@@ -1,0 +1,114 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import { loadCategoryTree, type CategoryNode } from '../../../api/catalog';
+import { isLang, localePath, hreflangAlternates } from '../../../lib/i18n';
+import { catalogStrings } from '../../../lib/i18n-strings';
+import { productCount } from '../../../lib/format';
+import { breadcrumbJsonLd } from '../../../lib/seo';
+import { webpSrcset } from '../../../lib/img';
+
+// The catalog entry point the header button points at: every category on one
+// page. Server-rendered and link-only, so it works without JS and gives crawlers
+// a single hub linking the whole tree (the later menu island enhances the same
+// button, it does not replace this page).
+export const prerender = false;
+
+const { lang } = Astro.params;
+if (!isLang(lang)) return Astro.rewrite('/404');
+
+const t = catalogStrings(lang);
+
+// Empty categories are dead ends for a shopper — a link promising products that
+// leads to "nothing here yet". Hide them at both levels.
+const hasProducts = (node: CategoryNode) => node.product_count > 0;
+const tree = await loadCategoryTree(lang);
+const groups = tree.filter(hasProducts).map((root) => ({
+  root,
+  children: (root.children ?? []).filter(hasProducts),
+}));
+
+const canonical = localePath(lang, 'c');
+const alternates = hreflangAlternates((l) => localePath(l, 'c'));
+const origin = (Astro.site ?? new URL('http://localhost:4321')).href;
+const jsonLd = [
+  breadcrumbJsonLd(origin, lang, [], { name: t.title, path: canonical }),
+];
+---
+
+<Layout
+  title={t.title}
+  description={t.description}
+  lang={lang}
+  canonical={canonical}
+  alternates={alternates}
+  jsonLd={jsonLd}
+>
+  <div class="mx-auto max-w-[1360px] px-5 py-6">
+    <Breadcrumbs items={[]} current={t.title} lang={lang} />
+    <h1 class="mt-4 text-2xl font-bold text-ink">{t.title}</h1>
+
+    {
+      groups.length > 0 ? (
+        <div class="mt-8 grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+          {groups.map(({ root, children }) => (
+            <section>
+              <a
+                href={localePath(lang, `c/${root.slug}`)}
+                class="group flex items-center gap-4"
+              >
+                <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-fill bg-white">
+                  {root.cover_image_url ? (
+                    <picture>
+                      <source
+                        type="image/webp"
+                        srcset={webpSrcset(root.cover_image_url)}
+                        sizes="64px"
+                      />
+                      <img
+                        src={root.cover_image_url}
+                        alt=""
+                        loading="lazy"
+                        class="h-full w-full object-contain p-1.5"
+                      />
+                    </picture>
+                  ) : (
+                    <span class="h-full w-full bg-linear-to-br from-primary/10 to-primary/25" />
+                  )}
+                </span>
+                <span>
+                  <span class="block text-lg font-bold text-ink transition group-hover:text-primary">
+                    {root.name}
+                  </span>
+                  <span class="block text-sm text-subtle">
+                    {productCount(root.product_count, lang)}
+                  </span>
+                </span>
+              </a>
+
+              {children.length > 0 && (
+                <ul class="mt-4 space-y-1.5 border-l-2 border-fill pl-4">
+                  {children.map((child) => (
+                    <li>
+                      <a
+                        href={localePath(lang, `c/${child.slug}`)}
+                        class="flex items-baseline justify-between gap-3 text-body transition hover:text-primary"
+                      >
+                        <span>{child.name}</span>
+                        <span class="shrink-0 text-sm text-subtle">
+                          {child.product_count}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <p class="mt-8 text-subtle">{t.empty}</p>
+      )
+    }
+  </div>
+</Layout>

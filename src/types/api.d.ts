@@ -3357,6 +3357,11 @@ export interface components {
       position: number;
       /** Cover Image Url */
       cover_image_url?: string | null;
+      /**
+       * Product Count
+       * @default 0
+       */
+      product_count: number;
       /** Children */
       children?: components['schemas']['CategoryNode'][];
     };

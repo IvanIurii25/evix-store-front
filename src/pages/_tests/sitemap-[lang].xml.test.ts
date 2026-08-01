@@ -92,6 +92,12 @@ describe('GET /sitemap-[lang].xml', () => {
       'hreflang="x-default" href="https://shop.evix.md/ro"',
     );
 
+    // Catalog hub: a static page in every locale, so it alternates like home.
+    expect(xml).toContain('<loc>https://shop.evix.md/ru/c</loc>');
+    expect(xml).toContain(
+      'hreflang="x-default" href="https://shop.evix.md/ro/c"',
+    );
+
     // Category present in ru, with lastmod truncated to a date.
     expect(xml).toContain('<loc>https://shop.evix.md/ru/c/avto-ru</loc>');
     expect(xml).toContain('<lastmod>2026-05-01</lastmod>');

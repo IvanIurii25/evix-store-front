@@ -575,6 +575,36 @@ export function footerLabels(lang: Lang): FooterLabels {
   return FOOTER_LABELS[lang];
 }
 
+// --- Catalog hub (/[lang]/c — every category on one page) ------------------- //
+
+export interface CatalogStrings {
+  title: string;
+  description: string;
+  allCategories: string;
+  empty: string;
+}
+
+const CATALOG: Record<Lang, CatalogStrings> = {
+  ro: {
+    title: 'Catalog',
+    description:
+      'Toate categoriile magazinului evix: electrocasnice, bucătărie, auto, sport și altele.',
+    allCategories: 'Toate categoriile',
+    empty: 'Catalogul nu este disponibil momentan.',
+  },
+  ru: {
+    title: 'Каталог',
+    description:
+      'Все категории магазина evix: техника, кухня, автотовары, спорт и другое.',
+    allCategories: 'Все категории',
+    empty: 'Каталог сейчас недоступен.',
+  },
+};
+
+export function catalogStrings(lang: Lang): CatalogStrings {
+  return CATALOG[lang];
+}
+
 // --- Catalog listing / category page chrome -------------------------------- //
 
 export interface ListingStrings {

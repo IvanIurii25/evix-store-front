@@ -16,11 +16,42 @@ export interface ListOpts {
   valueIds?: number[];
 }
 
+export type CategoryNode = components['schemas']['CategoryNode'];
+
 export async function getCategoryTree(lang: string) {
   const { data } = await api.GET('/api/v1/catalog/categories', {
     params: { query: { lang } },
   });
   return data ?? [];
+}
+
+// The tree drives catalog navigation on pages rendered for every visitor and
+// only changes on a back-office edit — cache it per-lang like the SEO defaults
+// and footer pages, so SSR hits the API at most once per window instead of once
+// per pageview. A failed or empty read is not cached, so a backend hiccup
+// retries on the next render rather than sticking for the whole window.
+const TREE_TTL_MS = 5 * 60 * 1000;
+const treeCache = new Map<
+  string,
+  { value: CategoryNode[]; expiresAt: number }
+>();
+
+export async function loadCategoryTree(
+  lang: string,
+  now = Date.now(),
+): Promise<CategoryNode[]> {
+  const hit = treeCache.get(lang);
+  if (hit && hit.expiresAt > now) return hit.value;
+  let value: CategoryNode[];
+  try {
+    value = await getCategoryTree(lang);
+  } catch {
+    return [];
+  }
+  if (value.length > 0) {
+    treeCache.set(lang, { value, expiresAt: now + TREE_TTL_MS });
+  }
+  return value;
 }
 
 export async function getCategory(slug: string, lang: string) {
