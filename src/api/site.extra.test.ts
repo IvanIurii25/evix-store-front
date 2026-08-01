@@ -167,4 +167,58 @@ describe('site api (fetch-backed accessors)', () => {
       card_payment_enabled: false,
     });
   });
+  // --- loadBanners (homepage carousel) --------------------------------------
+
+  const BANNERS = [
+    {
+      id: 1,
+      image_url: 'https://media.evix.md/media/b1.jpg',
+      image_mobile_url: null,
+      alt: 'Акция',
+      title: null,
+      subtitle: null,
+      cta_label: null,
+      link_url: '/ru/c/dom',
+    },
+  ];
+
+  it('loadBanners returns the live carousel and sends lang', async () => {
+    stub(jsonResponse(BANNERS));
+    const { loadBanners } = await load();
+    await expect(loadBanners('ru', 0)).resolves.toEqual(BANNERS);
+    expect(url()).toBe(`${BASE}/api/v1/site/banners?lang=ru`);
+  });
+
+  it('loadBanners caches per language within the TTL', async () => {
+    stubFactory(() => jsonResponse(BANNERS));
+    const { loadBanners } = await load();
+
+    await loadBanners('ru', 1000);
+    await loadBanners('ru', 2000);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // A different locale is a different carousel.
+    await loadBanners('ro', 2000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('loadBanners re-fetches once the TTL expires', async () => {
+    stubFactory(() => jsonResponse(BANNERS));
+    const { loadBanners } = await load();
+
+    await loadBanners('ru', 0);
+    await loadBanners('ru', 6 * 60 * 1000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('loadBanners degrades to [] and does not cache the failure', async () => {
+    stubFactory(() => envelope());
+    const { loadBanners } = await load();
+
+    // The homepage falls back to its static hero, and retries next render
+    // instead of staying empty for the whole window.
+    await expect(loadBanners('ru', 0)).resolves.toEqual([]);
+    await loadBanners('ru', 1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

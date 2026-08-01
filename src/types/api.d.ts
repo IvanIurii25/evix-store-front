@@ -1935,6 +1935,78 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/admin/banners': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Banners
+     * @description Return every banner — active, scheduled or expired — in display order.
+     */
+    get: operations['list_banners_api_v1_admin_banners_get'];
+    put?: never;
+    /**
+     * Create Banner
+     * @description Create a banner with both-language creatives.
+     */
+    post: operations['create_banner_api_v1_admin_banners_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/banners/{banner_id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Banner
+     * @description Return one banner with both creatives (404 when unknown).
+     */
+    get: operations['get_banner_api_v1_admin_banners__banner_id__get'];
+    /**
+     * Update Banner
+     * @description Replace a banner's schedule and both creatives (404 when unknown).
+     */
+    put: operations['update_banner_api_v1_admin_banners__banner_id__put'];
+    post?: never;
+    /**
+     * Delete Banner
+     * @description Delete a banner and its creatives (404 when unknown).
+     */
+    delete: operations['delete_banner_api_v1_admin_banners__banner_id__delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/admin/banners/reorder': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reorder Banners
+     * @description Apply new display positions in one write (404 if any id is unknown).
+     */
+    post: operations['reorder_banners_api_v1_admin_banners_reorder_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/admin/support/conversations': {
     parameters: {
       query?: never;
@@ -2354,6 +2426,37 @@ export interface paths {
      *         SiteConfigOut: The public config block.
      */
     get: operations['get_site_config_api_v1_site_config_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/site/banners': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Banners
+     * @description Return the homepage carousel for the storefront (public, read-only).
+     *
+     *     Only banners that are active, inside their display window and translated into
+     *     ``lang`` are returned, in display order. An empty list is a normal answer —
+     *     the storefront falls back to its static hero rather than rendering a gap.
+     *
+     *     Args:
+     *         lang: Requested language code.
+     *         session: Injected async DB session.
+     *
+     *     Returns:
+     *         list[BannerOut]: Ordered slides.
+     */
+    get: operations['list_banners_api_v1_site_banners_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -3186,6 +3289,164 @@ export interface components {
       /** Translations */
       translations?:
         components['schemas']['AttributeValueTranslationIn'][] | null;
+    };
+    /**
+     * BannerAdminOut
+     * @description Full admin view of a banner (schedule + both creatives).
+     */
+    BannerAdminOut: {
+      /** Id */
+      id: number;
+      /** Position */
+      position: number;
+      /** Is Active */
+      is_active: boolean;
+      /** Starts At */
+      starts_at?: string | null;
+      /** Ends At */
+      ends_at?: string | null;
+      /** Link Url */
+      link_url?: string | null;
+      /** Translations */
+      translations?: components['schemas']['BannerTranslationOut'][];
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * BannerCreate
+     * @description Create a banner with both-language creatives.
+     */
+    BannerCreate: {
+      /**
+       * Position
+       * @default 0
+       */
+      position: number;
+      /**
+       * Is Active
+       * @default false
+       */
+      is_active: boolean;
+      /** Starts At */
+      starts_at?: string | null;
+      /** Ends At */
+      ends_at?: string | null;
+      /** Link Url */
+      link_url?: string | null;
+      /** Translations */
+      translations: components['schemas']['BannerTranslationIn'][];
+    };
+    /**
+     * BannerOut
+     * @description One carousel slide for the requested language.
+     */
+    BannerOut: {
+      /** Id */
+      id: number;
+      /** Image Url */
+      image_url: string;
+      /** Image Mobile Url */
+      image_mobile_url?: string | null;
+      /** Alt */
+      alt: string;
+      /** Title */
+      title?: string | null;
+      /** Subtitle */
+      subtitle?: string | null;
+      /** Cta Label */
+      cta_label?: string | null;
+      /** Link Url */
+      link_url?: string | null;
+    };
+    /**
+     * BannerReorderItem
+     * @description One ``(banner_id, position)`` assignment in a reorder request.
+     */
+    BannerReorderItem: {
+      /** Banner Id */
+      banner_id: number;
+      /** Position */
+      position: number;
+    };
+    /**
+     * BannerReorderRequest
+     * @description Bulk position update, so the back-office can drag the carousel order.
+     */
+    BannerReorderRequest: {
+      /** Items */
+      items: components['schemas']['BannerReorderItem'][];
+    };
+    /**
+     * BannerTranslationIn
+     * @description The creative and copy for one language.
+     */
+    BannerTranslationIn: {
+      /** Lang */
+      lang: string;
+      /** Image Url */
+      image_url: string;
+      /** Image Mobile Url */
+      image_mobile_url?: string | null;
+      /** Alt */
+      alt: string;
+      /** Title */
+      title?: string | null;
+      /** Subtitle */
+      subtitle?: string | null;
+      /** Cta Label */
+      cta_label?: string | null;
+    };
+    /**
+     * BannerTranslationOut
+     * @description A banner translation as returned to the back-office.
+     */
+    BannerTranslationOut: {
+      /** Lang */
+      lang: string;
+      /** Image Url */
+      image_url: string;
+      /** Image Mobile Url */
+      image_mobile_url?: string | null;
+      /** Alt */
+      alt: string;
+      /** Title */
+      title?: string | null;
+      /** Subtitle */
+      subtitle?: string | null;
+      /** Cta Label */
+      cta_label?: string | null;
+    };
+    /**
+     * BannerUpdate
+     * @description Full update of a banner (both-language creatives replaced).
+     */
+    BannerUpdate: {
+      /**
+       * Position
+       * @default 0
+       */
+      position: number;
+      /**
+       * Is Active
+       * @default false
+       */
+      is_active: boolean;
+      /** Starts At */
+      starts_at?: string | null;
+      /** Ends At */
+      ends_at?: string | null;
+      /** Link Url */
+      link_url?: string | null;
+      /** Translations */
+      translations: components['schemas']['BannerTranslationIn'][];
     };
     /** Body_upload_asset_api_v1_admin_assets_post */
     Body_upload_asset_api_v1_admin_assets_post: {
@@ -8691,6 +8952,187 @@ export interface operations {
       };
     };
   };
+  list_banners_api_v1_admin_banners_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BannerAdminOut'][];
+        };
+      };
+    };
+  };
+  create_banner_api_v1_admin_banners_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BannerCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BannerAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  get_banner_api_v1_admin_banners__banner_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        banner_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BannerAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  update_banner_api_v1_admin_banners__banner_id__put: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        banner_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BannerUpdate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BannerAdminOut'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_banner_api_v1_admin_banners__banner_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        banner_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  reorder_banners_api_v1_admin_banners_reorder_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BannerReorderRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BannerAdminOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
   list_conversations_api_v1_admin_support_conversations_get: {
     parameters: {
       query?: {
@@ -9171,6 +9613,37 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SiteConfigOut'];
+        };
+      };
+    };
+  };
+  list_banners_api_v1_site_banners_get: {
+    parameters: {
+      query?: {
+        lang?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['BannerOut'][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

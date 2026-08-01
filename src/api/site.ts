@@ -79,6 +79,32 @@ export async function loadFooterPages(
   return value;
 }
 
+// --- Homepage banners (carousel) --------------------------------------------
+export type Banner = components['schemas']['BannerOut'];
+
+// Banners are read on every homepage render and change on a back-office edit —
+// cached per-lang like the footer pages. The window is deliberately the same
+// five minutes: a scheduled banner going live is not a to-the-second promise,
+// and the manager sees their edit after one window (or a front restart).
+const bannerCache = new Map<string, { value: Banner[]; expiresAt: number }>();
+
+// The live carousel for the language. Returns [] on any failure and does not
+// cache it, so the homepage falls back to its static hero on a hiccup and
+// retries on the next render instead of staying empty for the whole window.
+export async function loadBanners(
+  lang: string,
+  now = Date.now(),
+): Promise<Banner[]> {
+  const hit = bannerCache.get(lang);
+  if (hit && hit.expiresAt > now) return hit.value;
+  const { data, error } = await api.GET('/api/v1/site/banners', {
+    params: { query: { lang } },
+  });
+  if (error || !data) return [];
+  bannerCache.set(lang, { value: data, expiresAt: now + TTL_MS });
+  return data;
+}
+
 // One published content page for the language, or null (unknown/unpublished/404).
 export async function getContentPage(
   slug: string,

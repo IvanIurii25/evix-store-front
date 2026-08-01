@@ -9,6 +9,8 @@ import {
   listProducts,
   listAllProducts,
 } from '../../api/catalog';
+import BannerCarousel from '../../islands/BannerCarousel.vue';
+import { loadBanners } from '../../api/site';
 import { isLang, localePath, hreflangAlternates } from '../../lib/i18n';
 import { homeStrings, catalogStrings } from '../../lib/i18n-strings';
 import { organizationJsonLd, websiteJsonLd } from '../../lib/seo';
@@ -59,6 +61,10 @@ const tiles = covers.map((c) => ({
 // Hero image: the newest product photo across the store.
 const heroImage = newest[0]?.main_image_url ?? null;
 
+// Manager-managed carousel. Nothing scheduled (or the API is down) → the static
+// hero stays, so the top of the homepage is never an empty slot.
+const banners = await loadBanners(lang);
+
 const alternates = hreflangAlternates((l) => localePath(l));
 
 const origin = (Astro.site ?? new URL('http://localhost:4321')).href;
@@ -71,13 +77,19 @@ const jsonLd = [organizationJsonLd(origin), websiteJsonLd(origin, lang)];
   alternates={alternates}
   jsonLd={jsonLd}
 >
-  <Hero
-    title={t.heroTitle}
-    subtitle={t.heroSubtitle}
-    ctaLabel={t.heroCta}
-    ctaHref="#categories"
-    imageUrl={heroImage}
-  />
+  {
+    banners.length > 0 ? (
+      <BannerCarousel client:idle lang={lang} banners={banners} />
+    ) : (
+      <Hero
+        title={t.heroTitle}
+        subtitle={t.heroSubtitle}
+        ctaLabel={t.heroCta}
+        ctaHref="#categories"
+        imageUrl={heroImage}
+      />
+    )
+  }
 
   {
     tiles.length > 0 && (

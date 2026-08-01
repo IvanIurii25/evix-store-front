@@ -608,6 +608,34 @@ export function catalogStrings(lang: Lang): CatalogStrings {
   return CATALOG[lang];
 }
 
+// --- Homepage banner carousel (controls are icons, so they need labels) ----- //
+
+export interface BannerStrings {
+  label: string;
+  prev: string;
+  next: string;
+  goTo: string;
+}
+
+const BANNERS: Record<Lang, BannerStrings> = {
+  ro: {
+    label: 'Oferte',
+    prev: 'Bannerul anterior',
+    next: 'Bannerul următor',
+    goTo: 'Bannerul',
+  },
+  ru: {
+    label: 'Акции',
+    prev: 'Предыдущий баннер',
+    next: 'Следующий баннер',
+    goTo: 'Баннер',
+  },
+};
+
+export function bannerStrings(lang: Lang): BannerStrings {
+  return BANNERS[lang];
+}
+
 // --- Catalog listing / category page chrome -------------------------------- //
 
 export interface ListingStrings {
