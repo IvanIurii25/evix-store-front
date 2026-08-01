@@ -1,30 +1,32 @@
 import { mount, flushPromises } from '@vue/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const quote = vi.fn();
-const quoteResult = vi.fn();
-const checkout = vi.fn();
+// The spies are created inside the mock factories (which vitest hoists) and
+// read back through `vi.mocked`, so they carry the real modules' signatures: a
+// fixture of the wrong shape fails typecheck. Wrapping them by hand typed the
+// arguments as unknown[] and the payloads as never[], which made every fixture
+// an error and left the mocks unchecked.
 vi.mock('../api/checkout', () => ({
-  quote: (...a: unknown[]) => quote(...a),
-  quoteResult: (...a: unknown[]) => quoteResult(...a),
-  checkout: (...a: unknown[]) => checkout(...a),
+  quote: vi.fn(),
+  quoteResult: vi.fn(),
+  checkout: vi.fn(),
 }));
-
-// The island asks the server which methods to offer on mount. Default: carrier
-// off, which is what every pre-existing expectation here assumes.
-const listDeliveryMethods = vi.fn(async () => ({
-  methods: [],
-  novapost_enabled: false,
-}));
-const searchSettlements = vi.fn(async () => []);
-const listDivisions = vi.fn(async () => []);
 vi.mock('../api/delivery', () => ({
-  listDeliveryMethods: (...a: unknown[]) => listDeliveryMethods(...a),
-  searchSettlements: (...a: unknown[]) => searchSettlements(...a),
-  listDivisions: (...a: unknown[]) => listDivisions(...a),
+  listDeliveryMethods: vi.fn(),
+  searchSettlements: vi.fn(),
+  listDivisions: vi.fn(),
 }));
 
 import CheckoutForm from './CheckoutForm.vue';
+import * as checkoutApi from '../api/checkout';
+import * as deliveryApi from '../api/delivery';
+
+const quote = vi.mocked(checkoutApi.quote);
+const quoteResult = vi.mocked(checkoutApi.quoteResult);
+const checkout = vi.mocked(checkoutApi.checkout);
+const listDeliveryMethods = vi.mocked(deliveryApi.listDeliveryMethods);
+const searchSettlements = vi.mocked(deliveryApi.searchSettlements);
+const listDivisions = vi.mocked(deliveryApi.listDivisions);
 
 const QUOTE = {
   subtotal: '998',
@@ -32,6 +34,7 @@ const QUOTE = {
   delivery_cost: '0',
   total: '998',
   delivery_type: 'pickup',
+  delivery_service: 'own',
   item_count: 2,
 };
 
@@ -41,9 +44,42 @@ const QUOTE_COURIER = {
   delivery_type: 'courier',
 };
 
+// A complete order, so a test can name only the fields it is about. Spelling
+// out the whole contract once is what makes a missing field a typecheck error
+// instead of an `undefined` the component silently renders.
+const ORDER = {
+  number: 'A-100',
+  status: 'new',
+  payment_status: 'pending',
+  email: 'buyer@example.com',
+  phone: '069123456',
+  subtotal: '998',
+  discount_total: '0',
+  delivery_cost: '0',
+  total: '998',
+  delivery_type: 'pickup',
+  delivery_service: 'own',
+  delivery_address_id: null,
+  payment_method: 'cod',
+  created_at: '2026-08-01T10:00:00Z',
+};
+
+const order = (
+  overrides: Partial<typeof ORDER> & { pay_url?: string | null },
+) => ({ ...ORDER, ...overrides });
+
 let hrefStore = '';
 beforeEach(() => {
   vi.clearAllMocks();
+  // The island asks the server which methods to offer on mount. Default: carrier
+  // off, which is what every expectation outside the carrier block assumes.
+  // Re-established per test, so a carrier fixture cannot leak into the next one.
+  listDeliveryMethods.mockResolvedValue({
+    methods: [],
+    novapost_enabled: false,
+  });
+  searchSettlements.mockResolvedValue([]);
+  listDivisions.mockResolvedValue([]);
   hrefStore = '';
   Object.defineProperty(window, 'location', {
     configurable: true,
@@ -217,7 +253,7 @@ describe('CheckoutForm', () => {
 
   it('submits a valid order and redirects to the success page', async () => {
     quote.mockResolvedValue(QUOTE);
-    checkout.mockResolvedValue({ number: 'A-100', email: 'buyer@example.com' });
+    checkout.mockResolvedValue(order({ number: 'A-100' }));
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
@@ -285,7 +321,7 @@ describe('CheckoutForm', () => {
 
   it('submits successfully through the aside button click as well', async () => {
     quote.mockResolvedValue(QUOTE);
-    checkout.mockResolvedValue({ number: 'B-2', email: 'buyer@example.com' });
+    checkout.mockResolvedValue(order({ number: 'B-2' }));
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
@@ -350,7 +386,7 @@ describe('CheckoutForm', () => {
   it('includes the applied promo_code in the checkout body', async () => {
     quote.mockResolvedValue(QUOTE);
     quoteResult.mockResolvedValue({ data: QUOTE_DISCOUNTED, error: null });
-    checkout.mockResolvedValue({ number: 'P-1', email: 'buyer@example.com' });
+    checkout.mockResolvedValue(order({ number: 'P-1' }));
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
@@ -415,7 +451,7 @@ describe('CheckoutForm', () => {
 
   it('checks out with delivery_address_id when a saved address is used', async () => {
     quote.mockResolvedValueOnce(QUOTE).mockResolvedValueOnce(QUOTE_COURIER);
-    checkout.mockResolvedValue({ number: 'S-9', email: 'buyer@example.com' });
+    checkout.mockResolvedValue(order({ number: 'S-9' }));
     const wrapper = mount(CheckoutForm, {
       props: { lang: 'ru', isLoggedIn: true, savedAddresses: SAVED },
     });
@@ -508,10 +544,9 @@ describe('CheckoutForm', () => {
 
   it('redirects the browser to pay_url on a card checkout', async () => {
     quote.mockResolvedValue(QUOTE);
-    checkout.mockResolvedValue({
-      number: 'C-1',
-      pay_url: 'https://maib.example/checkout/xyz',
-    });
+    checkout.mockResolvedValue(
+      order({ number: 'C-1', pay_url: 'https://maib.example/checkout/xyz' }),
+    );
     const wrapper = mount(CheckoutForm, {
       props: { lang: 'ru', cardPaymentEnabled: true },
     });
@@ -532,7 +567,7 @@ describe('CheckoutForm', () => {
 
   it('shows an error and does not redirect when a card order has no pay_url', async () => {
     quote.mockResolvedValue(QUOTE);
-    checkout.mockResolvedValue({ number: 'C-2', pay_url: null });
+    checkout.mockResolvedValue(order({ number: 'C-2', pay_url: null }));
     const wrapper = mount(CheckoutForm, {
       props: { lang: 'ru', cardPaymentEnabled: true },
     });
@@ -549,7 +584,7 @@ describe('CheckoutForm', () => {
 
   it('keeps the COD body unchanged (no payment_method) when card is disabled', async () => {
     quote.mockResolvedValue(QUOTE);
-    checkout.mockResolvedValue({ number: 'D-1', email: 'buyer@example.com' });
+    checkout.mockResolvedValue(order({ number: 'D-1' }));
     const wrapper = mount(CheckoutForm, { props: { lang: 'ru' } });
     await flushPromises();
 
