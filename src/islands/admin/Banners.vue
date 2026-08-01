@@ -45,6 +45,7 @@ function emptyTranslation(lang: Lang): BannerTranslationIn {
     image_url: '',
     image_mobile_url: null,
     alt: '',
+    link_url: null,
     title: null,
     subtitle: null,
     cta_label: null,
@@ -208,6 +209,13 @@ function state(banner: BannerAdminOut): string {
   return 'Показывается';
 }
 
+// В списке показываем ту ссылку, по которой реально уйдёт RU-посетитель:
+// свою у языка, иначе общую.
+function shownLink(banner: BannerAdminOut): string | null {
+  const ru = (banner.translations ?? []).find((t) => t.lang === 'ru');
+  return ru?.link_url || banner.link_url || null;
+}
+
 function preview(banner: BannerAdminOut): string {
   const ru = (banner.translations ?? []).find((t) => t.lang === 'ru');
   return ru?.image_url ?? (banner.translations ?? [])[0]?.image_url ?? '';
@@ -229,7 +237,8 @@ function preview(banner: BannerAdminOut): string {
 
     <p class="mb-4 text-sm text-gray-500">
       Порядок в списке — порядок слайдов. Витрина показывает только включённые
-      баннеры внутри их дат; правки появляются на сайте в течение минуты.
+      баннеры внутри их дат; правки появляются на сайте в течение минуты. Ссылку
+      задавайте внутри вкладки языка — пути витрины у RU и RO разные.
     </p>
 
     <p
@@ -267,7 +276,7 @@ function preview(banner: BannerAdminOut): string {
               </p>
               <p class="text-xs text-gray-500">
                 {{ state(banner) }}
-                <span v-if="banner.link_url"> · {{ banner.link_url }}</span>
+                <span v-if="shownLink(banner)"> · {{ shownLink(banner) }}</span>
               </p>
             </div>
             <div class="flex shrink-0 items-center gap-1">
@@ -384,6 +393,22 @@ function preview(banner: BannerAdminOut): string {
             />
           </div>
 
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Ссылка для этого языка
+            </label>
+            <input
+              v-model="currentTranslation.link_url"
+              type="text"
+              :placeholder="tab === 'ru' ? '/ru/p/tovar' : '/ro/p/produs'"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+            <p class="mt-1 text-xs text-gray-500">
+              Пути витрины содержат язык, поэтому у RU и RO ссылки разные. Пусто
+              — возьмётся общая ссылка ниже.
+            </p>
+          </div>
+
           <p class="pt-2 text-xs text-gray-500">
             Поля ниже необязательны. Пусто — показывается только картинка;
             заполнено — текст рисуется поверх неё.
@@ -414,7 +439,7 @@ function preview(banner: BannerAdminOut): string {
         <div class="space-y-3">
           <div>
             <label class="block text-sm font-medium text-gray-700">
-              Ссылка (например /ru/c/dom или https://…)
+              Общая ссылка — если у языка своя не задана
             </label>
             <input
               v-model="draft.link_url"

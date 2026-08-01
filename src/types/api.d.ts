@@ -25,7 +25,7 @@ export interface paths {
      *     Returns:
      *         dict[str, str]: ``{"status": "ok"}`` when the service and DB respond.
      */
-    get: operations['health_api_v1_health_get'];
+    get: operations['health_api_v1_health_head'];
     put?: never;
     post?: never;
     delete?: never;
@@ -44,7 +44,7 @@ export interface paths {
      *     Returns:
      *         dict[str, str]: ``{"status": "ok"}`` when the service and DB respond.
      */
-    head: operations['health_api_v1_health_get'];
+    head: operations['health_api_v1_health_head'];
     patch?: never;
     trace?: never;
   };
@@ -3397,6 +3397,8 @@ export interface components {
       image_mobile_url?: string | null;
       /** Alt */
       alt: string;
+      /** Link Url */
+      link_url?: string | null;
       /** Title */
       title?: string | null;
       /** Subtitle */
@@ -3417,6 +3419,8 @@ export interface components {
       image_mobile_url?: string | null;
       /** Alt */
       alt: string;
+      /** Link Url */
+      link_url?: string | null;
       /** Title */
       title?: string | null;
       /** Subtitle */
@@ -5931,7 +5935,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  health_api_v1_health_get: {
+  health_api_v1_health_head: {
     parameters: {
       query?: never;
       header?: never;
@@ -5953,7 +5957,7 @@ export interface operations {
       };
     };
   };
-  health_api_v1_health_get: {
+  health_api_v1_health_head: {
     parameters: {
       query?: never;
       header?: never;

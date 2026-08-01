@@ -199,3 +199,57 @@ describe('admin Banners', () => {
     expect(wrapper.text()).toContain('Ссылка недопустима');
   });
 });
+
+describe('admin Banners — ссылки по языкам', () => {
+  it('отправляет свою ссылку для каждого языка', async () => {
+    createBanner.mockResolvedValue(banner());
+    const wrapper = await factory([]);
+    await wrapper.get('button').trigger('click');
+
+    const vm = wrapper.vm as unknown as {
+      draft: {
+        translations: Record<
+          string,
+          { image_url: string; alt: string; link_url: string | null }
+        >;
+      };
+    };
+    for (const [lang, path] of [
+      ['ru', '/ru/p/chasy'],
+      ['ro', '/ro/p/ceas'],
+    ] as const) {
+      vm.draft.translations[lang].image_url =
+        'https://media.evix.md/media/x.jpg';
+      vm.draft.translations[lang].alt = 'alt';
+      vm.draft.translations[lang].link_url = path;
+    }
+    await wrapper.vm.$nextTick();
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().startsWith('Сохранить'))!
+      .trigger('click');
+    await flushPromises();
+
+    const body = createBanner.mock.calls[0][0];
+    expect(body.translations.map((t) => t.link_url)).toEqual([
+      '/ru/p/chasy',
+      '/ro/p/ceas',
+    ]);
+  });
+
+  it('в списке показывает ссылку языка, а не общую', async () => {
+    const withOwn = banner({
+      link_url: '/ro/c/dom',
+      translations: [
+        { ...banner().translations![0], link_url: '/ru/p/chasy' },
+        banner().translations![1],
+      ],
+    });
+    const wrapper = await factory([withOwn]);
+
+    // Иначе менеджер видит румынский путь и считает, что RU ведёт туда же.
+    expect(wrapper.get('li').text()).toContain('/ru/p/chasy');
+    expect(wrapper.get('li').text()).not.toContain('/ro/c/dom');
+  });
+});
