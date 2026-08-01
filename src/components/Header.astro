@@ -1,10 +1,12 @@
 ---
-// Storefront header «по мотивам ecom»: logo · Каталог button · big central
-// live-search island · right icons. The Каталог button is a plain link to the
-// /c hub (icon-only on narrow screens); a mega-menu island can enhance it later
-// without taking the link away.
+// Storefront header «по мотивам ecom»: logo · Каталог menu · big central
+// live-search island · right icons. The Каталог control is an island that
+// renders a plain link to the /c hub and upgrades it into a menu once hydrated
+// (icon-only on narrow screens, where the menu opens as a drawer).
+import CatalogMenu from '../islands/CatalogMenu.vue';
 import SearchBox from '../islands/SearchBox.vue';
 import CartCount from '../islands/CartCount.vue';
+import { loadCategoryTree } from '../api/catalog';
 import {
   langFromPath,
   localePath,
@@ -29,6 +31,10 @@ const loggedIn = Boolean(Astro.cookies.get('access')?.value);
 // outside the [lang] route param).
 const lang = isLang(langProp) ? langProp : langFromPath(Astro.url.pathname);
 const t = ui(lang);
+
+// Menu contents come from SSR (the tree is cached per-lang), so the first click
+// opens instantly instead of waiting on a request.
+const categories = await loadCategoryTree(lang);
 
 // Language switcher target for the given locale: the page's equivalent path if
 // known (PDP dual-slug / home / search), else that locale's home (safe).
@@ -86,22 +92,7 @@ function switchHref(target: (typeof LANGS)[number]): string {
       >
     </a>
 
-    <a
-      href={localePath(lang, 'c')}
-      aria-label={t.catalog}
-      class="flex h-12 shrink-0 items-center gap-2 rounded-[10px] bg-primary px-3 font-semibold text-white transition hover:bg-primary-hover md:px-5"
-    >
-      <svg
-        class="h-5 w-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"></path>
-      </svg>
-      <span class="hidden md:inline">{t.catalog}</span>
-    </a>
+    <CatalogMenu client:idle lang={lang} categories={categories} />
 
     <SearchBox client:idle lang={lang} />
 

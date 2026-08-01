@@ -582,6 +582,7 @@ export interface CatalogStrings {
   description: string;
   allCategories: string;
   empty: string;
+  close: string;
 }
 
 const CATALOG: Record<Lang, CatalogStrings> = {
@@ -591,6 +592,7 @@ const CATALOG: Record<Lang, CatalogStrings> = {
       'Toate categoriile magazinului evix: electrocasnice, bucătărie, auto, sport și altele.',
     allCategories: 'Toate categoriile',
     empty: 'Catalogul nu este disponibil momentan.',
+    close: 'Închide',
   },
   ru: {
     title: 'Каталог',
@@ -598,6 +600,7 @@ const CATALOG: Record<Lang, CatalogStrings> = {
       'Все категории магазина evix: техника, кухня, автотовары, спорт и другое.',
     allCategories: 'Все категории',
     empty: 'Каталог сейчас недоступен.',
+    close: 'Закрыть',
   },
 };
 
